@@ -2,7 +2,7 @@ extern crate core;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    println!("Hello, world!");
+	println!("Hello, world!");
 
-    Ok(())
+	Ok(())
 }
