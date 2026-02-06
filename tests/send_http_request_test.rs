@@ -311,8 +311,14 @@ async fn test_json_pretty_print_enabled() {
 	let response = result.unwrap();
 	match response.content {
 		Some(ResponseContent::Body(body)) => {
-			assert!(body.contains('\n'), "Expected pretty-printed JSON with newlines");
-			assert!(body.contains("  "), "Expected pretty-printed JSON with indentation");
+			assert!(
+				body.contains('\n'),
+				"Expected pretty-printed JSON with newlines"
+			);
+			assert!(
+				body.contains("  "),
+				"Expected pretty-printed JSON with indentation"
+			);
 		}
 		other => panic!("Expected Body content, got {:?}", other),
 	}
@@ -455,7 +461,10 @@ async fn test_duration_format() {
 	let duration = response.duration.unwrap();
 	// Duration format should contain time unit indicators (ns, µs, ms, or s)
 	assert!(
-		duration.contains("ns") || duration.contains("µs") || duration.contains("ms") || duration.contains('s'),
+		duration.contains("ns")
+			|| duration.contains("µs")
+			|| duration.contains("ms")
+			|| duration.contains('s'),
 		"Duration '{}' should contain a time unit",
 		duration
 	);

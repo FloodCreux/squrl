@@ -49,7 +49,8 @@ fn environment_serializes_to_json() {
 
 #[test]
 fn environment_deserializes_from_json() {
-	let json = r#"{"name":"prod","values":{"HOST":"localhost","PORT":"8080"},"path":"/tmp/prod.env"}"#;
+	let json =
+		r#"{"name":"prod","values":{"HOST":"localhost","PORT":"8080"},"path":"/tmp/prod.env"}"#;
 	let env: Environment = serde_json::from_str(json).unwrap();
 
 	assert_eq!(env.name, "prod");
