@@ -49,14 +49,13 @@ pub async fn send_http_request(
                 let (headers, is_image) = extract_headers(resp.headers());
                 let cookies = extract_cookies(&resp);
 
-                let response_content = decode_reponse_body(
+                let response_content = decode_response_body(
                     resp,
                     &headers,
                     is_image,
                     request.settings.pretty_print_response_content.as_bool(),
                 )
-                    .await
-                    .unwrap();
+                    .await?;
 
                 RequestResponse {
                     duration: None,
@@ -67,29 +66,9 @@ pub async fn send_http_request(
                 }
             },
             Err(err) => {
-                error!("Sending error: {}", err);
-
                 elapsed_time = request_start.elapsed();
-
-                let response_status_code;
-
-                if let Some(status_code) = err.status() {
-                    response_status_code = Some(status_code.to_string());
-                } else {
-                    response_status_code = None;
-                }
-
-                let result_body = ResponseContent::Body(err.to_string());
-
-
-                RequestResponse {
-                    duration: None,
-                    status_code: response_status_code,
-                    content: Some(result_body),
-                    cookies: None,
-                    headers: vec![],
-                }
-            },
+                build_error_response(&err)
+            }
         },
     };
 
@@ -98,6 +77,21 @@ pub async fn send_http_request(
     trace!("Request sent");
 
     Ok(response)
+}
+
+fn build_error_response(err: &reqwest_middleware::Error) -> RequestResponse {
+    error!("Sending error: {}", err);
+
+    let response_status_code = err.status().map(|s| s.to_string());
+    let result_body = ResponseContent::Body(err.to_string());
+
+    RequestResponse {
+        duration: None,
+        status_code: response_status_code,
+        content: Some(result_body),
+        cookies: None,
+        headers: vec![],
+    }
 }
 
 fn build_sentinel_response(status_code: &str) -> RequestResponse {
@@ -110,33 +104,29 @@ fn build_sentinel_response(status_code: &str) -> RequestResponse {
     }
 }
 
-async fn decode_reponse_body(
+async fn decode_response_body(
     response: reqwest::Response,
     headers: &Vec<(String, String)>,
     is_image: bool,
     pretty_print: bool,
 ) -> Result<ResponseContent, RequestResponseError> {
-    let content = match is_image {
-        true => {
-            let content = response.bytes().await.unwrap();
-            let image = image::load_from_memory(content.as_ref());
+    let content = if is_image {
+        let content = response.bytes().await.unwrap();
+        let image = image::load_from_memory(content.as_ref());
 
-            ResponseContent::Image(ImageResponse {
-                data: content.to_vec(),
-                image: image.ok(),
-            })
-        }
-        false => match response.bytes().await {
+        ResponseContent::Image(ImageResponse {
+            data: content.to_vec(),
+            image: image.ok(),
+        })
+    } else {
+        match response.bytes().await {
             Ok(bytes) => match String::from_utf8(bytes.to_vec()) {
                 Ok(mut result_body) => {
-                    if let Some(file_format) = find_file_format_in_content_type(headers) {
-                        if pretty_print {
-                            match file_format.as_str() {
-                                "json" => {
-                                    result_body =
-                                        jsonxf::pretty_print(&result_body).unwrap_or(result_body);
-                                }
-                                _ => {}
+                    if pretty_print {
+                        if let Some(file_format) = find_file_format_in_content_type(headers) {
+                            if file_format == "json" {
+                                result_body =
+                                    jsonxf::pretty_print(&result_body).unwrap_or(result_body);
                             }
                         }
                     }
@@ -146,7 +136,7 @@ async fn decode_reponse_body(
                 Err(_) => ResponseContent::Body(format!("{:#X?}", bytes)),
             },
             Err(_) => return Err(CouldNotDecodeResponse),
-        },
+        }
     };
 
     Ok(content)
