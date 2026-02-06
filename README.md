@@ -1,31 +1,48 @@
 # squrl
 
-An async HTTP request client library for Rust, built on top of [reqwest](https://github.com/seanmonstar/reqwest) and [Tokio](https://tokio.rs/).
+A terminal HTTP client built with Rust, powered by [ratatui](https://github.com/ratatui/ratatui), [reqwest](https://github.com/seanmonstar/reqwest), and [Tokio](https://tokio.rs/).
 
 ## Features
 
-- Async HTTP request execution with configurable timeouts
-- Request cancellation via `CancellationToken`
+- TUI and CLI modes
+- Async HTTP request execution with configurable timeouts and cancellation
+- Environment management with key-value variable support
 - Response parsing for text, JSON, and image content types
 - Pretty-printed JSON responses
 - Header and cookie capture
-- Middleware support via `reqwest-middleware`
-- Structured logging with `tracing`
+- Man page generation
+
+## Installation
+
+```sh
+cargo install --path .
+```
 
 ## Usage
 
-```rust
-use squrl::app::request::http::send::send_http_request;
-use squrl::models::request::Request;
-use std::sync::Arc;
-use parking_lot::RwLock;
+### CLI
 
-let request = Arc::new(RwLock::new(Request::default()));
-let client = reqwest_middleware::ClientBuilder::new(reqwest::Client::new()).build();
-let request_builder = client.get("https://httpbin.org/get");
+```sh
+# Environment management
+squrl env info <name>              # Show environment details
+squrl env info <name> --os-vars    # Include OS environment variables
+squrl env key <name> get <key>     # Get a key value
+squrl env key <name> set <key> <value>   # Update a key
+squrl env key <name> add <key> <value>   # Add a new key
+squrl env key <name> delete <key>        # Delete a key
+squrl env key <name> rename <key> <new>  # Rename a key
 
-let response = send_http_request(request_builder, request).await?;
+# Man pages
+squrl man [output_dir]             # Generate man pages
+
+# Options
+squrl --directory <dir>            # Set working directory (or SQURL_MAIN_DIR env var)
+squrl --dry-run                    # Test without saving changes
 ```
+
+### TUI
+
+Run `squrl` with no subcommand to launch the interactive terminal UI.
 
 ## Development
 
