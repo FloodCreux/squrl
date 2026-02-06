@@ -10,6 +10,7 @@ use crate::models::environment::Environment;
 pub struct App<'a> {
 	pub should_quit: bool,
 	pub environments: Vec<Arc<RwLock<Environment>>>,
+	pub selected_environment: usize,
 }
 
 impl App<'_> {
@@ -17,6 +18,7 @@ impl App<'_> {
 		Ok(App {
 			should_quit: false,
 			environments: vec![],
+			selected_environment: 0,
 		})
 	}
 
