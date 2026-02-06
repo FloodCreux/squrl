@@ -2897,6 +2897,7 @@ dependencies = [
  "reqwest-tracing",
  "serde",
  "serde_json",
+ "strum",
  "thiserror 2.0.18",
  "tokio",
  "tokio-util",
