@@ -32,25 +32,11 @@ pub async fn send_http_request(
     let mut response = tokio::select! {
         _ = cancellation_token.cancelled() => {
             elapsed_time = request_start.elapsed();
-
-            RequestResponse {
-                duration: None,
-                status_code: Some(String::from("CANCELLED")),
-                content: None,
-                cookies: None,
-                headers: vec![],
-            }
+            build_sentinel_response("CANCELLED")
         },
         _ = timeout => {
             elapsed_time = request_start.elapsed();
-
-            RequestResponse {
-                duration: None,
-                status_code: Some(String::from("TIMEOUT")),
-                content: None,
-                cookies: None,
-                headers: vec![],
-            }
+            build_sentinel_response("TIMEOUT")
         },
         response = request_builder.send() => match response {
             Ok(resp) => {
@@ -59,29 +45,9 @@ pub async fn send_http_request(
                 elapsed_time = request_start.elapsed();
 
                 let status_code = resp.status().to_string();
-                let mut is_image = false;
 
-                let headers: Vec<(String, String)> = resp.headers().clone()
-                    .iter()
-                    .map(|(header_name, header_value)| {
-                        let value = header_value.to_str().unwrap_or("").to_string();
-
-                        if header_name == CONTENT_TYPE && value.starts_with("image/") {
-                            is_image = true;
-                        }
-
-                        (header_name.to_string(), value)
-                    })
-                    .collect();
-
-                let cookies = resp.cookies()
-                    .par_bridge()
-                    .map(|cookie| {
-                        format!("{}: {}", cookie.name(), cookie.value())
-                    })
-                    .collect::<Vec<String>>()
-                    .join("\n");
-
+                let (headers, is_image) = extract_headers(resp.headers());
+                let cookies = extract_cookies(&resp);
 
                 let response_content = match is_image {
                     true => {
@@ -155,4 +121,41 @@ pub async fn send_http_request(
     trace!("Request sent");
 
     Ok(response)
+}
+
+fn build_sentinel_response(status_code: &str) -> RequestResponse {
+    RequestResponse {
+        duration: None,
+        status_code: Some(String::from(status_code)),
+        content: None,
+        cookies: None,
+        headers: vec![],
+    }
+}
+
+fn extract_headers(response_headers: &reqwest::header::HeaderMap) -> (Vec<(String, String)>, bool) {
+    let mut is_image = false;
+    let result = response_headers
+        .iter()
+        .map(|(header_name, header_value)| {
+            let value = header_value.to_str().unwrap_or("").to_string();
+
+            if header_name == CONTENT_TYPE && value.starts_with("image/") {
+                is_image = true;
+            }
+
+            (header_name.to_string(), value)
+        })
+        .collect();
+
+    (result, is_image)
+}
+
+fn extract_cookies(response: &reqwest::Response) -> String {
+    response
+        .cookies()
+        .par_bridge()
+        .map(|cookie| format!("{}: {}", cookie.name(), cookie.value()))
+        .collect::<Vec<String>>()
+        .join("\n")
 }
