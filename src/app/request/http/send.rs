@@ -19,7 +19,10 @@ pub async fn send_http_request(
 
 	local_request.write().is_pending = true;
 
-	let request = local_request.read();
+	let request = {
+		let guard = local_request.read();
+		guard.clone()
+	};
 
 	let cancellation_token = request.cancellation_token.clone();
 	let timeout = tokio::time::sleep(Duration::from_millis(
@@ -122,13 +125,11 @@ async fn decode_response_body(
 		match response.bytes().await {
 			Ok(bytes) => match String::from_utf8(bytes.to_vec()) {
 				Ok(mut result_body) => {
-					if pretty_print {
-						if let Some(file_format) = find_file_format_in_content_type(headers) {
-							if file_format == "json" {
-								result_body =
-									jsonxf::pretty_print(&result_body).unwrap_or(result_body);
-							}
-						}
+					if pretty_print
+						&& let Some(file_format) = find_file_format_in_content_type(headers)
+						&& file_format == "json"
+					{
+						result_body = jsonxf::pretty_print(&result_body).unwrap_or(result_body);
 					}
 
 					ResponseContent::Body(result_body)
