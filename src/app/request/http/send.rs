@@ -49,37 +49,14 @@ pub async fn send_http_request(
                 let (headers, is_image) = extract_headers(resp.headers());
                 let cookies = extract_cookies(&resp);
 
-                let response_content = match is_image {
-                    true => {
-                        let content = resp.bytes().await.unwrap();
-                        let image = image::load_from_memory(content.as_ref());
-
-                        ResponseContent::Image(ImageResponse {
-                            data: content.to_vec(),
-                            image: image.ok(),
-                        })
-                    },
-                    false => match resp.bytes().await {
-                        Ok(bytes) => match String::from_utf8(bytes.to_vec()) {
-                            Ok(mut result_body) => {
-                                if let Some(file_format) = find_file_format_in_content_type(&headers) {
-                                    if request.settings.pretty_print_response_content.as_bool() {
-                                        match file_format.as_str() {
-                                            "json" => {
-                                                result_body = jsonxf::pretty_print(&result_body).unwrap_or(result_body);
-                                            },
-                                            _ => {},
-                                        }
-                                    }
-                                }
-
-                                ResponseContent::Body(result_body)
-                            },
-                            Err(_) => ResponseContent::Body(format!("{:#X?}", bytes))
-                        },
-                        Err(_) => return Err(CouldNotDecodeResponse)
-                    },
-                };
+                let response_content = decode_reponse_body(
+                    resp,
+                    &headers,
+                    is_image,
+                    request.settings.pretty_print_response_content.as_bool(),
+                )
+                    .await
+                    .unwrap();
 
                 RequestResponse {
                     duration: None,
@@ -131,6 +108,48 @@ fn build_sentinel_response(status_code: &str) -> RequestResponse {
         cookies: None,
         headers: vec![],
     }
+}
+
+async fn decode_reponse_body(
+    response: reqwest::Response,
+    headers: &Vec<(String, String)>,
+    is_image: bool,
+    pretty_print: bool,
+) -> Result<ResponseContent, RequestResponseError> {
+    let content = match is_image {
+        true => {
+            let content = response.bytes().await.unwrap();
+            let image = image::load_from_memory(content.as_ref());
+
+            ResponseContent::Image(ImageResponse {
+                data: content.to_vec(),
+                image: image.ok(),
+            })
+        }
+        false => match response.bytes().await {
+            Ok(bytes) => match String::from_utf8(bytes.to_vec()) {
+                Ok(mut result_body) => {
+                    if let Some(file_format) = find_file_format_in_content_type(headers) {
+                        if pretty_print {
+                            match file_format.as_str() {
+                                "json" => {
+                                    result_body =
+                                        jsonxf::pretty_print(&result_body).unwrap_or(result_body);
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+
+                    ResponseContent::Body(result_body)
+                }
+                Err(_) => ResponseContent::Body(format!("{:#X?}", bytes)),
+            },
+            Err(_) => return Err(CouldNotDecodeResponse),
+        },
+    };
+
+    Ok(content)
 }
 
 fn extract_headers(response_headers: &reqwest::header::HeaderMap) -> (Vec<(String, String)>, bool) {
