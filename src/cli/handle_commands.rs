@@ -3,12 +3,14 @@ use crate::cli::args::Command;
 use crate::cli::args::Command::*;
 use crate::cli::commands::env::{EnvCommand, EnvSubCommand};
 use crate::cli::commands::key::KeyCommand;
+use crate::cli::man::generate_man_pages;
 use crate::errors::panic_error;
 
 impl App {
 	pub async fn handle_command(&mut self, command: Command) {
 		let result = match &command {
 			Env(env_command) => self.handle_env_commands(env_command),
+			Man(_) => generate_man_pages(),
 		};
 
 		if let Err(error) = result {
