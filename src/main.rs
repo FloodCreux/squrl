@@ -1,5 +1,5 @@
-use crate::app::app::App;
-use crate::app::startup::startup::AppMode;
+use squrl::app::app::App;
+use squrl::app::startup::startup::AppMode;
 
 extern crate core;
 

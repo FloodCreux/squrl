@@ -7,14 +7,14 @@ use ratatui::backend::{Backend, CrosstermBackend};
 
 use crate::models::environment::Environment;
 
-pub struct App<'a> {
+pub struct App {
 	pub should_quit: bool,
 	pub environments: Vec<Arc<RwLock<Environment>>>,
 	pub selected_environment: usize,
 }
 
-impl App<'_> {
-	pub fn new<'a>() -> anyhow::Result<App<'a>> {
+impl App {
+	pub fn new() -> anyhow::Result<App> {
 		Ok(App {
 			should_quit: false,
 			environments: vec![],

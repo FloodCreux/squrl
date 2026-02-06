@@ -13,7 +13,7 @@ lazy_static! {
 	pub static ref OS_ENV_VARS: IndexMap<String, String> = env::vars().collect();
 }
 
-impl App<'_> {
+impl App {
 	pub fn save_environment_to_file(&mut self, env_index: usize) {
 		let environment = self.environments[env_index].read();
 		save_environment_to_file(&environment);

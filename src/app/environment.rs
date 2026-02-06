@@ -22,7 +22,7 @@ pub enum EnvironmentError {
 	KeyAlreadyExists,
 }
 
-impl App<'_> {
+impl App {
 	pub fn get_env_as_local_from_index(&self, index: usize) -> Option<Arc<RwLock<Environment>>> {
 		match self.environments.get(index) {
 			None => None,

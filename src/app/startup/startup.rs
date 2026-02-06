@@ -7,7 +7,7 @@ pub enum AppMode {
 	CLI(Command),
 }
 
-impl<'a> App<'a> {
+impl App {
 	pub fn startup(&mut self) -> AppMode {
 		match ARGS.command {
 			Some(_) => tracing_subscriber::fmt()
