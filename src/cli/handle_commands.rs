@@ -11,6 +11,10 @@ impl App<'_> {
 		let result = match &command {
 			Env(env_command) => self.handle_env_commands(env_command),
 			Man(_) => generate_man_pages(),
+			Try(try_command) => {
+				self.try_request(&try_command.new_request_command, &try_command.send_command)
+					.await
+			}
 		};
 
 		if let Err(error) = result {

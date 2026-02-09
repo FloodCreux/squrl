@@ -9,6 +9,7 @@ use lazy_static::lazy_static;
 use crate::app::files::utils::expand_tilde;
 use crate::cli::commands::env::EnvCommand;
 use crate::cli::commands::man::ManCommand;
+use crate::cli::commands::try_command::TryCommand;
 use crate::errors::panic_error;
 
 #[derive(Parser, Debug)]
@@ -28,6 +29,7 @@ pub struct Args {
 pub enum Command {
 	Env(EnvCommand),
 	Man(ManCommand),
+	Try(TryCommand),
 }
 
 lazy_static! {
