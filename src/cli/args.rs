@@ -7,6 +7,7 @@ use directories::ProjectDirs;
 use lazy_static::lazy_static;
 
 use crate::app::files::utils::expand_tilde;
+use crate::cli::commands::completions::CompletionsCommand;
 use crate::cli::commands::env::EnvCommand;
 use crate::cli::commands::man::ManCommand;
 use crate::cli::commands::try_command::TryCommand;
@@ -27,6 +28,7 @@ pub struct Args {
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum Command {
+	Completions(CompletionsCommand),
 	Env(EnvCommand),
 	Man(ManCommand),
 	Try(TryCommand),
