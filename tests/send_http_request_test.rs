@@ -11,9 +11,15 @@ use squrl::models::request::{KeyValue, Request};
 use squrl::models::response::ResponseContent;
 use squrl::models::settings::{RequestSettings, Setting};
 
+use squrl::models::environment::Environment;
+
 fn build_request_builder(url: &str) -> reqwest_middleware::RequestBuilder {
 	let client = reqwest_middleware::ClientBuilder::new(reqwest::Client::new()).build();
 	client.get(url)
+}
+
+fn build_env() -> Option<Arc<RwLock<Environment>>> {
+	None
 }
 
 fn build_local_request(timeout_ms: u32) -> Arc<RwLock<Request>> {
@@ -21,6 +27,7 @@ fn build_local_request(timeout_ms: u32) -> Arc<RwLock<Request>> {
 		settings: RequestSettings {
 			timeout: Setting::U32(timeout_ms),
 			pretty_print_response_content: Setting::Bool(true),
+			..Default::default()
 		},
 		..Default::default()
 	}))
@@ -40,7 +47,7 @@ async fn test_successful_text_response() {
 	let request_builder = build_request_builder(&url);
 	let local_request = build_local_request(5000);
 
-	let result = send_http_request(request_builder, local_request.clone()).await;
+	let result = send_http_request(request_builder, local_request.clone(), &build_env()).await;
 	mock.assert_async().await;
 
 	let response = result.unwrap();
@@ -68,7 +75,7 @@ async fn test_server_error_response() {
 	let request_builder = build_request_builder(&url);
 	let local_request = build_local_request(5000);
 
-	let result = send_http_request(request_builder, local_request).await;
+	let result = send_http_request(request_builder, local_request, &build_env()).await;
 	mock.assert_async().await;
 
 	let response = result.unwrap();
@@ -105,7 +112,7 @@ async fn test_timeout() {
 	let request_builder = build_request_builder(&url);
 	let local_request = build_local_request(100); // 100ms timeout
 
-	let result = send_http_request(request_builder, local_request).await;
+	let result = send_http_request(request_builder, local_request, &build_env()).await;
 
 	let response = result.unwrap();
 	assert_eq!(response.status_code, Some("TIMEOUT".to_string()));
@@ -143,7 +150,7 @@ async fn test_cancellation() {
 		cancellation_token.cancel();
 	});
 
-	let result = send_http_request(request_builder, local_request).await;
+	let result = send_http_request(request_builder, local_request, &build_env()).await;
 
 	let response = result.unwrap();
 	assert_eq!(response.status_code, Some("CANCELLED".to_string()));
@@ -166,7 +173,7 @@ async fn test_response_headers_are_captured() {
 	let request_builder = build_request_builder(&url);
 	let local_request = build_local_request(5000);
 
-	let result = send_http_request(request_builder, local_request).await;
+	let result = send_http_request(request_builder, local_request, &build_env()).await;
 	mock.assert_async().await;
 
 	let response = result.unwrap();
@@ -201,7 +208,7 @@ async fn test_image_response() {
 	let request_builder = build_request_builder(&url);
 	let local_request = build_local_request(5000);
 
-	let result = send_http_request(request_builder, local_request).await;
+	let result = send_http_request(request_builder, local_request, &build_env()).await;
 	mock.assert_async().await;
 
 	let response = result.unwrap();
@@ -232,7 +239,7 @@ async fn test_sets_is_pending() {
 
 	assert!(!local_request.read().is_pending);
 
-	let _ = send_http_request(request_builder, local_request.clone()).await;
+	let _ = send_http_request(request_builder, local_request.clone(), &build_env()).await;
 
 	assert!(local_request.read().is_pending);
 }
@@ -243,7 +250,7 @@ async fn test_connection_error() {
 	let request_builder = build_request_builder("http://127.0.0.1:1");
 	let local_request = build_local_request(5000);
 
-	let result = send_http_request(request_builder, local_request).await;
+	let result = send_http_request(request_builder, local_request, &build_env()).await;
 
 	let response = result.unwrap();
 	assert!(response.status_code.is_none());
@@ -272,7 +279,7 @@ async fn test_cookies_are_captured() {
 	let request_builder = build_request_builder(&url);
 	let local_request = build_local_request(5000);
 
-	let result = send_http_request(request_builder, local_request).await;
+	let result = send_http_request(request_builder, local_request, &build_env()).await;
 	mock.assert_async().await;
 
 	let response = result.unwrap();
@@ -305,7 +312,7 @@ async fn test_json_pretty_print_enabled() {
 	let request_builder = build_request_builder(&url);
 	let local_request = build_local_request(5000);
 
-	let result = send_http_request(request_builder, local_request).await;
+	let result = send_http_request(request_builder, local_request, &build_env()).await;
 	mock.assert_async().await;
 
 	let response = result.unwrap();
@@ -341,11 +348,12 @@ async fn test_json_pretty_print_disabled() {
 		settings: RequestSettings {
 			timeout: Setting::U32(5000),
 			pretty_print_response_content: Setting::Bool(false),
+			..Default::default()
 		},
 		..Default::default()
 	}));
 
-	let result = send_http_request(request_builder, local_request).await;
+	let result = send_http_request(request_builder, local_request, &build_env()).await;
 	mock.assert_async().await;
 
 	let response = result.unwrap();
@@ -371,7 +379,7 @@ async fn test_empty_response_body() {
 	let request_builder = build_request_builder(&url);
 	let local_request = build_local_request(5000);
 
-	let result = send_http_request(request_builder, local_request).await;
+	let result = send_http_request(request_builder, local_request, &build_env()).await;
 	mock.assert_async().await;
 
 	let response = result.unwrap();
@@ -399,7 +407,7 @@ async fn test_multiple_response_headers() {
 	let request_builder = build_request_builder(&url);
 	let local_request = build_local_request(5000);
 
-	let result = send_http_request(request_builder, local_request).await;
+	let result = send_http_request(request_builder, local_request, &build_env()).await;
 	mock.assert_async().await;
 
 	let response = result.unwrap();
@@ -429,12 +437,13 @@ async fn test_request_with_custom_headers() {
 		settings: RequestSettings {
 			timeout: Setting::U32(5000),
 			pretty_print_response_content: Setting::Bool(true),
+			..Default::default()
 		},
 		..Default::default()
 	}));
 
 	let request_builder = build_request_builder(&url);
-	let result = send_http_request(request_builder, local_request).await;
+	let result = send_http_request(request_builder, local_request, &build_env()).await;
 	mock.assert_async().await;
 
 	let response = result.unwrap();
@@ -455,7 +464,7 @@ async fn test_duration_format() {
 	let request_builder = build_request_builder(&url);
 	let local_request = build_local_request(5000);
 
-	let result = send_http_request(request_builder, local_request).await;
+	let result = send_http_request(request_builder, local_request, &build_env()).await;
 	let response = result.unwrap();
 
 	let duration = response.duration.unwrap();

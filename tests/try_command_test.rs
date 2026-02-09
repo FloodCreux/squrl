@@ -30,6 +30,12 @@ fn new_request_defaults_url_to_empty() {
 }
 
 #[test]
+fn new_request_defaults_protocol_to_http() {
+	let cli = NewRequestCli::try_parse_from(["test"]).unwrap();
+	assert_eq!(cli.cmd.protocol.to_string(), "HTTP");
+}
+
+#[test]
 fn new_request_defaults_method_to_get() {
 	let cli = NewRequestCli::try_parse_from(["test"]).unwrap();
 	assert_eq!(cli.cmd.method.to_string(), "GET");
@@ -108,6 +114,12 @@ fn new_request_defaults_empty_headers() {
 }
 
 // === NewRequestCommand parsing ===
+
+#[test]
+fn new_request_parses_protocol_http() {
+	let cli = NewRequestCli::try_parse_from(["test", "--protocol", "HTTP"]).unwrap();
+	assert_eq!(cli.cmd.protocol.to_string(), "HTTP");
+}
 
 #[test]
 fn new_request_parses_url() {
@@ -668,6 +680,7 @@ fn try_command_with_env() {
 fn try_command_defaults_match_subcommand_defaults() {
 	let cli = TryCli::try_parse_from(["test"]).unwrap();
 	assert_eq!(cli.cmd.new_request_command.url, "");
+	assert_eq!(cli.cmd.new_request_command.protocol.to_string(), "HTTP");
 	assert_eq!(cli.cmd.new_request_command.method.to_string(), "GET");
 	assert_eq!(cli.cmd.new_request_command.timeout, 30000);
 	assert!(!cli.cmd.new_request_command.no_cookies);

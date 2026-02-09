@@ -1,3 +1,4 @@
+use squrl::models::protocol::protocol::Protocol;
 use squrl::models::request::{KeyValue, Request};
 
 #[test]
@@ -16,6 +17,12 @@ fn default_request_has_empty_headers() {
 fn default_request_has_empty_params() {
 	let req = Request::default();
 	assert!(req.params.is_empty());
+}
+
+#[test]
+fn default_request_has_http_protocol() {
+	let req = Request::default();
+	assert!(matches!(req.protocol, Protocol::HttpRequest(_)));
 }
 
 #[test]
@@ -96,4 +103,19 @@ fn deserialized_request_defaults_is_pending_to_false() {
 	let json = serde_json::to_string(&req).unwrap();
 	let req: Request = serde_json::from_str(&json).unwrap();
 	assert!(!req.is_pending);
+}
+
+#[test]
+fn request_roundtrip_preserves_protocol() {
+	let req = Request::default();
+	let json = serde_json::to_string(&req).unwrap();
+	let deserialized: Request = serde_json::from_str(&json).unwrap();
+	assert!(matches!(deserialized.protocol, Protocol::HttpRequest(_)));
+}
+
+#[test]
+fn request_serialization_includes_protocol() {
+	let req = Request::default();
+	let json = serde_json::to_string(&req).unwrap();
+	assert!(json.contains("protocol"));
 }
