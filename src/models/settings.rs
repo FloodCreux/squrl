@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -24,6 +26,22 @@ impl Setting {
 		match self {
 			Setting::Bool(_) => unreachable!(),
 			Setting::U32(u32) => *u32,
+		}
+	}
+}
+
+impl FromStr for Setting {
+	type Err = String;
+
+	fn from_str(input: &str) -> Result<Self, String> {
+		match bool::from_str(&input.to_lowercase()) {
+			Ok(bool) => Ok(Setting::Bool(bool)),
+			Err(_) => match u32::from_str(input) {
+				Ok(u32) => Ok(Setting::U32(u32)),
+				Err(_) => Err(String::from(
+					"Value should either be a boolean or a positive int",
+				)),
+			},
 		}
 	}
 }

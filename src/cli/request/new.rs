@@ -1,12 +1,63 @@
-use crate::cli::commands::request_commands::new::NewRequestCommand;
-use crate::models::request::{KeyValue, Request};
+use anyhow::anyhow;
+use clap::ValueEnum;
+use tokio_util::sync::CancellationToken;
+
+use crate::cli::commands::request_commands::new::{AuthArgs, BodyArgs, NewRequestCommand};
+use crate::errors::panic_error;
+use crate::models::auth::auth::Auth;
+use crate::models::auth::basic::BasicAuth;
+use crate::models::auth::bearer_token::BearerToken;
+use crate::models::auth::digest::{Digest, extract_www_authenticate_digest_data};
+use crate::models::auth::jwt::{JwtAlgorithm, JwtSecretType, JwtToken};
+use crate::models::protocol::http::body::ContentType;
+use crate::models::protocol::protocol::Protocol;
+use crate::models::request::{DEFAULT_HEADERS, KeyValue, Request};
+use crate::models::response::RequestResponse;
+use crate::models::settings::{RequestSettings, Setting};
 
 pub fn create_request_from_new_request_command(
 	request_name: String,
 	new_request_command: NewRequestCommand,
 ) -> anyhow::Result<Request> {
 	let params = string_array_to_key_value_array(new_request_command.add_param);
-	let headers = string_array_to_key_value_array(new_request_command.headers);
+	let auth = get_auth_from_auth_args(new_request_command.auth)?;
+	let headers = string_array_to_key_value_array(new_request_command.add_header);
+	let body = get_content_type_from_body_args(new_request_command.body);
+
+	let base_headers = if new_request_command.no_base_headers {
+		vec![]
+	} else {
+		DEFAULT_HEADERS.clone()
+	};
+
+	let mut protocol = new_request_command.protocol.clone();
+
+	match &mut protocol {
+		Protocol::HttpRequest(http_request) => {
+			http_request.method = new_request_command.method;
+			http_request.body = body;
+		}
+	};
+
+	let mut request = Request {
+		name: request_name,
+		url: String::new(),
+		protocol,
+		params,
+		auth,
+		headers: vec![base_headers, headers].concat(),
+		settings: RequestSettings {
+			timeout: Setting::U32(new_request_command.timeout),
+			pretty_print_response_content: Setting::Bool(!new_request_command.no_pretty),
+		},
+		is_pending: false,
+		response: RequestResponse::default(),
+		cancellation_token: CancellationToken::new(),
+	};
+
+	request.update_url_and_params(new_request_command.url);
+
+	Ok(request)
 }
 
 fn string_array_to_key_value_array(string_array: Vec<String>) -> Vec<KeyValue> {
@@ -20,4 +71,57 @@ fn string_array_to_key_value_array(string_array: Vec<String>) -> Vec<KeyValue> {
 	}
 
 	key_value_array
+}
+
+fn get_auth_from_auth_args(auth_args: AuthArgs) -> anyhow::Result<Auth> {
+	if !auth_args.auth_basic.is_empty() {
+		Ok(Auth::BasicAuth(BasicAuth {
+			username: auth_args.auth_basic[0].clone(),
+			password: auth_args.auth_basic[1].clone(),
+		}))
+	} else if !auth_args.auth_bearer_token.is_empty() {
+		Ok(Auth::BearerToken(BearerToken {
+			token: auth_args.auth_bearer_token[0].clone(),
+		}))
+	} else if !auth_args.auth_jwt_token.is_empty() {
+		Ok(Auth::JwtToken(JwtToken {
+			algorithm: JwtAlgorithm::from_str(&auth_args.auth_jwt_token[0], true)
+				.map_err(|e| anyhow!(e))?,
+			secret_type: JwtSecretType::from_str(&auth_args.auth_jwt_token[1], true)
+				.map_err(|e| anyhow!(e))?,
+			secret: auth_args.auth_jwt_token[2].clone(),
+			payload: auth_args.auth_jwt_token[3].clone(),
+		}))
+	} else if !auth_args.auth_digest.is_empty() {
+		let www_authenticate_header = &auth_args.auth_digest[2];
+		match extract_www_authenticate_digest_data(www_authenticate_header) {
+			Ok((domains, realm, nonce, opaque, stale, algorithm, qop, user_hash, charset)) => {
+				Ok(Auth::Digest(Digest {
+					username: auth_args.auth_digest[0].clone(),
+					password: auth_args.auth_digest[1].clone(),
+					domains,
+					realm,
+					nonce,
+					opaque,
+					stale,
+					algorithm,
+					qop,
+					user_hash,
+					charset,
+					nc: 0,
+				}))
+			}
+			Err(error) => panic_error(error),
+		}
+	} else {
+		Ok(Auth::NoAuth)
+	}
+}
+
+fn get_content_type_from_body_args(body_args: BodyArgs) -> ContentType {
+	if let Some(file_path) = &body_args.body_file {
+		ContentType::File(file_path.clone())
+	} else {
+		ContentType::NoBody
+	}
 }
