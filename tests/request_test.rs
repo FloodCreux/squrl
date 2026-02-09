@@ -89,7 +89,11 @@ fn request_roundtrip_preserves_headers() {
 
 #[test]
 fn deserialized_request_defaults_is_pending_to_false() {
-	let json = r#"{"url":"http://test.com","headers":[],"params":[],"settings":{"timeout":{"U32":5000},"pretty_print_response_content":{"Bool":true}},"response":{"duration":null,"status_code":null,"content":null,"cookies":null,"headers":[]}}"#;
-	let req: Request = serde_json::from_str(json).unwrap();
+	let req = Request {
+		url: "http://test.com".to_string(),
+		..Default::default()
+	};
+	let json = serde_json::to_string(&req).unwrap();
+	let req: Request = serde_json::from_str(&json).unwrap();
 	assert!(!req.is_pending);
 }

@@ -1,3 +1,5 @@
+use crate::app::files::theme::THEME;
+use ratatui::prelude::Color;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumString};
 
@@ -22,4 +24,50 @@ pub enum Method {
 	TRACE,
 	#[strum(to_string = "CONNECT")]
 	CONNECT,
+}
+
+impl Method {
+	pub fn get_color(&self) -> Color {
+		let theme = THEME.read();
+
+		match self {
+			Method::GET => theme.http.methods.get,
+			Method::POST => theme.http.methods.post,
+			Method::PUT => theme.http.methods.put,
+			Method::PATCH => theme.http.methods.patch,
+			Method::DELETE => theme.http.methods.delete,
+			Method::HEAD => theme.http.methods.head,
+			Method::OPTIONS => theme.http.methods.options,
+			Method::TRACE => theme.http.methods.trace,
+			Method::CONNECT => theme.http.methods.connect,
+		}
+	}
+
+	pub fn to_reqwest(&self) -> reqwest::Method {
+		match self {
+			Method::GET => reqwest::Method::GET,
+			Method::POST => reqwest::Method::POST,
+			Method::PUT => reqwest::Method::PUT,
+			Method::PATCH => reqwest::Method::PATCH,
+			Method::DELETE => reqwest::Method::DELETE,
+			Method::OPTIONS => reqwest::Method::OPTIONS,
+			Method::HEAD => reqwest::Method::HEAD,
+			Method::TRACE => reqwest::Method::TRACE,
+			Method::CONNECT => reqwest::Method::CONNECT,
+		}
+	}
+}
+
+pub fn next_method(method: &Method) -> Method {
+	match method {
+		&Method::GET => Method::POST,
+		&Method::POST => Method::PUT,
+		&Method::PUT => Method::PATCH,
+		&Method::PATCH => Method::DELETE,
+		&Method::DELETE => Method::OPTIONS,
+		&Method::OPTIONS => Method::HEAD,
+		&Method::HEAD => Method::TRACE,
+		&Method::TRACE => Method::CONNECT,
+		&Method::CONNECT => Method::GET,
+	}
 }

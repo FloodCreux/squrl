@@ -1,19 +1,23 @@
+use std::sync::Arc;
+use std::time::{Duration, Instant};
+
+use parking_lot::RwLock;
+use rayon::prelude::*;
+use reqwest::header::CONTENT_TYPE;
+use tracing::{error, info, trace};
+
+use crate::models::environment::Environment;
 use crate::models::protocol::http::body::find_file_format_in_content_type;
 use crate::models::request::Request;
 use crate::models::response::RequestResponseError::CouldNotDecodeResponse;
 use crate::models::response::{
 	ImageResponse, RequestResponse, RequestResponseError, ResponseContent,
 };
-use parking_lot::RwLock;
-use rayon::prelude::*;
-use reqwest::header::CONTENT_TYPE;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
-use tracing::{error, info, trace};
 
 pub async fn send_http_request(
 	request_builder: reqwest_middleware::RequestBuilder,
 	local_request: Arc<RwLock<Request>>,
+	env: &Option<Arc<RwLock<Environment>>>,
 ) -> Result<RequestResponse, RequestResponseError> {
 	info!("Sending request");
 

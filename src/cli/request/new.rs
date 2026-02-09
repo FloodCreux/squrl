@@ -11,8 +11,9 @@ use crate::models::auth::digest::{Digest, extract_www_authenticate_digest_data};
 use crate::models::auth::jwt::{JwtAlgorithm, JwtSecretType, JwtToken};
 use crate::models::protocol::http::body::ContentType;
 use crate::models::protocol::protocol::Protocol;
-use crate::models::request::{DEFAULT_HEADERS, KeyValue, Request};
+use crate::models::request::{ConsoleOutput, DEFAULT_HEADERS, KeyValue, Request};
 use crate::models::response::RequestResponse;
+use crate::models::scripts::RequestScripts;
 use crate::models::settings::{RequestSettings, Setting};
 
 pub fn create_request_from_new_request_command(
@@ -46,12 +47,22 @@ pub fn create_request_from_new_request_command(
 		params,
 		auth,
 		headers: vec![base_headers, headers].concat(),
-		settings: RequestSettings {
-			timeout: Setting::U32(new_request_command.timeout),
-			pretty_print_response_content: Setting::Bool(!new_request_command.no_pretty),
+		scripts: RequestScripts {
+			pre_request_script: new_request_command.pre_request_script,
+			post_request_script: new_request_command.post_request_script,
 		},
-		is_pending: false,
+		settings: RequestSettings {
+			use_config_proxy: Setting::Bool(!new_request_command.no_proxy),
+			allow_redirects: Setting::Bool(!new_request_command.no_redirects),
+			timeout: Setting::U32(new_request_command.timeout),
+			store_received_cookies: Setting::Bool(!new_request_command.no_cookies),
+			pretty_print_response_content: Setting::Bool(!new_request_command.no_pretty),
+			accept_invalid_certs: Setting::Bool(new_request_command.accept_invalid_certs),
+			accept_invalid_hostnames: Setting::Bool(new_request_command.accept_invalid_hostnames),
+		},
 		response: RequestResponse::default(),
+		console_output: ConsoleOutput::default(),
+		is_pending: false,
 		cancellation_token: CancellationToken::new(),
 	};
 

@@ -30,3 +30,12 @@ pub enum Auth {
 	#[clap(visible_alias = "digest")]
 	Digest(Digest),
 }
+
+impl Auth {
+	pub fn get_digest_mut(&mut self) -> &mut Digest {
+		match self {
+			Auth::Digest(digest) => digest,
+			_ => unreachable!(),
+		}
+	}
+}

@@ -3,10 +3,18 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tokio_util::sync::CancellationToken;
 
+use crate::app::app::App;
+use crate::app::files::config::SKIP_SAVE_REQUESTS_RESPONSE;
 use crate::models::{
 	auth::auth::Auth, protocol::protocol::Protocol, response::RequestResponse,
-	settings::RequestSettings,
+	scripts::RequestScripts, settings::RequestSettings,
 };
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct ConsoleOutput {
+	pub pre_request_output: Option<String>,
+	pub post_request_output: Option<String>,
+}
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Request {
@@ -18,6 +26,9 @@ pub struct Request {
 	pub auth: Auth,
 
 	pub protocol: Protocol,
+
+	pub scripts: RequestScripts,
+	pub console_output: ConsoleOutput,
 
 	#[serde(
 		skip_serializing_if = "should_skip_requests_response",
@@ -39,8 +50,25 @@ pub struct KeyValue {
 }
 
 fn should_skip_requests_response(_: &RequestResponse) -> bool {
-	// TODO: finish this method
-	false
+	*SKIP_SAVE_REQUESTS_RESPONSE.get().unwrap_or(&true)
+}
+
+impl App<'_> {
+	pub fn key_value_vec_to_tuple_vec(&self, key_value: &Vec<KeyValue>) -> Vec<(String, String)> {
+		key_value
+			.iter()
+			.filter_map(|param| {
+				if param.enabled {
+					let key = self.replace_env_keys_by_value(&param.data.0);
+					let value = self.replace_env_keys_by_value(&param.data.1);
+
+					Some((key, value))
+				} else {
+					None
+				}
+			})
+			.collect()
+	}
 }
 
 impl Request {

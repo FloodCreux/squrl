@@ -13,14 +13,14 @@ lazy_static! {
 	pub static ref OS_ENV_VARS: IndexMap<String, String> = env::vars().collect();
 }
 
-impl App {
+impl App<'_> {
 	pub fn save_environment_to_file(&mut self, env_index: usize) {
 		let environment = self.environments[env_index].read();
 		save_environment_to_file(&environment);
 	}
 }
 
-fn save_environment_to_file(environment: &Environment) {
+pub fn save_environment_to_file(environment: &Environment) {
 	if !ARGS.should_save {
 		warn!("Dry-run, not saving the environment");
 		return;

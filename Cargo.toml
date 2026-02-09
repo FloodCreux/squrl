@@ -13,29 +13,45 @@ exclude = [
 
 [dependencies]
 anyhow = "1.0.101"
+boa_engine = "0.21.0"
+chrono = { version="0.4.43", default-features=false, features=["now", "serde"] }
 clap = { version="4.5.57", features=["derive", "color", "suggestions"] }
 clap_mangen = "0.2.31"
+cookie_store = "0.22.0"
+crokey = "1.4.0"
+digest_auth = "0.3.1"
 directories = "6.0.0"
+edtui = { version = "0.11.1", default-features = false, features = ["syntax-highlighting", "mouse-support", "system-editor"] }
 image = "0.25.9"
 indexmap = { version="2.13.0", features=["serde", "rayon"] }
 jsonwebtoken = "10.3.0"
 jsonxf = "1.1.1"
 lazy_static = "1.5.0"
+nestify = "0.3.3"
 parking_lot = "0.12.5"
-ratatui = "0.30.0"
+ratatui = { version="0.30.0", features=["serde"] }
+ratatui-image = "10.0.5"
 rayon = "1.11.0"
 regex = "1.12.3"
-reqwest = { version = "0.13.1", features = ["cookies"] }
-reqwest-middleware = "0.5.1"
+reqwest = { version = "0.13.1", features = ["cookies", "rustls", "form", "multipart", "gzip", "brotli", "deflate", "stream"] }
+reqwest-middleware = { version = "0.5.1", features = ["rustls", "json", "multipart", "form"] }
 reqwest-tracing = "0.7.0"
+reqwest-websocket = { version = "0.6.0", features = ["json", "middleware"] }
+reqwest_cookie_store = "0.10.0"
 serde = { version="1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
+serde_yaml = "0.9.34"
 strum = { version="0.27.2", features=["derive"] }
+## Syntac highlighting
+syntect = { version="5.3.0", features=["default-fancy"] }
 thiserror = "2.0.18"
 tokio = { version = "1.49.0", features = ["rt", "rt-multi-thread", "macros", "time", "net"] }
 tokio-util = "0.7.18"
+toml = "0.9.11"
 tracing = "0.1.44"
 tracing-subscriber = "0.3.22"
+tui-tree-widget = "0.24.0"
+uuid = { version="1.20.0", features=["v4", "v7", "serde"] }
 
 [dev-dependencies]
 mockito = "1.7.2"
