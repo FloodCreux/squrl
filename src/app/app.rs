@@ -1,29 +1,136 @@
 use std::io::Stdout;
 use std::sync::Arc;
+use std::time::Duration;
 
-#[cfg(feature = "clipboard")]
-use arboard::Clipboard;
-use parking_lot::RwLock;
+use parking_lot::{Mutex, RwLock};
 use ratatui::Terminal;
 use ratatui::backend::{Backend, CrosstermBackend};
+use ratatui::crossterm::terminal::disable_raw_mode;
+use strum::VariantArray;
+use throbber_widgets_tui::ThrobberState;
 
 use crate::app::files::config::Config;
+use crate::app::files::theme::THEME;
 use crate::models::collection::Collection;
 use crate::models::environment::Environment;
+use crate::models::export::ExportFormat;
+// use crate::tui::app_states::AppState;
+// use crate::tui::ui::param_tabs::param_tabs::RequestParamsTabs;
+use crate::tui::ui::result_tabs::RequestResultTabs;
+// use crate::tui::ui::views::RequestView;
+// use crate::tui::utils::stateful::choice_popup::ChoicePopup;
 use crate::tui::utils::stateful::cookies_popup::CookiesPopup;
 use crate::tui::utils::stateful::display_popup::DisplayPopup;
+// use crate::tui::utils::stateful::help_popup::HelpPopup;
+// use crate::tui::utils::stateful::new_request_popup::NewRequestPopup;
+// use crate::tui::utils::stateful::script_console::ScriptConsole;
+// use crate::tui::utils::stateful::settings_popup::SettingsPopup;
+// use crate::tui::utils::stateful::stateful_custom_table::StatefulCustomTable;
+use crate::tui::utils::stateful::stateful_scrollbar::StatefulScrollbar;
 use crate::tui::utils::stateful::stateful_tree::StatefulTree;
+use crate::tui::utils::stateful::text_input::TextInput;
+// use crate::tui::utils::stateful::text_input_selection::TextInputSelection;
+// use crate::tui::utils::stateful::validation_popup::ValidationPopup;
+use crate::tui::utils::syntax_highlighting::SyntaxHighlighting;
+#[cfg(feature = "clipboard")]
+use arboard::Clipboard;
+use ratatui::prelude::{Line, Stylize};
 
 pub struct App<'a> {
+	pub tick_rate: Duration,
 	pub should_quit: bool,
-	pub environments: Vec<Arc<RwLock<Environment>>>,
-	pub selected_environment: usize,
+	pub should_display_help: bool,
+
+	// pub state: AppState,
+	pub was_last_state_selected_request: bool,
+
 	pub config: Config,
 
+	/* Help */
+	// pub help_popup: HelpPopup,
+
+	/* Environments */
+	pub environments: Vec<Arc<RwLock<Environment>>>,
+	pub selected_environment: usize,
+	// pub env_editor_table: StatefulCustomTable<'a>,
+
+	/* Cookies */
+	pub cookies_popup: CookiesPopup,
+
+	/* Logs */
+	pub logs_vertical_scrollbar: StatefulScrollbar,
+	pub logs_horizontal_scrollbar: StatefulScrollbar,
+
+	/* Collections */
 	pub collections: Vec<Collection>,
 	pub collections_tree: StatefulTree<'a>,
 
-	pub cookies_popup: CookiesPopup,
+	// pub request_view: RequestView,
+	// pub request_param_tab: RequestParamsTabs,
+	pub request_result_tab: RequestResultTabs,
+
+	// pub creation_popup: ChoicePopup<String>,
+	pub new_collection_input: TextInput,
+	pub rename_collection_input: TextInput,
+	// pub new_request_popup: NewRequestPopup,
+	pub rename_request_input: TextInput,
+
+	// pub delete_collection_popup: ValidationPopup,
+	// pub delete_request_popup: ValidationPopup,
+
+	/* Request */
+	pub url_text_input: TextInput,
+
+	/* Query params */
+	// pub query_params_table: StatefulCustomTable<'a>,
+
+	/* Auth */
+	// pub auth_text_input_selection: TextInputSelection,
+	pub auth_basic_username_text_input: TextInput,
+	pub auth_basic_password_text_input: TextInput,
+
+	pub auth_bearer_token_text_input: TextInput,
+
+	pub auth_jwt_secret_text_input: TextInput,
+	pub auth_jwt_payload_text_area: TextInput,
+
+	pub auth_digest_username_text_input: TextInput,
+	pub auth_digest_password_text_input: TextInput,
+	pub auth_digest_domains_text_input: TextInput,
+	pub auth_digest_realm_text_input: TextInput,
+	pub auth_digest_nonce_text_input: TextInput,
+	pub auth_digest_opaque_text_input: TextInput,
+
+	/* Headers */
+	// pub headers_table: StatefulCustomTable<'a>,
+
+	/* Body */
+	pub body_file_text_input: TextInput,
+	// pub body_form_table: StatefulCustomTable<'a>,
+	pub body_text_area: TextInput,
+
+	/* WS message */
+	pub message_text_area: TextInput,
+
+	/* Settings */
+	// pub request_settings_popup: SettingsPopup,
+
+	/* Response */
+	pub received_response: Arc<Mutex<bool>>,
+
+	pub result_throbber_state: ThrobberState,
+	pub result_vertical_scrollbar: StatefulScrollbar,
+	pub result_horizontal_scrollbar: StatefulScrollbar,
+
+	pub last_messages_area_size: (u16, u16),
+
+	/* Scripts */
+	// pub script_console: ScriptConsole,
+
+	/* Others */
+	pub syntax_highlighting: SyntaxHighlighting,
+
+	// pub export_request: ChoicePopup<ExportFormat>,
 	pub display_request_export: DisplayPopup,
 
 	#[cfg(feature = "clipboard")]
@@ -33,14 +140,143 @@ pub struct App<'a> {
 impl App<'_> {
 	pub fn new<'a>() -> anyhow::Result<App<'a>> {
 		Ok(App {
-			config: Config::default(),
-			collections: vec![],
-			collections_tree: StatefulTree::default(),
+			tick_rate: Duration::from_millis(250),
 			should_quit: false,
+			should_display_help: false,
+
+			// state: AppState::Normal,
+			was_last_state_selected_request: false,
+
+			config: Config::default(),
+
+			/* Help */
+			// help_popup: HelpPopup::default(),
+
+			/* Environments */
 			environments: vec![],
 			selected_environment: 0,
+			// env_editor_table: StatefulCustomTable::new(
+			// 	vec![
+			// 		Line::default(),
+			// 		Line::from("No environment variable").fg(THEME.read().ui.font_color),
+			// 		Line::from("(Add one with n)").fg(THEME.read().ui.secondary_foreground_color),
+			// 	],
+			// 	"Key",
+			// 	"Value",
+			// ),
+
+			/* Cookies */
 			cookies_popup: CookiesPopup::default(),
+
+			/* Logs */
+			logs_vertical_scrollbar: StatefulScrollbar::default(),
+			logs_horizontal_scrollbar: StatefulScrollbar::default(),
+
+			/* Collections */
+			collections: vec![],
+			collections_tree: StatefulTree::default(),
+
+			// request_view: RequestView::Normal,
+
+			// request_param_tab: RequestParamsTabs::QueryParams,
+			request_result_tab: RequestResultTabs::Body,
+
+			// creation_popup: ChoicePopup {
+			// 	choices: vec![String::from("Collection"), String::from("Request")],
+			// 	selection: 0,
+			// },
+			new_collection_input: TextInput::new(None),
+			rename_collection_input: TextInput::new(None),
+			// new_request_popup: NewRequestPopup::default(),
+			rename_request_input: TextInput::new(None),
+
+			// delete_collection_popup: ValidationPopup::default(),
+			// delete_request_popup: ValidationPopup::default(),
+
+			/* Request */
+			url_text_input: TextInput::new(Some(String::from("URL"))),
+
+			/* Query params */
+			// query_params_table: StatefulCustomTable::new(
+			// 	vec![
+			// 		Line::default(),
+			// 		Line::from("No params").fg(THEME.read().ui.font_color),
+			// 		Line::from("(Add one with n or via the URL)")
+			// 			.fg(THEME.read().ui.secondary_foreground_color),
+			// 	],
+			// 	"Param",
+			// 	"Value",
+			// ),
+
+			/* Auth */
+			// auth_text_input_selection: TextInputSelection::default(),
+			auth_basic_username_text_input: TextInput::new(Some(String::from("Username"))),
+			auth_basic_password_text_input: TextInput::new(Some(String::from("Password"))),
+
+			auth_bearer_token_text_input: TextInput::new(Some(String::from("Bearer token"))),
+
+			auth_jwt_secret_text_input: TextInput::new(Some(String::from("Secret"))),
+			auth_jwt_payload_text_area: TextInput::new(Some(String::from("Payload"))),
+
+			auth_digest_username_text_input: TextInput::new(Some(String::from("Username"))),
+			auth_digest_password_text_input: TextInput::new(Some(String::from("Password"))),
+			auth_digest_domains_text_input: TextInput::new(Some(String::from("Domains"))),
+			auth_digest_realm_text_input: TextInput::new(Some(String::from("Realm"))),
+			auth_digest_nonce_text_input: TextInput::new(Some(String::from("Nonce"))),
+			auth_digest_opaque_text_input: TextInput::new(Some(String::from("Opaque"))),
+
+			/* Headers */
+			// headers_table: StatefulCustomTable::new(
+			// 	vec![
+			// 		Line::default(),
+			// 		Line::from("Default headers").fg(THEME.read().ui.font_color),
+			// 		Line::from("(Add one with n)").fg(THEME.read().ui.secondary_foreground_color),
+			// 	],
+			// 	"Header",
+			// 	"Value",
+			// ),
+
+			/* Body */
+			body_file_text_input: TextInput::new(Some(String::from("File path"))),
+			// body_form_table: StatefulCustomTable::new(
+			// 	vec![
+			// 		Line::default(),
+			// 		Line::from("No form data").fg(THEME.read().ui.font_color),
+			// 		Line::from("(Add one with n)").fg(THEME.read().ui.secondary_foreground_color),
+			// 	],
+			// 	"Key",
+			// 	"Value",
+			// ),
+			body_text_area: TextInput::new(None),
+
+			/* WS message */
+			message_text_area: TextInput::new(None),
+
+			/* Settings */
+			// request_settings_popup: SettingsPopup::default(),
+
+			/* Response */
+			result_throbber_state: ThrobberState::default(),
+			received_response: Arc::new(Mutex::new(false)),
+			result_vertical_scrollbar: StatefulScrollbar::default(),
+			result_horizontal_scrollbar: StatefulScrollbar::default(),
+
+			last_messages_area_size: (0, 0),
+			// script_console: ScriptConsole {
+			// 	pre_request_text_area: TextInput::new(None),
+			// 	post_request_text_area: TextInput::new(None),
+			// 	script_selection: 0,
+			// },
+
+			/* Others */
+			syntax_highlighting: SyntaxHighlighting::default(),
+			// export_request: ChoicePopup {
+			// 	choices: ExportFormat::VARIANTS.to_vec(),
+			// 	selection: 0,
+			// },
 			display_request_export: DisplayPopup::default(),
+
+			#[cfg(feature = "clipboard")]
 			clipboard: Clipboard::new().ok(),
 		})
 	}
@@ -49,10 +285,25 @@ impl App<'_> {
 		&mut self,
 		mut terminal: Terminal<CrosstermBackend<Stdout>>,
 	) -> Result<(), <CrosstermBackend<Stdout> as Backend>::Error> {
-		let _ = terminal.clear();
+		terminal.clear()?;
 
-		while !self.should_quit {}
+		while !self.should_quit {
+			self.update_current_available_events();
+			self.draw(&mut terminal)?;
+			self.handle_events(&mut terminal).await;
+		}
 
 		Ok(())
+	}
+
+	pub fn chain_hook(&mut self) -> &mut Self {
+		let original_hook = std::panic::take_hook();
+
+		std::panic::set_hook(Box::new(move |panic| {
+			disable_raw_mode().unwrap();
+			original_hook(panic);
+		}));
+
+		self
 	}
 }

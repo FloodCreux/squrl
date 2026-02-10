@@ -1,3 +1,9 @@
+use std::io::stdout;
+
+use ratatui::Terminal;
+use ratatui::backend::CrosstermBackend;
+use ratatui::crossterm::terminal::{LeaveAlternateScreen, disable_raw_mode};
+
 use squrl::app::app::App;
 use squrl::app::startup::startup::AppMode;
 
@@ -15,6 +21,20 @@ async fn main() -> anyhow::Result<()> {
 		}
 		AppMode::TUI => true,
 	};
+
+	match should_run_tui {
+		true => run_tui(&mut app).await?,
+		false => false,
+	}
+}
+
+async fn run_tui<'a>(app: &mut App<'a>) -> anyhow::Result<()> {
+	let terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
+
+	app.prepare_terminal().chain_hook().run(terminal).await?;
+
+	stdout().execute(LeaveAlternateScreen);
+	disable_raw_mode();
 
 	Ok(())
 }
