@@ -1,3 +1,12 @@
+pub mod auth;
+pub mod describe;
+pub mod export;
+pub mod headers;
+pub mod http;
 pub(super) mod new;
+pub mod query_params;
+pub mod scripts;
 pub mod send;
+pub mod settings;
 pub mod try_request;
+pub mod url;

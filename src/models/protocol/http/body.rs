@@ -1,15 +1,20 @@
+use anyhow::anyhow;
 use rayon::prelude::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use strum::Display;
 
+use crate::app::request::http::body::FormError::NotAForm;
+use crate::models::protocol::http::body::ContentType::{
+	File, Form, Html, Javascript, Json, Multipart, NoBody, Raw, Xml,
+};
 use crate::models::request::KeyValue;
 
 #[derive(Default, Debug, Clone, Display, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ContentType {
 	#[default]
-	#[strum(to_string = "No body")]
+	#[strum(to_string = "No Body")]
 	NoBody,
 
 	#[strum(to_string = "File")]
@@ -37,17 +42,79 @@ pub enum ContentType {
 	Javascript(String),
 }
 
+impl ContentType {
+	pub fn to_content_type(&self) -> String {
+		match &self {
+			NoBody => String::new(),
+			Multipart(_) => String::from("multipart/form-data"),
+			Form(_) => String::from("application/x-www-form-urlencoded"),
+			Raw(_) => String::from("text/plain"),
+			File(_) => String::from("application/octet-stream"),
+			Json(_) | Xml(_) | Html(_) | Javascript(_) => {
+				format!("application/{}", self.to_string().to_lowercase())
+			}
+		}
+	}
+
+	pub fn from_content_type(content_type: &str, body: String) -> ContentType {
+		match content_type {
+			//"multipart/form-data" => Multipart(body),
+			//"application/x-www-form-urlencoded" => Form(body),
+			"application/octet-stream" => File(body),
+			"text/plain" => Raw(body),
+			"application/json" => Json(body),
+			"application/xml" => Json(body),
+			"application/html" => Json(body),
+			"application/javascript" => Json(body),
+			_ => NoBody,
+		}
+	}
+
+	pub fn get_form(&self) -> anyhow::Result<&Vec<KeyValue>> {
+		match self {
+			Multipart(form) | Form(form) => Ok(form),
+			_ => Err(anyhow!(NotAForm)),
+		}
+	}
+
+	pub fn get_form_mut(&mut self) -> anyhow::Result<&mut Vec<KeyValue>> {
+		match self {
+			Multipart(form) | Form(form) => Ok(form),
+			_ => Err(anyhow!(NotAForm)),
+		}
+	}
+}
+
+pub fn next_content_type(content_type: &ContentType) -> ContentType {
+	match content_type {
+		NoBody => Multipart(Vec::new()),
+		Multipart(_) => Form(Vec::new()),
+		Form(_) => File(String::new()),
+		File(_) => Raw(String::new()),
+		Raw(body) => Json(body.to_string()),
+		Json(body) => Xml(body.to_string()),
+		Xml(body) => Html(body.to_string()),
+		Html(body) => Javascript(body.to_string()),
+		Javascript(_) => NoBody,
+	}
+}
+
+/// Iter through the headers and tries to catch a file format like `application/<file_format>`
 pub fn find_file_format_in_content_type(headers: &Vec<(String, String)>) -> Option<String> {
 	if let Some((_, content_type)) = headers
 		.par_iter()
 		.find_any(|(header, _)| *header == "content-type")
 	{
+		// Regex that likely catches the file format
 		let regex = Regex::new(r"\w+/(?<file_format>\w+)").unwrap();
 
-		regex
-			.captures(content_type)
-			.map(|capture| capture["file_format"].to_string())
+		return match regex.captures(content_type) {
+			// No file format found
+			None => None,
+			// File format found
+			Some(capture) => Some(capture["file_format"].to_string()),
+		};
 	} else {
-		None
+		return None;
 	}
 }

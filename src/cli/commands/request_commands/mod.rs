@@ -1,3 +1,9 @@
+pub mod auth;
+pub mod body;
+pub mod method;
 pub mod new;
 pub mod request_commands;
+pub mod scripts;
 pub mod send;
+pub mod settings;
+pub mod url;

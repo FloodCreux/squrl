@@ -1,6 +1,12 @@
-use std::io::stdout;
-use std::sync::Arc;
-
+use crate::app::app::App;
+use crate::app::request::http::send::send_http_request;
+// use crate::app::request::ws::send::send_ws_request;
+use crate::cli::commands::request_commands::send::SendCommand;
+use crate::models::protocol::protocol::Protocol;
+// use crate::models::protocol::ws::message_type::MessageType;
+// use crate::models::protocol::ws::ws::{Message, Sender};
+use crate::models::request::Request;
+use crate::models::response::ResponseContent;
 use anyhow::anyhow;
 use chrono::Local;
 use futures_util::SinkExt;
@@ -11,18 +17,58 @@ use ratatui::prelude::CrosstermBackend;
 use ratatui::{Terminal, TerminalOptions, Viewport};
 use ratatui_image::picker::Picker;
 use ratatui_image::{Resize, ResizeEncodeRender};
+use std::io::stdout;
+use std::sync::Arc;
 use tokio::io;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tracing::info;
 
-use crate::app::app::App;
-use crate::app::request::http::send::send_http_request;
-use crate::cli::commands::request_commands::send::SendCommand;
-use crate::models::protocol::protocol::Protocol;
-use crate::models::request::Request;
-use crate::models::response::ResponseContent;
-
 impl App<'_> {
+	pub async fn cli_send_request(
+		&mut self,
+		collection_index: usize,
+		request_index: usize,
+		send_command: &SendCommand,
+	) -> anyhow::Result<()> {
+		let local_request =
+			self.get_request_as_local_from_indexes(&(collection_index, request_index));
+
+		self.local_send_request(&send_command, local_request)
+			.await?;
+
+		if self.config.should_save_requests_response() {
+			self.save_collection_to_file(collection_index);
+		}
+
+		Ok(())
+	}
+
+	pub async fn cli_send_collection(
+		&mut self,
+		collection_name: &str,
+		send_command: &SendCommand,
+	) -> anyhow::Result<()> {
+		let collection_index = self.find_collection(collection_name)?;
+		let collection = &self.collections[collection_index];
+
+		let mut requests: Vec<Arc<RwLock<Request>>> = vec![];
+
+		for request in &collection.requests {
+			let local_request = request.clone();
+			requests.push(local_request);
+		}
+
+		for request in requests {
+			self.local_send_request(&send_command, request).await?;
+
+			if self.config.should_save_requests_response() {
+				self.save_collection_to_file(collection_index);
+			}
+		}
+
+		Ok(())
+	}
+
 	pub async fn local_send_request(
 		&mut self,
 		send_command: &SendCommand,
