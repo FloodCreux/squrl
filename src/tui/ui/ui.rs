@@ -42,7 +42,11 @@ impl<'a> App<'a> {
 
 		let inner_layout = Layout::new(
 			Horizontal,
-			[Constraint::Percentage(20), Constraint::Percentage(80)],
+			[
+				Constraint::Percentage(20),
+				Constraint::Length(1),
+				Constraint::Percentage(80),
+			],
 		)
 		.split(main_layout[1]);
 
@@ -60,8 +64,14 @@ impl<'a> App<'a> {
 			self.render_collections(frame, env_and_collections_layout[1]);
 		}
 
+		let separator = Block::new()
+			.borders(Borders::RIGHT)
+			.fg(THEME.read().ui.separator_color);
+
+		frame.render_widget(separator, inner_layout[1]);
+
 		match self.collections_tree.selected {
-			None => self.render_homepage(frame, inner_layout[1]),
+			None => self.render_homepage(frame, inner_layout[2]),
 			Some(selection) => {
 				let selected_request = self
 					.get_request_as_local_from_indexes(&selection)
@@ -70,7 +80,7 @@ impl<'a> App<'a> {
 
 				match selected_request.protocol {
 					Protocol::HttpRequest(_) => {
-						self.render_http_request(frame, inner_layout[1], selected_request)
+						self.render_http_request(frame, inner_layout[2], selected_request)
 					}
 					Protocol::WsRequest(_) => todo!(),
 				}

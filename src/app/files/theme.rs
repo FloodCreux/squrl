@@ -27,7 +27,9 @@ nest! {
 				pub secondary_foreground_color: Color,
 
 				pub main_background_color: Color,
-				pub secondary_background_color: Color
+				pub secondary_background_color: Color,
+
+				pub separator_color: Color,
 			},
 
 		#[serde(alias = "Others")]
@@ -109,6 +111,8 @@ impl Default for Theme {
 
 				main_background_color: Color::DarkGray,
 				secondary_background_color: Color::Rgb(50, 50, 50),
+
+				separator_color: Color::Gray,
 			},
 			others: ThemeOthers {
 				selection_highlight_color: Color::Yellow,
