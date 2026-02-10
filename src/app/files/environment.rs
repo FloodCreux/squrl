@@ -18,7 +18,7 @@ use crate::errors::panic_error;
 use crate::models::environment::Environment;
 
 lazy_static! {
-	pub static ref OS_ENV_VARS: IndexMap<String, String> = { env::vars().collect() };
+	pub static ref OS_ENV_VARS: IndexMap<String, String> = env::vars().collect();
 }
 
 impl App<'_> {

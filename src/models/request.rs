@@ -150,8 +150,7 @@ impl Request {
 		let prefix = match &self.protocol {
 			Protocol::HttpRequest(http_request) => Span::from(http_request.method.to_string())
 				.style(Modifier::BOLD)
-				.fg(Color::White)
-				.bg(http_request.method.get_color()),
+				.fg(http_request.method.get_color()),
 			Protocol::WsRequest(ws_request) => {
 				let color = match ws_request.is_connected {
 					true => THEME.read().websocket.connection_status.connected,

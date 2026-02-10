@@ -25,6 +25,7 @@ use ratatui::crossterm::event::{KeyCode, KeyEvent};
 use ratatui::layout::HorizontalAlignment;
 use ratatui::prelude::{Constraint, Layout, Rect, Span, Style, Stylize, Widget};
 use ratatui::style::Color;
+use ratatui::symbols::border;
 use ratatui::widgets::{Block, Borders, Padding};
 use std::collections::HashMap;
 use std::io::Stdout;
@@ -52,10 +53,16 @@ impl<'a> Widget for SingleLineTextInput<'a> {
 	{
 		let new_area = match &self.0.block_title {
 			None => area,
-			Some(block_title) => {
+			Some(_block_title) => {
 				let mut block = Block::new()
-					.title(block_title.as_str())
-					.borders(Borders::ALL)
+					// .title(block_title.as_str())
+					.borders(Borders::BOTTOM)
+					.border_set(border::Set {
+						horizontal_bottom: "╌",
+						bottom_left: "╌",
+						bottom_right: "╌",
+						..border::PLAIN
+					})
 					.padding(Padding::horizontal(1));
 
 				block = match self.0.highlight_block {

@@ -5,12 +5,14 @@ use ratatui::layout::Direction::{Horizontal, Vertical};
 use ratatui::layout::{Alignment, Constraint, Layout};
 use ratatui::prelude::Modifier;
 use ratatui::style::Stylize;
+use ratatui::text::Line;
 use ratatui::widgets::{Block, Borders};
 
 use crate::app::app::App;
 use crate::app::files::theme::THEME;
 use crate::models::protocol::protocol::Protocol;
 use crate::tui::app_states::AppState::*;
+use crate::tui::app_states::{AVAILABLE_EVENTS, event_available_keys_to_spans};
 
 impl<'a> App<'a> {
 	fn ui(&mut self, frame: &mut Frame) {
@@ -75,10 +77,35 @@ impl<'a> App<'a> {
 			}
 		}
 
+		let state_line = self.get_state_line();
+		let events = &*AVAILABLE_EVENTS.read();
+		let available_keys = Line::from(
+			event_available_keys_to_spans(
+				events,
+				THEME.read().ui.secondary_foreground_color,
+				THEME.read().ui.secondary_background_color,
+				true,
+			)
+			.concat(),
+		);
+
+		let footer_left = Block::new()
+			.title(Line::from(state_line))
+			.title_alignment(Alignment::Left);
+
+		let footer_right = Block::new()
+			.title(Line::from(available_keys))
+			.title_alignment(Alignment::Right);
+
+		frame.render_widget(footer_left, main_layout[2]);
+		frame.render_widget(footer_right, main_layout[2]);
+
 		// POPUPS
 
 		match self.state {
+			ChoosingElementToCreate => self.render_creating_element_popup(frame),
 			CreatingNewCollection => self.render_creating_new_collection_popup(frame),
+			CreatingNewRequest => self.render_creating_new_request_popup(frame),
 			_ => {}
 		}
 	}

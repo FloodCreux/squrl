@@ -29,8 +29,8 @@ impl<'a> App<'a> {
 			.node_no_children_symbol("")
 			.block(
 				Block::default()
-					.title("Collections")
-					.title_alignment(Alignment::Center)
+					.title(" COLLECTIONS ")
+					.title_alignment(Alignment::Left)
 					.borders(Borders::ALL)
 					.border_set(border::Set {
 						vertical_left: " ",
