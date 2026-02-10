@@ -27,7 +27,7 @@ impl App<'_> {
 				) {
 					(None, None) => match selected_request.protocol {
 						Protocol::HttpRequest(_) => RequestResultTabs::Body,
-						// Protocol::WsRequest(_) => RequestResultTabs::Messages,
+						Protocol::WsRequest(_) => RequestResultTabs::Messages,
 					},
 					(_, _) => RequestResultTabs::Console,
 				}
@@ -54,7 +54,7 @@ impl App<'_> {
 		{
 			self.request_result_tab = match selected_request.protocol {
 				Protocol::HttpRequest(_) => RequestResultTabs::Body,
-				// Protocol::WsRequest(_) => RequestResultTabs::Messages,
+				Protocol::WsRequest(_) => RequestResultTabs::Messages,
 			};
 		} else {
 			match selected_request.protocol {
@@ -63,9 +63,9 @@ impl App<'_> {
 				{
 					self.request_result_tab = RequestResultTabs::Body
 				}
-				// Protocol::WsRequest(_) if self.request_result_tab == RequestResultTabs::Body => {
-				// 	self.request_result_tab = RequestResultTabs::Messages
-				// }
+				Protocol::WsRequest(_) if self.request_result_tab == RequestResultTabs::Body => {
+					self.request_result_tab = RequestResultTabs::Messages
+				}
 				_ => {}
 			};
 		}

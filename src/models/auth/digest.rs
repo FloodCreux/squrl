@@ -1,45 +1,40 @@
-use std::collections::HashMap;
-use std::str::FromStr;
-
+use crate::models::auth::digest::DigestError::{
+	InvalidAlgorithm, InvalidBooleanValue, InvalidCharset, InvalidHeaderSyntax, MissingRequired,
+};
 use clap::{Args, ValueEnum};
 use digest_auth::{AuthContext, WwwAuthenticateHeader};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::str::FromStr;
 use strum::Display;
 use thiserror::Error;
 use tracing::{info, warn};
 
-#[derive(Error, Debug)]
-pub enum DigestError {
-	#[error("Invalid header syntax: {0}")]
-	InvalidHeaderSyntax(String),
-
-	#[error("Missing required {0}")]
-	MissingRequired(&'static str),
-
-	#[error("Invalid algorithm: {0}")]
-	InvalidAlgorithm(String),
-
-	#[error("Invalid boolean for {0}: {1}")]
-	InvalidBooleanValue(&'static str, String),
-
-	#[error("Invalid charset: {0}")]
-	InvalidCharset(String),
-}
-
 #[derive(Args, Default, Clone, Debug, Serialize, Deserialize)]
 pub struct Digest {
+	// Secrets part
 	pub username: String,
 	pub password: String,
 
+	// Header part
 	pub domains: String,
+	/// Authorization realm (i.e. hostname, serial number...)
 	pub realm: String,
+	/// Server nonce
 	pub nonce: String,
+	/// Server opaque string
 	pub opaque: String,
+	/// True if the server nonce expired.
+	/// This is sent in response to an auth attempt with an older digest.
+	/// The response should contain a new WWW-Authenticate header.
 	pub stale: bool,
-
+	/// Hashing algo
 	pub algorithm: DigestAlgorithm,
+	/// Digest algorithm variant
 	pub qop: DigestQop,
+	/// Flag that the server supports user-hashes
 	pub user_hash: bool,
+	/// Server-supported charset
 	pub charset: DigestCharset,
 
 	#[serde(skip, default)]
@@ -61,6 +56,59 @@ pub enum DigestAlgorithm {
 	SHA512,
 	#[strum(to_string = "SHA-512-sess")]
 	SHA512Sess,
+}
+
+#[derive(Debug, Default, Clone, ValueEnum, Display, Serialize, Deserialize)]
+pub enum DigestQop {
+	#[default]
+	#[strum(to_string = "None")]
+	None,
+	#[strum(to_string = "auth")]
+	Auth,
+	#[strum(to_string = "auth-int")]
+	AuthInt,
+}
+
+#[derive(Debug, Default, Clone, ValueEnum, Display, Serialize, Deserialize)]
+pub enum DigestCharset {
+	#[default]
+	ASCII,
+	UTF8,
+}
+
+impl Digest {
+	pub fn update_from_www_authenticate_header(&mut self, headers: &Vec<(String, String)>) {
+		let www_authenticate_header = headers.iter().find_map(|(header, value)| {
+			if header == "www-authenticate" {
+				Some(value)
+			} else {
+				None
+			}
+		});
+
+		if let Some(www_authenticate_header) = www_authenticate_header {
+			info!("www-authenticate header found, trying to update digest auth data");
+
+			match extract_www_authenticate_digest_data(www_authenticate_header) {
+				Ok((domains, realm, nonce, opaque, stale, algorithm, qop, user_hash, charset)) => {
+					self.domains = domains;
+					self.realm = realm;
+					self.nonce = nonce;
+					self.opaque = opaque;
+					self.stale = stale;
+					self.algorithm = algorithm;
+					self.qop = qop;
+					self.user_hash = user_hash;
+					self.charset = charset;
+					info!("Digest auth data updated");
+				}
+				Err(error) => {
+					warn!("{}", error);
+					info!("Leaving digest auth data unupdated");
+				}
+			}
+		}
+	}
 }
 
 impl DigestAlgorithm {
@@ -127,17 +175,6 @@ pub fn next_digest_algorithm(algorithm: &DigestAlgorithm) -> DigestAlgorithm {
 	}
 }
 
-#[derive(Debug, Default, Clone, ValueEnum, Display, Serialize, Deserialize)]
-pub enum DigestQop {
-	#[default]
-	#[strum(to_string = "None")]
-	None,
-	#[strum(to_string = "auth")]
-	Auth,
-	#[strum(to_string = "auth-int")]
-	AuthInt,
-}
-
 impl DigestQop {
 	pub fn from_digest_auth_qop(qop: digest_auth::Qop) -> Self {
 		match qop {
@@ -171,13 +208,6 @@ pub fn next_digest_qop(qop: &DigestQop) -> DigestQop {
 	}
 }
 
-#[derive(Debug, Default, Clone, ValueEnum, Display, Serialize, Deserialize)]
-pub enum DigestCharset {
-	#[default]
-	ASCII,
-	UTF8,
-}
-
 impl DigestCharset {
 	fn from_digest_charset(charset: digest_auth::Charset) -> Self {
 		match charset {
@@ -191,6 +221,13 @@ impl DigestCharset {
 			DigestCharset::ASCII => digest_auth::Charset::ASCII,
 			DigestCharset::UTF8 => digest_auth::Charset::UTF8,
 		}
+	}
+}
+
+pub fn toggle_digest_charset(charset: &DigestCharset) -> DigestCharset {
+	match charset {
+		DigestCharset::ASCII => DigestCharset::UTF8,
+		DigestCharset::UTF8 => DigestCharset::ASCII,
 	}
 }
 
@@ -241,6 +278,24 @@ pub fn digest_to_authorization_header(
 	answer
 }
 
+#[derive(Error, Debug)]
+pub enum DigestError {
+	#[error("Invalid header syntax: {0}")]
+	InvalidHeaderSyntax(String),
+
+	#[error("Missing required {0}")]
+	MissingRequired(&'static str),
+
+	#[error("Invalid algorithm: {0}")]
+	InvalidAlgorithm(String),
+
+	#[error("Invalid boolean for {0}: {1}")]
+	InvalidBooleanValue(&'static str, String),
+
+	#[error("Invalid charset: {0}")]
+	InvalidCharset(String),
+}
+
 pub fn extract_www_authenticate_digest_data(
 	www_authenticate_header: &str,
 ) -> Result<
@@ -261,25 +316,25 @@ pub fn extract_www_authenticate_digest_data(
 	let domains = prompt_kv.remove("domain").unwrap_or_default();
 	let realm = match prompt_kv.remove("realm") {
 		Some(v) => v,
-		None => return Err(DigestError::MissingRequired("realm")),
+		None => return Err(MissingRequired("realm")),
 	};
 	let nonce = match prompt_kv.remove("nonce") {
 		Some(v) => v,
-		None => return Err(DigestError::MissingRequired("nonce")),
+		None => return Err(MissingRequired("nonce")),
 	};
 	let opaque = prompt_kv.remove("opaque").unwrap_or_default();
 	let stale = match prompt_kv.get("stale") {
 		Some(v) => match v.to_ascii_lowercase().as_str() {
 			"true" => true,
 			"false" => false,
-			_ => return Err(DigestError::InvalidBooleanValue("stale", v.to_string())),
+			_ => return Err(InvalidBooleanValue("stale", v.to_string())),
 		},
 		None => false,
 	};
 	let algorithm = match prompt_kv.get("algorithm") {
 		Some(a) => match digest_auth::Algorithm::from_str(a.as_str()) {
 			Ok(algorithm) => DigestAlgorithm::from_digest_auth_algorithm(algorithm),
-			Err(_) => return Err(DigestError::InvalidAlgorithm(a.to_string())),
+			Err(_) => return Err(InvalidAlgorithm(a.to_string())),
 		},
 		_ => DigestAlgorithm::default(),
 	};
@@ -294,7 +349,7 @@ pub fn extract_www_authenticate_digest_data(
 			} else if domains.contains(&"auth") {
 				DigestQop::Auth
 			} else {
-				return Err(DigestError::MissingRequired("QOP"));
+				return Err(MissingRequired("QOP"));
 			}
 		}
 		None => DigestQop::None,
@@ -303,14 +358,14 @@ pub fn extract_www_authenticate_digest_data(
 		Some(v) => match v.to_ascii_lowercase().as_str() {
 			"true" => true,
 			"false" => false,
-			_ => return Err(DigestError::InvalidBooleanValue("userhash", v.to_string())),
+			_ => return Err(InvalidBooleanValue("userhash", v.to_string())),
 		},
 		None => false,
 	};
 	let charset = match prompt_kv.get("charset") {
 		Some(v) => match digest_auth::Charset::from_str(v) {
 			Ok(charset) => DigestCharset::from_digest_charset(charset),
-			Err(_) => return Err(DigestError::InvalidCharset(v.to_string())),
+			Err(_) => return Err(InvalidCharset(v.to_string())),
 		},
 		None => DigestCharset::ASCII,
 	};
@@ -411,7 +466,7 @@ fn parse_header_map(input: &str) -> Result<HashMap<String, String>, DigestError>
 			parsed.insert(current_token.unwrap().to_string(), current_value); // consume the value here
 		}
 		ParserState::P_WHITE => {}
-		_ => return Err(DigestError::InvalidHeaderSyntax(input.to_string())),
+		_ => return Err(InvalidHeaderSyntax(input.to_string())),
 	}
 
 	Ok(parsed)

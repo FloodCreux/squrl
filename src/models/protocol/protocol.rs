@@ -1,8 +1,8 @@
 use crate::models::protocol::http::http::HttpRequest;
+use crate::models::protocol::ws::ws::WsRequest;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumString};
 use thiserror::Error;
-// use crate::models::protocol::ws::ws::WsRequest;
 
 #[derive(Error, Debug)]
 pub enum ProtocolTypeError {
@@ -18,9 +18,10 @@ pub enum Protocol {
 	#[serde(rename = "http", alias = "http", alias = "HTTP")]
 	#[strum(to_string = "HTTP")]
 	HttpRequest(HttpRequest),
-	// #[serde(rename = "websocket", alias = "websocket", alias = "WEBSOCKET")]
-	// #[strum(to_string = "websocket")]
-	// WsRequest(WsRequest)
+
+	#[serde(rename = "websocket", alias = "websocket", alias = "WEBSOCKET")]
+	#[strum(to_string = "websocket")]
+	WsRequest(WsRequest),
 }
 
 impl Default for Protocol {

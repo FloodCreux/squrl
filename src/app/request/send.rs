@@ -176,7 +176,7 @@ impl App<'_> {
 
 		let method = match &modified_request.protocol {
 			Protocol::HttpRequest(http_request) => http_request.method.to_reqwest(),
-			// Protocol::WsRequest(_) => reqwest::Method::GET,
+			Protocol::WsRequest(_) => reqwest::Method::GET,
 		};
 
 		let mut request_builder = client.request(method, url);

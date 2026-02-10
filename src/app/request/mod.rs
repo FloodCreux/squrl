@@ -7,3 +7,4 @@ pub mod scripts;
 pub mod send;
 pub mod url;
 pub mod utils;
+pub mod ws;

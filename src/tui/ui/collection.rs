@@ -1,7 +1,8 @@
 use ratatui::Frame;
-use ratatui::layout::Rect;
+use ratatui::layout::{Alignment, Rect};
 use ratatui::prelude::{Modifier, Style};
 use ratatui::style::Stylize;
+use ratatui::symbols::border;
 use ratatui::widgets::{Block, Borders};
 use rayon::prelude::*;
 use tui_tree_widget::{Tree, TreeItem};
@@ -29,7 +30,13 @@ impl<'a> App<'a> {
 			.block(
 				Block::default()
 					.title("Collections")
+					.title_alignment(Alignment::Center)
 					.borders(Borders::ALL)
+					.border_set(border::Set {
+						vertical_left: " ",
+						vertical_right: " ",
+						..border::PLAIN
+					})
 					.fg(THEME.read().ui.main_foreground_color),
 			);
 

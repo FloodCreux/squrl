@@ -10,3 +10,4 @@ pub mod send;
 pub mod settings;
 pub mod try_request;
 pub mod url;
+pub mod ws;

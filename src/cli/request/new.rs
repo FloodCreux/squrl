@@ -55,25 +55,26 @@ pub fn create_request_from_new_request_command(
 		Protocol::HttpRequest(http_request) => {
 			http_request.method = new_request_command.method;
 			http_request.body = body;
-		} // Protocol::WsRequest(_) => {
-		  // 	match new_request_command.method {
-		  // 		Method::GET => {}
-		  // 		_ => {
-		  // 			return Err(anyhow!(
-		  // 				"Setting a method with a websocket request is incompatible"
-		  // 			));
-		  // 		}
-		  // 	}
-		  //
-		  // 	match body {
-		  // 		ContentType::NoBody => {}
-		  // 		_ => {
-		  // 			return Err(anyhow!(
-		  // 				"Setting a body with a websocket request body is incompatible"
-		  // 			));
-		  // 		}
-		  // 	}
-		  // }
+		}
+		Protocol::WsRequest(_) => {
+			match new_request_command.method {
+				Method::GET => {}
+				_ => {
+					return Err(anyhow!(
+						"Setting a method with a websocket request is incompatible"
+					));
+				}
+			}
+
+			match body {
+				ContentType::NoBody => {}
+				_ => {
+					return Err(anyhow!(
+						"Setting a body with a websocket request body is incompatible"
+					));
+				}
+			}
+		}
 	};
 
 	let mut request = Request {

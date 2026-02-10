@@ -1,21 +1,21 @@
+use parking_lot::RwLock;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use parking_lot::RwLock;
-use rayon::prelude::*;
-use reqwest::header::CONTENT_TYPE;
-use tracing::{error, info, trace};
-
+use crate::app::app::App;
+use crate::app::request::send::RequestResponseError;
+use crate::app::request::send::RequestResponseError::CouldNotDecodeResponse;
 use crate::models::environment::Environment;
 use crate::models::protocol::http::body::find_file_format_in_content_type;
 use crate::models::request::Request;
-use crate::models::response::RequestResponseError::CouldNotDecodeResponse;
-use crate::models::response::{
-	ImageResponse, RequestResponse, RequestResponseError, ResponseContent,
-};
+use crate::models::response::{ImageResponse, RequestResponse, ResponseContent};
+use rayon::prelude::*;
+use reqwest::header::CONTENT_TYPE;
+use tokio_util::sync::CancellationToken;
+use tracing::{error, info, trace};
 
 pub async fn send_http_request(
-	request_builder: reqwest_middleware::RequestBuilder,
+	prepared_request: reqwest_middleware::RequestBuilder,
 	local_request: Arc<RwLock<Request>>,
 	env: &Option<Arc<RwLock<Environment>>>,
 ) -> Result<RequestResponse, RequestResponseError> {
@@ -23,10 +23,7 @@ pub async fn send_http_request(
 
 	local_request.write().is_pending = true;
 
-	let request = {
-		let guard = local_request.read();
-		guard.clone()
-	};
+	let request = local_request.read();
 
 	let cancellation_token = request.cancellation_token.clone();
 	let timeout = tokio::time::sleep(Duration::from_millis(
@@ -39,137 +36,144 @@ pub async fn send_http_request(
 	let mut response = tokio::select! {
 		_ = cancellation_token.cancelled() => {
 			elapsed_time = request_start.elapsed();
-			build_sentinel_response("CANCELLED")
+
+			RequestResponse {
+				duration: None,
+				status_code: Some(String::from("CANCELED")),
+				content: None,
+				cookies: None,
+				headers: vec![]
+			}
 		},
 		_ = timeout => {
 			elapsed_time = request_start.elapsed();
-			build_sentinel_response("TIMEOUT")
+
+			RequestResponse {
+				duration: None,
+				status_code: Some(String::from("TIMEOUT")),
+				content: None,
+				cookies: None,
+				headers: vec![]
+			}
 		},
-		response = request_builder.send() => match response {
-			Ok(resp) => {
+		response = prepared_request.send() => match response {
+			Ok(response) => {
 				info!("Response received");
 
 				elapsed_time = request_start.elapsed();
 
-				let status_code = resp.status().to_string();
+				let status_code = response.status().to_string();
 
-				let (headers, is_image) = extract_headers(resp.headers());
-				let cookies = extract_cookies(&resp);
+				let mut is_image = false;
 
-				let response_content = decode_response_body(
-					resp,
-					&headers,
-					is_image,
-					request.settings.pretty_print_response_content.as_bool(),
-				)
-					.await?;
+				let headers: Vec<(String, String)> = response.headers().clone()
+					.iter()
+					.map(|(header_name, header_value)| {
+						let value = header_value.to_str().unwrap_or("").to_string();
+
+						if header_name == CONTENT_TYPE && value.starts_with("image/") {
+							is_image = true;
+						}
+
+						(header_name.to_string(), value)
+					})
+					.collect();
+
+				let cookies = response.cookies()
+					.par_bridge()
+					.map(|cookie| {
+						format!("{}: {}", cookie.name(), cookie.value())
+					})
+					.collect::<Vec<String>>()
+					.join("\n");
+
+				let response_content = match is_image {
+					true => {
+						let content = response.bytes().await.unwrap();
+						let image = image::load_from_memory(content.as_ref());
+
+						ResponseContent::Image(ImageResponse {
+							data: content.to_vec(),
+							image: image.ok(),
+						})
+					},
+					false => match response.bytes().await {
+						Ok(bytes) => match String::from_utf8(bytes.to_vec()) {
+							Ok(mut result_body) => {
+								// If a file format has been found in the content-type header
+								if let Some(file_format) = find_file_format_in_content_type(&headers) {
+									// If the request response content can be pretty printed
+									if request.settings.pretty_print_response_content.as_bool() {
+										// Match the file format
+										match file_format.as_str() {
+											"json" => {
+												result_body = jsonxf::pretty_print(&result_body).unwrap_or(result_body);
+											},
+											_ => {}
+										}
+									}
+								}
+
+								ResponseContent::Body(result_body)
+							},
+							Err(_) => ResponseContent::Body(format!("{:#X?}", bytes))
+						},
+						Err(_) => return Err(CouldNotDecodeResponse)
+					}
+				};
 
 				RequestResponse {
 					duration: None,
 					status_code: Some(status_code),
 					content: Some(response_content),
 					cookies: Some(cookies),
-					headers,
+					headers
 				}
 			},
-			Err(err) => {
+			Err(error) => {
+				error!("Sending error: {}", error);
+
 				elapsed_time = request_start.elapsed();
-				build_error_response(&err)
+
+				let response_status_code;
+
+				if let Some(status_code) = error.status() {
+					response_status_code = Some(status_code.to_string());
+				} else {
+					response_status_code = None;
+				}
+
+				let result_body = ResponseContent::Body(error.to_string());
+
+				RequestResponse {
+					duration: None,
+					status_code: response_status_code,
+					content: Some(result_body),
+					cookies: None,
+					headers: vec![]
+				}
 			}
-		},
+		}
 	};
 
 	response.duration = Some(format!("{:?}", elapsed_time));
 
 	trace!("Request sent");
 
-	Ok(response)
-}
+	/* POST-REQUEST SCRIPT */
 
-fn build_error_response(err: &reqwest_middleware::Error) -> RequestResponse {
-	error!("Sending error: {}", err);
+	let (modified_response, post_request_output) =
+		App::handle_post_request_script(&request, response, env)?;
 
-	let response_status_code = err.status().map(|s| s.to_string());
-	let result_body = ResponseContent::Body(err.to_string());
+	drop(request);
 
-	RequestResponse {
-		duration: None,
-		status_code: response_status_code,
-		content: Some(result_body),
-		cookies: None,
-		headers: vec![],
+	{
+		let mut request = local_request.write();
+
+		request.console_output.post_request_output = post_request_output;
+		request.is_pending = false;
+		request.cancellation_token = CancellationToken::new();
 	}
-}
 
-fn build_sentinel_response(status_code: &str) -> RequestResponse {
-	RequestResponse {
-		duration: None,
-		status_code: Some(String::from(status_code)),
-		content: None,
-		cookies: None,
-		headers: vec![],
-	}
-}
-
-async fn decode_response_body(
-	response: reqwest::Response,
-	headers: &Vec<(String, String)>,
-	is_image: bool,
-	pretty_print: bool,
-) -> Result<ResponseContent, RequestResponseError> {
-	let content = if is_image {
-		let content = response.bytes().await.unwrap();
-		let image = image::load_from_memory(content.as_ref());
-
-		ResponseContent::Image(ImageResponse {
-			data: content.to_vec(),
-			image: image.ok(),
-		})
-	} else {
-		match response.bytes().await {
-			Ok(bytes) => match String::from_utf8(bytes.to_vec()) {
-				Ok(mut result_body) => {
-					if pretty_print
-						&& let Some(file_format) = find_file_format_in_content_type(headers)
-						&& file_format == "json"
-					{
-						result_body = jsonxf::pretty_print(&result_body).unwrap_or(result_body);
-					}
-
-					ResponseContent::Body(result_body)
-				}
-				Err(_) => ResponseContent::Body(format!("{:#X?}", bytes)),
-			},
-			Err(_) => return Err(CouldNotDecodeResponse),
-		}
-	};
-
-	Ok(content)
-}
-
-fn extract_headers(response_headers: &reqwest::header::HeaderMap) -> (Vec<(String, String)>, bool) {
-	let mut is_image = false;
-	let result = response_headers
-		.iter()
-		.map(|(header_name, header_value)| {
-			let value = header_value.to_str().unwrap_or("").to_string();
-
-			if header_name == CONTENT_TYPE && value.starts_with("image/") {
-				is_image = true;
-			}
-
-			(header_name.to_string(), value)
-		})
-		.collect();
-
-	(result, is_image)
-}
-
-fn extract_cookies(response: &reqwest::Response) -> String {
-	response
-		.cookies()
-		.par_bridge()
-		.map(|cookie| format!("{}: {}", cookie.name(), cookie.value()))
-		.collect::<Vec<String>>()
-		.join("\n")
+	return Ok(modified_response);
 }

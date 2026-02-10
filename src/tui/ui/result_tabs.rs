@@ -16,7 +16,7 @@ use throbber_widgets_tui::{BRAILLE_DOUBLE, Throbber, WhichUse};
 use crate::app::app::App;
 use crate::app::files::theme::THEME;
 use crate::models::protocol::protocol::Protocol;
-// use crate::models::protocol::ws::ws::Sender;
+use crate::models::protocol::ws::ws::Sender;
 use crate::models::request::Request;
 use crate::models::response::ResponseContent;
 use crate::tui::utils::centered_rect::centered_rect;
@@ -238,106 +238,106 @@ impl App<'_> {
 						},
 					},
 				},
-				// RequestResultTabs::Messages => {
-				// 	let ws_request = request.get_ws_request().unwrap();
-				//
-				// 	let mut messages = vec![];
-				// 	let mut last_sender: Option<&Sender> = None;
-				//
-				// 	for message in &ws_request.messages {
-				// 		let mut alignment = Alignment::Right;
-				//
-				// 		let content = message.content.to_content();
-				// 		let max_length = self.get_max_line_length(&content);
-				// 		let lines = wrap(&content, max_length);
-				//
-				// 		match message.sender {
-				// 			Sender::You => {
-				// 				for line in lines {
-				// 					let line = match line.is_empty() {
-				// 						true => " ".repeat(max_length),
-				// 						false => format!("{line:max_length$}"),
-				// 					};
-				//
-				// 					messages.push(
-				// 						Line::raw(line)
-				// 							.fg(THEME.read().ui.font_color)
-				// 							.bg(THEME
-				// 								.read()
-				// 								.websocket
-				// 								.messages
-				// 								.you_background_color)
-				// 							.alignment(alignment),
-				// 					);
-				// 				}
-				// 			}
-				// 			Sender::Server => {
-				// 				alignment = Alignment::Left;
-				//
-				// 				if last_sender != Some(&message.sender) {
-				// 					messages.push(
-				// 						Line::raw(message.sender.to_string())
-				// 							.bold()
-				// 							.fg(THEME
-				// 								.read()
-				// 								.websocket
-				// 								.messages
-				// 								.server_foreground_color)
-				// 							.alignment(alignment),
-				// 					);
-				// 				}
-				//
-				// 				for line in lines {
-				// 					let line = match line.is_empty() {
-				// 						true => " ".repeat(max_length),
-				// 						false => format!("{line:max_length$}"),
-				// 					};
-				//
-				// 					messages.push(
-				// 						Line::raw(line)
-				// 							.fg(THEME.read().ui.font_color)
-				// 							.bg(THEME
-				// 								.read()
-				// 								.websocket
-				// 								.messages
-				// 								.server_background_color)
-				// 							.alignment(alignment),
-				// 					);
-				// 				}
-				// 			}
-				// 		}
-				//
-				// 		let timestamp_format =
-				// 			match Local::now().date_naive() == message.timestamp.date_naive() {
-				// 				true => "%H:%M:%S",
-				// 				false => "%H:%M:%S %d/%m/%Y",
-				// 			};
-				//
-				// 		let timestamp = message.timestamp.format(timestamp_format).to_string();
-				//
-				// 		messages.push(
-				// 			Line::raw(format!("{} {}", message.content.to_string(), timestamp))
-				// 				.fg(THEME.read().websocket.messages.details_color)
-				// 				.alignment(alignment),
-				// 		);
-				//
-				// 		last_sender = Some(&message.sender);
-				// 	}
-				//
-				// 	let messages_paragraph = Paragraph::new(messages).scroll((
-				// 		self.result_vertical_scrollbar.scroll,
-				// 		self.result_horizontal_scrollbar.scroll,
-				// 	));
-				//
-				// 	let inner_area = Rect {
-				// 		x: request_result_layout[2].x,
-				// 		y: request_result_layout[2].y,
-				// 		width: request_result_layout[2].width - 2,
-				// 		height: request_result_layout[2].height,
-				// 	};
-				//
-				// 	frame.render_widget(messages_paragraph, inner_area);
-				// }
+				RequestResultTabs::Messages => {
+					let ws_request = request.get_ws_request().unwrap();
+
+					let mut messages = vec![];
+					let mut last_sender: Option<&Sender> = None;
+
+					for message in &ws_request.messages {
+						let mut alignment = Alignment::Right;
+
+						let content = message.content.to_content();
+						let max_length = self.get_max_line_length(&content);
+						let lines = wrap(&content, max_length);
+
+						match message.sender {
+							Sender::You => {
+								for line in lines {
+									let line = match line.is_empty() {
+										true => " ".repeat(max_length),
+										false => format!("{line:max_length$}"),
+									};
+
+									messages.push(
+										Line::raw(line)
+											.fg(THEME.read().ui.font_color)
+											.bg(THEME
+												.read()
+												.websocket
+												.messages
+												.you_background_color)
+											.alignment(alignment),
+									);
+								}
+							}
+							Sender::Server => {
+								alignment = Alignment::Left;
+
+								if last_sender != Some(&message.sender) {
+									messages.push(
+										Line::raw(message.sender.to_string())
+											.bold()
+											.fg(THEME
+												.read()
+												.websocket
+												.messages
+												.server_foreground_color)
+											.alignment(alignment),
+									);
+								}
+
+								for line in lines {
+									let line = match line.is_empty() {
+										true => " ".repeat(max_length),
+										false => format!("{line:max_length$}"),
+									};
+
+									messages.push(
+										Line::raw(line)
+											.fg(THEME.read().ui.font_color)
+											.bg(THEME
+												.read()
+												.websocket
+												.messages
+												.server_background_color)
+											.alignment(alignment),
+									);
+								}
+							}
+						}
+
+						let timestamp_format =
+							match Local::now().date_naive() == message.timestamp.date_naive() {
+								true => "%H:%M:%S",
+								false => "%H:%M:%S %d/%m/%Y",
+							};
+
+						let timestamp = message.timestamp.format(timestamp_format).to_string();
+
+						messages.push(
+							Line::raw(format!("{} {}", message.content.to_string(), timestamp))
+								.fg(THEME.read().websocket.messages.details_color)
+								.alignment(alignment),
+						);
+
+						last_sender = Some(&message.sender);
+					}
+
+					let messages_paragraph = Paragraph::new(messages).scroll((
+						self.result_vertical_scrollbar.scroll,
+						self.result_horizontal_scrollbar.scroll,
+					));
+
+					let inner_area = Rect {
+						x: request_result_layout[2].x,
+						y: request_result_layout[2].y,
+						width: request_result_layout[2].width - 2,
+						height: request_result_layout[2].height,
+					};
+
+					frame.render_widget(messages_paragraph, inner_area);
+				}
 				RequestResultTabs::Cookies => {
 					let result_cookies = match &request.response.cookies {
 						None => "",

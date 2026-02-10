@@ -17,7 +17,7 @@ use crate::models::auth::auth::Auth;
 use crate::models::protocol::http::http::HttpRequest;
 use crate::models::protocol::protocol::Protocol;
 use crate::models::protocol::protocol::ProtocolTypeError::{NotAWsRequest, NotAnHttpRequest};
-// use crate::models::protocol::ws::ws::WsRequest;
+use crate::models::protocol::ws::ws::WsRequest;
 use crate::models::response::RequestResponse;
 use crate::models::scripts::RequestScripts;
 use crate::models::settings::RequestSettings;
@@ -119,30 +119,30 @@ impl Request {
 	pub fn get_http_request(&self) -> anyhow::Result<&HttpRequest> {
 		match &self.protocol {
 			Protocol::HttpRequest(request) => Ok(request),
-			// Protocol::WsRequest(_) => Err(anyhow!(NotAnHttpRequest)),
+			Protocol::WsRequest(_) => Err(anyhow!(NotAnHttpRequest)),
 		}
 	}
 
 	pub fn get_http_request_mut(&mut self) -> anyhow::Result<&mut HttpRequest> {
 		match &mut self.protocol {
 			Protocol::HttpRequest(request) => Ok(request),
-			// Protocol::WsRequest(_) => Err(anyhow!(NotAnHttpRequest)),
+			Protocol::WsRequest(_) => Err(anyhow!(NotAnHttpRequest)),
 		}
 	}
 
-	// pub fn get_ws_request(&self) -> anyhow::Result<&WsRequest> {
-	// 	match &self.protocol {
-	// 		Protocol::HttpRequest(_) => Err(anyhow!(NotAWsRequest)),
-	// 		Protocol::WsRequest(request) => Ok(request),
-	// 	}
-	// }
+	pub fn get_ws_request(&self) -> anyhow::Result<&WsRequest> {
+		match &self.protocol {
+			Protocol::HttpRequest(_) => Err(anyhow!(NotAWsRequest)),
+			Protocol::WsRequest(request) => Ok(request),
+		}
+	}
 
-	// pub fn get_ws_request_mut(&mut self) -> anyhow::Result<&mut WsRequest> {
-	// 	match &mut self.protocol {
-	// 		Protocol::HttpRequest(_) => Err(anyhow!(NotAWsRequest)),
-	// 		Protocol::WsRequest(request) => Ok(request),
-	// 	}
-	// }
+	pub fn get_ws_request_mut(&mut self) -> anyhow::Result<&mut WsRequest> {
+		match &mut self.protocol {
+			Protocol::HttpRequest(_) => Err(anyhow!(NotAWsRequest)),
+			Protocol::WsRequest(request) => Ok(request),
+		}
+	}
 
 	pub fn to_tree_item<'a>(&self, identifier: usize) -> TreeItem<'a, usize> {
 		let mut line_elements: Vec<Span> = vec![];
@@ -152,17 +152,17 @@ impl Request {
 				.style(Modifier::BOLD)
 				.fg(Color::White)
 				.bg(http_request.method.get_color()),
-			// Protocol::WsRequest(ws_request) => {
-			// 	let color = match ws_request.is_connected {
-			// 		true => THEME.read().websocket.connection_status.connected,
-			// 		false => THEME.read().websocket.connection_status.disconnected,
-			// 	};
-			//
-			// 	Span::from("WS")
-			// 		.style(Modifier::BOLD)
-			// 		.fg(Color::White)
-			// 		.bg(color)
-			// }
+			Protocol::WsRequest(ws_request) => {
+				let color = match ws_request.is_connected {
+					true => THEME.read().websocket.connection_status.connected,
+					false => THEME.read().websocket.connection_status.disconnected,
+				};
+
+				Span::from("WS")
+					.style(Modifier::BOLD)
+					.fg(Color::White)
+					.bg(color)
+			}
 		};
 
 		line_elements.push(prefix);

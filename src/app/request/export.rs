@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use anyhow::anyhow;
 use thiserror::Error;
 use crate::app::app::App;
+use crate::app::request::export::ExportError::{CouldNotOpenFile, CouldNotParseUrl, ExportFormatNotSupported};
 use crate::app::request::send::get_file_content_with_name;
 use crate::app::utils::to_train_case;
 use crate::models::auth::auth::Auth;
@@ -15,6 +16,7 @@ use crate::models::auth::jwt::{jwt_do_jaat, JwtToken};
 use crate::models::protocol::http::body::ContentType::{File, Form, Html, Javascript, Json, Multipart, NoBody, Raw, Xml};
 use crate::models::export::ExportFormat;
 use crate::models::export::ExportFormat::{Curl, NodeJsAxios, PhpGuzzle, RustReqwest, HTTP};
+use crate::models::protocol::http::method::Method;
 use crate::models::protocol::protocol::Protocol;
 use crate::models::request::Request;
 
@@ -39,7 +41,7 @@ impl App<'_> {
 
         let url = match Url::parse_with_params(&url, &params) {
             Ok(url) => url,
-            Err(_) => return Err(anyhow!(ExportError::CouldNotParseUrl))
+            Err(_) => return Err(anyhow!(CouldNotParseUrl))
         };
 
         let headers = self
@@ -56,10 +58,10 @@ impl App<'_> {
                 NodeJsAxios => self.node_axios(output, request, url, headers),
                 RustReqwest => self.rust_request(output, request, url, headers),
             }
-            // Protocol::WsRequest(_) => match export_format {
-            //     RustReqwest => self.rust_request(output, request, url, headers),
-            //     PhpGuzzle | NodeJsAxios | HTTP | Curl => return Err(anyhow!(ExportFormatNotSupported(request.protocol.to_string())))
-            // }
+            Protocol::WsRequest(_) => match export_format {
+                RustReqwest => self.rust_request(output, request, url, headers),
+                PhpGuzzle | NodeJsAxios | HTTP | Curl => return Err(anyhow!(ExportFormatNotSupported(request.protocol.to_string())))
+            }
         };
 
         export
@@ -149,7 +151,7 @@ impl App<'_> {
                 let file_content = match get_file_content_with_name(PathBuf::from(&file_path_with_env_values)) {
                     Ok((content, _)) => content,
                     Err(_) => {
-                        return Err(anyhow!(ExportError::CouldNotOpenFile(file_path_with_env_values)));
+                        return Err(anyhow!(CouldNotOpenFile(file_path_with_env_values)));
                     }
                 };
 
@@ -176,7 +178,7 @@ impl App<'_> {
                         let (file_content, file_name) = match get_file_content_with_name(PathBuf::from(file_path)) {
                             Ok(result) => result,
                             Err(_) => {
-                                return Err(anyhow!(ExportError::CouldNotOpenFile(file_path.to_string())));
+                                return Err(anyhow!(CouldNotOpenFile(file_path.to_string())));
                             }
                         };
 
@@ -448,7 +450,7 @@ impl App<'_> {
                 let file_content = match get_file_content_with_name(PathBuf::from(&file_path_with_env_values)) {
                     Ok((content, _)) => content,
                     Err(_) => {
-                        return Err(anyhow!(ExportError::CouldNotOpenFile(file_path_with_env_values)));
+                        return Err(anyhow!(CouldNotOpenFile(file_path_with_env_values)));
                     }
                 };
 
@@ -692,7 +694,7 @@ impl App<'_> {
 
         let method = match &request.protocol {
             Protocol::HttpRequest(http_request) => http_request.method.to_string(),
-            // Protocol::WsRequest(_) => Method::GET.to_string()
+            Protocol::WsRequest(_) => Method::GET.to_string()
         };
 
         /* Headers */
@@ -770,9 +772,9 @@ impl App<'_> {
                 },
                 _ => {}
             }
-            // Protocol::WsRequest(_) => {
-            //     output += "use reqwest_websocket::{Error, Message, RequestBuilderExt};\nuse futures_util::{SinkExt, StreamExt, TryStreamExt};\n";
-            // }
+            Protocol::WsRequest(_) => {
+                output += "use reqwest_websocket::{Error, Message, RequestBuilderExt};\nuse futures_util::{SinkExt, StreamExt, TryStreamExt};\n";
+            }
         }
 
         /* Main function */
@@ -835,7 +837,7 @@ impl App<'_> {
                     body_str += &format!("        .body(r#\"{}\"#)\n", body);
                 }
             }
-            // Protocol::WsRequest(_) => {}
+            Protocol::WsRequest(_) => {}
         }
 
         /* Request and response */
@@ -847,9 +849,9 @@ impl App<'_> {
 
         output += &body_str;
 
-        // if matches!(request.protocol, Protocol::WsRequest(_)) {
-        //     output += "        .upgrade()\n";
-        // }
+        if matches!(request.protocol, Protocol::WsRequest(_)) {
+            output += "        .upgrade()\n";
+        }
 
         output += "        .send()\n";
         output += "        .await?;\n\n";
@@ -868,27 +870,27 @@ impl App<'_> {
                 output += "    println!(\"Body: {}\", body);\n\n";
 
             }
-//             Protocol::WsRequest(_) => {
-//                 output += r#"    let websocket = response.into_websocket().await?;
-//     let (mut tx, mut rx) = websocket.split();
-//
-//     futures_util::future::join(
-//         async move {
-//             tx.send(Message::Text("Hello, World!")).await.unwrap();
-//         },
-//         async move {
-//             while let Some(message) = rx.try_next().await.unwrap() {
-//                 if let Message::Text(text) = message {
-//                     println!("received: {text}");
-//                 }
-//             }
-//         },
-//     )
-//     .await;
-//
-// "#;
-//
-//             }
+            Protocol::WsRequest(_) => {
+                output += r#"    let websocket = response.into_websocket().await?;
+    let (mut tx, mut rx) = websocket.split();
+
+    futures_util::future::join(
+        async move {
+            tx.send(Message::Text("Hello, World!")).await.unwrap();
+        },
+        async move {
+            while let Some(message) = rx.try_next().await.unwrap() {
+                if let Message::Text(text) = message {
+                    println!("received: {text}");
+                }
+            }
+        },
+    )
+    .await;
+
+"#;
+
+            }
         }
 
         output += "    Ok(())\n";

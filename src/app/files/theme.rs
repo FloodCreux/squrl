@@ -104,7 +104,7 @@ impl Default for Theme {
 				font_color: Color::White,
 				app_background: None,
 
-				main_foreground_color: Color::White,
+				main_foreground_color: Color::Blue,
 				secondary_foreground_color: Color::DarkGray,
 
 				main_background_color: Color::DarkGray,

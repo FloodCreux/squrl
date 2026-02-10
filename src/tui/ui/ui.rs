@@ -35,6 +35,26 @@ impl<'a> App<'a> {
 			.borders(Borders::TOP);
 
 		frame.render_widget(header, main_layout[0]);
+
+		let inner_layout = Layout::new(
+			Horizontal,
+			[Constraint::Percentage(20), Constraint::Percentage(80)],
+		)
+		.split(main_layout[1]);
+
+		if self.environments.is_empty() {
+			let env_and_collections_layout =
+				Layout::new(Vertical, [Constraint::Fill(1)]).split(inner_layout[0]);
+
+			self.render_collections(frame, env_and_collections_layout[0]);
+		} else {
+			let env_and_collections_layout =
+				Layout::new(Vertical, [Constraint::Length(3), Constraint::Fill(1)])
+					.split(inner_layout[0]);
+
+			self.render_environments(frame, env_and_collections_layout[0]);
+			self.render_collections(frame, env_and_collections_layout[1]);
+		}
 	}
 
 	pub fn draw<B: Backend>(&mut self, terminal: &mut Terminal<B>) -> Result<(), B::Error> {
