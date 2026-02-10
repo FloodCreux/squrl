@@ -1,6 +1,8 @@
 use std::io::Stdout;
 use std::sync::Arc;
 
+#[cfg(feature = "clipboard")]
+use arboard::Clipboard;
 use parking_lot::RwLock;
 use ratatui::Terminal;
 use ratatui::backend::{Backend, CrosstermBackend};
@@ -9,6 +11,7 @@ use crate::app::files::config::Config;
 use crate::models::collection::Collection;
 use crate::models::environment::Environment;
 use crate::tui::utils::stateful::cookies_popup::CookiesPopup;
+use crate::tui::utils::stateful::display_popup::DisplayPopup;
 use crate::tui::utils::stateful::stateful_tree::StatefulTree;
 
 pub struct App<'a> {
@@ -21,6 +24,10 @@ pub struct App<'a> {
 	pub collections_tree: StatefulTree<'a>,
 
 	pub cookies_popup: CookiesPopup,
+	pub display_request_export: DisplayPopup,
+
+	#[cfg(feature = "clipboard")]
+	pub clipboard: Option<Clipboard>,
 }
 
 impl App<'_> {
@@ -33,6 +40,8 @@ impl App<'_> {
 			environments: vec![],
 			selected_environment: 0,
 			cookies_popup: CookiesPopup::default(),
+			display_request_export: DisplayPopup::default(),
+			clipboard: Clipboard::new().ok(),
 		})
 	}
 
@@ -40,7 +49,7 @@ impl App<'_> {
 		&mut self,
 		mut terminal: Terminal<CrosstermBackend<Stdout>>,
 	) -> Result<(), <CrosstermBackend<Stdout> as Backend>::Error> {
-		terminal.clear();
+		let _ = terminal.clear();
 
 		while !self.should_quit {}
 

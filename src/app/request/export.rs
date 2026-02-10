@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use anyhow::anyhow;
 use thiserror::Error;
 use crate::app::app::App;
-use crate::app::request::export::ExportError::{CouldNotOpenFile, CouldNotParseUrl, ExportFormatNotSupported};
 use crate::app::request::send::get_file_content_with_name;
 use crate::app::utils::to_train_case;
 use crate::models::auth::auth::Auth;
@@ -16,7 +15,6 @@ use crate::models::auth::jwt::{jwt_do_jaat, JwtToken};
 use crate::models::protocol::http::body::ContentType::{File, Form, Html, Javascript, Json, Multipart, NoBody, Raw, Xml};
 use crate::models::export::ExportFormat;
 use crate::models::export::ExportFormat::{Curl, NodeJsAxios, PhpGuzzle, RustReqwest, HTTP};
-use crate::models::protocol::http::method::Method;
 use crate::models::protocol::protocol::Protocol;
 use crate::models::request::Request;
 
@@ -41,7 +39,7 @@ impl App<'_> {
 
         let url = match Url::parse_with_params(&url, &params) {
             Ok(url) => url,
-            Err(_) => return Err(anyhow!(CouldNotParseUrl))
+            Err(_) => return Err(anyhow!(ExportError::CouldNotParseUrl))
         };
 
         let headers = self
@@ -151,7 +149,7 @@ impl App<'_> {
                 let file_content = match get_file_content_with_name(PathBuf::from(&file_path_with_env_values)) {
                     Ok((content, _)) => content,
                     Err(_) => {
-                        return Err(anyhow!(CouldNotOpenFile(file_path_with_env_values)));
+                        return Err(anyhow!(ExportError::CouldNotOpenFile(file_path_with_env_values)));
                     }
                 };
 
@@ -178,7 +176,7 @@ impl App<'_> {
                         let (file_content, file_name) = match get_file_content_with_name(PathBuf::from(file_path)) {
                             Ok(result) => result,
                             Err(_) => {
-                                return Err(anyhow!(CouldNotOpenFile(file_path.to_string())));
+                                return Err(anyhow!(ExportError::CouldNotOpenFile(file_path.to_string())));
                             }
                         };
 
@@ -450,7 +448,7 @@ impl App<'_> {
                 let file_content = match get_file_content_with_name(PathBuf::from(&file_path_with_env_values)) {
                     Ok((content, _)) => content,
                     Err(_) => {
-                        return Err(anyhow!(CouldNotOpenFile(file_path_with_env_values)));
+                        return Err(anyhow!(ExportError::CouldNotOpenFile(file_path_with_env_values)));
                     }
                 };
 

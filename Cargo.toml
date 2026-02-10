@@ -11,6 +11,11 @@ exclude = [
 	".github"
 ]
 
+[features]
+default = ["clipboard"]
+clipboard = ["arboard"]
+arboard = ["dep:arboard"]
+
 [dependencies]
 # Request
 ## Send requests
