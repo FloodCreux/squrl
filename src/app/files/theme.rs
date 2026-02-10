@@ -101,7 +101,7 @@ impl Default for Theme {
 	fn default() -> Self {
 		Theme {
 			ui: ThemeUI {
-				font_color: Color::White,
+				font_color: Color::Blue,
 				app_background: None,
 
 				main_foreground_color: Color::Blue,

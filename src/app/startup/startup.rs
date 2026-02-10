@@ -1,31 +1,152 @@
 use crate::app::app::App;
+use crate::app::log::LogCounterLayer;
 use crate::app::startup::startup::AppMode::{CLI, TUI};
 use crate::cli::args::{ARGS, Command};
+use crate::errors::panic_error;
+use crate::models::collection::CollectionFileFormat;
+use clap_verbosity_flag::log::LevelFilter;
+use std::fs::{File, OpenOptions};
+use tracing::trace;
+use tracing_log::AsTrace;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 
 pub enum AppMode {
 	TUI,
 	CLI(Command),
 }
 
-impl App<'_> {
+impl<'a> App<'a> {
+	/// Method called before running the app, returns the app if the TUI should be started
 	pub fn startup(&mut self) -> AppMode {
-		match ARGS.command {
-			Some(_) => tracing_subscriber::fmt()
+		// Logging is initialized before anything else
+		match ARGS.command.is_some() {
+			// CLI
+			true => tracing_subscriber::fmt()
 				.pretty()
+				.with_max_level(ARGS.verbosity.log_level_filter().as_trace())
 				.with_file(false)
 				.with_line_number(false)
+				.with_ansi(ARGS.ansi_log)
 				.init(),
-			_ => tracing_subscriber::fmt()
-				.pretty()
-				.with_file(false)
-				.with_line_number(false)
-				.init(),
+			// TUI
+			false => {
+				let verbosity = match ARGS.verbosity.log_level_filter() {
+					LevelFilter::Error => LevelFilter::Debug, // Ensure that at least the debug level is always active
+					level => level,
+				};
+
+				// Using a separate file allows to redirect the output and avoid printing to screen
+				let log_file = self.create_log_file();
+
+				tracing_subscriber::fmt()
+					.with_max_level(verbosity.as_trace())
+					.with_writer(log_file)
+					.with_file(false)
+					.with_line_number(false)
+					.with_ansi(ARGS.ansi_log)
+					.finish()
+					.with(LogCounterLayer)
+					.init();
+			}
 		};
+
+		if ARGS.should_parse_directory {
+			self.parse_app_directory();
+		}
 
 		if let Some(command) = &ARGS.command {
 			CLI(command.clone())
 		} else {
+			self.parse_key_bindings_file();
+			self.parse_theme_file();
+			self.update_text_inputs_handler();
+
 			TUI
 		}
+	}
+
+	fn parse_app_directory(&mut self) {
+		let paths = match ARGS.directory.as_ref().unwrap().read_dir() {
+			Ok(paths) => paths,
+			Err(e) => panic_error(format!(
+				"Directory \"{}\" not found\n\t{e}",
+				ARGS.directory.as_ref().unwrap().display()
+			)),
+		};
+
+		for path in paths {
+			let path = path.unwrap().path();
+
+			if path.is_dir() {
+				continue;
+			}
+
+			let file_name = path.file_name().unwrap().to_str().unwrap();
+
+			trace!("Checking file \"{}\"", path.display());
+
+			if file_name.starts_with(".env.") {
+				self.add_environment_from_file(&path);
+				continue;
+			} else if file_name == "atac.toml" {
+				self.parse_config_file(&path);
+				continue;
+			} else if file_name == "atac.log" {
+				trace!("Log file is not parsable");
+				continue;
+			}
+
+			if let Some(filter) = &ARGS.collection_filter {
+				if !filter.is_match(file_name) {
+					trace!("File \"{file_name}\" does not match filter");
+					continue;
+				}
+			}
+
+			if file_name.ends_with(".json") {
+				self.set_collections_from_file(path, CollectionFileFormat::Json);
+			} else if file_name.ends_with(".yaml") {
+				self.set_collections_from_file(path, CollectionFileFormat::Yaml);
+			}
+		}
+
+		// Check if the global config file exists
+		if let Some(config_directory) = &ARGS.config_directory {
+			let global_config_file_path = config_directory.join("global.toml");
+
+			if global_config_file_path.exists() {
+				self.parse_global_config_file(&global_config_file_path);
+			}
+		}
+
+		// Ensures that legacy collections and requests gets save as their new version
+		if ARGS.should_save {
+			for index in 0..self.collections.len() {
+				self.save_collection_to_file(index);
+			}
+		}
+
+		self.collections.sort_by(|a, b| {
+			a.last_position
+				.unwrap_or(usize::MAX)
+				.cmp(&b.last_position.unwrap_or(usize::MAX))
+		});
+	}
+
+	fn create_log_file(&mut self) -> File {
+		let path = ARGS.directory.as_ref().unwrap().join("atac.log");
+
+		let log_file = match OpenOptions::new()
+			.write(true)
+			.create(true)
+			.truncate(true)
+			.open(path)
+		{
+			Ok(log_file) => log_file,
+			Err(e) => panic_error(format!("Could not open log file\n\t{e}")),
+		};
+
+		return log_file;
 	}
 }

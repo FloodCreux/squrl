@@ -1,6 +1,3 @@
-use std::collections::HashMap;
-use std::io::Stdout;
-
 use crate::app::files::key_bindings::{CustomTextArea, KEY_BINDINGS, TextAreaMode};
 use crate::app::files::theme::THEME;
 use crate::tui::utils::syntax_highlighting::{
@@ -29,6 +26,8 @@ use ratatui::layout::HorizontalAlignment;
 use ratatui::prelude::{Constraint, Layout, Rect, Span, Style, Stylize, Widget};
 use ratatui::style::Color;
 use ratatui::widgets::{Block, Borders, Padding};
+use std::collections::HashMap;
+use std::io::Stdout;
 use syntect::parsing::SyntaxReference;
 
 pub struct TextInput {
