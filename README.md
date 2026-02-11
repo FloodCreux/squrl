@@ -12,7 +12,7 @@ A terminal HTTP client built with Rust, powered by [ratatui](https://github.com/
 - **Request bodies** -- raw text, JSON, XML, HTML, JavaScript, file upload, form, and multipart
 - **Pre/post scripts** -- JavaScript execution via embedded runtime
 - **Response handling** -- pretty-printed JSON, syntax highlighting, image preview, cookies, and headers
-- **Import** -- Postman collections/environments, cURL commands, and OpenAPI specs
+- **Import** -- Postman collections/environments, cURL commands, OpenAPI specs, and `.http` files
 - **Export** -- HTTP, cURL, PHP Guzzle, Node.js Axios, and Rust reqwest
 - **Clipboard** -- copy response bodies (optional feature)
 - **Shell completions & man pages** -- generated via clap
@@ -83,6 +83,7 @@ squrl import postman <path> [--max-depth <n>]
 squrl import postman-env <path> [--force-uppercase-keys] [--use-disabled]
 squrl import curl <path> <collection-name> [<request-name>] [--recursive] [--max-depth <n>]
 squrl import openapi <path> [--max-depth <n>]
+squrl import http-file <path> [<collection-name>] [--recursive] [--max-depth <n>]
 ```
 
 #### One-off requests
@@ -103,6 +104,9 @@ squrl man [<output-dir>]            # Generate man pages
 ```sh
 squrl --directory <dir>   # Set working directory (or SQURL_MAIN_DIR env var)
 squrl --dry-run           # Test without saving changes
+squrl --filter <regex>    # Only load collections matching regex
+squrl --tui               # Launch TUI after a CLI command
+squrl --verbose/-v        # Increase verbosity level
 ```
 
 ## Configuration
@@ -130,7 +134,7 @@ squrl_main_dir/
   collection2.json
   environment1          # KEY=VALUE format
   environment2
-  atac.toml             # Configuration
+  squrl.toml            # Configuration
 ```
 
 ## Development
