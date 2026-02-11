@@ -151,18 +151,10 @@ impl App<'_> {
 			return Err(anyhow!(RequestNameIsEmpty));
 		}
 
-		let local_selected_request =
-			self.get_request_as_local_from_indexes(&(collection_index, request_index));
-
-		{
-			let mut selected_request = local_selected_request.write();
-
+		self.with_request_write(collection_index, request_index, |req| {
 			info!("Request renamed to \"{new_request_name}\"");
-
-			selected_request.name = new_request_name.to_string();
-		}
-
-		self.save_collection_to_file(collection_index);
+			req.name = new_request_name;
+		});
 
 		Ok(())
 	}
@@ -189,21 +181,14 @@ impl App<'_> {
 		collection_index: usize,
 		request_index: usize,
 	) -> anyhow::Result<()> {
-		let local_selected_request =
-			self.get_request_as_local_from_indexes(&(collection_index, request_index));
+		self.with_request_write(collection_index, request_index, |req| {
+			info!("Request \"{}\" duplicated", req.name);
 
-		{
-			let mut selected_request = local_selected_request.read().clone();
-
-			info!("Request \"{}\" duplicated", selected_request.name);
-
-			selected_request.name = format!("{} copy", selected_request.name);
+			req.name = format!("{} copy", req.name);
 			self.collections[collection_index]
 				.requests
-				.insert(request_index + 1, Arc::new(RwLock::new(selected_request)));
-		}
-
-		self.save_collection_to_file(collection_index);
+				.insert(request_index + 1, Arc::new(RwLock::new(req.clone())));
+		});
 
 		Ok(())
 	}

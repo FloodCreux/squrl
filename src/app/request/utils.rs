@@ -17,4 +17,43 @@ impl App<'_> {
 	) -> Arc<RwLock<Request>> {
 		self.collections[selected_request_index.0].requests[selected_request_index.1].clone()
 	}
+
+	pub fn with_request_write<F, R>(
+		&mut self,
+		collection_index: usize,
+		request_index: usize,
+		f: F,
+	) -> R
+	where
+		F: FnOnce(&mut Request) -> R,
+	{
+		let local = self.get_request_as_local_from_indexes(&(collection_index, request_index));
+		let result = {
+			let mut req = local.write();
+			f(&mut req)
+		};
+
+		self.save_collection_to_file(collection_index);
+		result
+	}
+
+	pub fn with_request_write_result<F>(
+		&mut self,
+		collection_index: usize,
+		request_index: usize,
+		f: F,
+	) -> anyhow::Result<()>
+	where
+		F: FnOnce(&mut Request) -> anyhow::Result<()>,
+	{
+		let local = self.get_request_as_local_from_indexes(&(collection_index, request_index));
+
+		{
+			let mut req = local.write();
+			f(&mut req)?;
+		}
+
+		self.save_collection_to_file(collection_index);
+		Ok(())
+	}
 }
