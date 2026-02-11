@@ -3,7 +3,6 @@ use thiserror::Error;
 
 use crate::app::app::App;
 use crate::cli::utils::collection::FindElementError::{CollectionNotFound, RequestNotFound};
-use crate::models::collection::Collection;
 
 #[derive(Error, Debug)]
 pub enum FindElementError {
@@ -22,21 +21,6 @@ impl App<'_> {
 		}
 
 		return Err(anyhow!(CollectionNotFound));
-	}
-
-	#[allow(dead_code)]
-	pub fn find_request(
-		&mut self,
-		collection: &Collection,
-		request_name: &str,
-	) -> anyhow::Result<usize> {
-		for (index, request) in collection.requests.iter().enumerate() {
-			if request.read().name == request_name {
-				return Ok(index);
-			}
-		}
-
-		return Err(anyhow!(RequestNotFound));
 	}
 
 	pub fn find_collection_slash_request(

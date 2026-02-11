@@ -173,7 +173,7 @@ fn get_content_type_from_body_args(body_args: BodyArgs) -> ContentType {
 		let multipart_key_values = string_array_to_key_value_array(body_args.add_body_multipart);
 		return ContentType::Multipart(multipart_key_values);
 	} else if !body_args.add_body_form.is_empty() {
-		let form_key_values = string_array_to_key_value_array(body_args.add_body_multipart);
+		let form_key_values = string_array_to_key_value_array(body_args.add_body_form);
 		return ContentType::Form(form_key_values);
 	} else if let Some(raw) = &body_args.body_raw {
 		return ContentType::Raw(raw.clone());

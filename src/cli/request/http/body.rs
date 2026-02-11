@@ -70,8 +70,9 @@ impl App<'_> {
 
 		{
 			let selected_request = local_selected_request.read();
-
-			let value = &selected_request.headers[row].data.1;
+			let selected_http_request = selected_request.get_http_request()?;
+			let form = selected_http_request.body.get_form()?;
+			let value = &form[row].data.1;
 
 			println!("{value}")
 		}
