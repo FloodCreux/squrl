@@ -49,7 +49,11 @@ impl Collection {
 			.requests
 			.par_iter()
 			.enumerate()
-			.map(|(request_index, request)| request.read().to_tree_item(request_index))
+			.map(|(request_index, request)| {
+				request
+					.read()
+					.to_tree_item(request_index, request_index == self.requests.len() - 1)
+			})
 			.collect();
 
 		TreeItem::new(identifier, line, items).unwrap()

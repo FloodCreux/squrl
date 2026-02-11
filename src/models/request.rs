@@ -144,8 +144,14 @@ impl Request {
 		}
 	}
 
-	pub fn to_tree_item<'a>(&self, identifier: usize) -> TreeItem<'a, usize> {
+	pub fn to_tree_item<'a>(&self, identifier: usize, is_last: bool) -> TreeItem<'a, usize> {
 		let mut line_elements: Vec<Span> = vec![];
+
+		if is_last {
+			line_elements.push(Span::raw("└─ "));
+		} else {
+			line_elements.push(Span::raw("├─ "));
+		}
 
 		let prefix = match &self.protocol {
 			Protocol::HttpRequest(http_request) => Span::from(http_request.method.to_string())
