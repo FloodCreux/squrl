@@ -1,8 +1,4 @@
-use tracing::info;
-
 use crate::app::app::App;
-use crate::app::key_value::find_key;
-use crate::models::request::KeyValue;
 
 impl App<'_> {
 	pub fn find_header(
@@ -11,11 +7,7 @@ impl App<'_> {
 		request_index: usize,
 		key: &str,
 	) -> anyhow::Result<usize> {
-		let local_selected_request =
-			self.get_request_as_local_from_indexes(&(collection_index, request_index));
-		let selected_request = local_selected_request.read();
-
-		find_key(&selected_request.headers, key)
+		self.find_kv(collection_index, request_index, key, |req| &req.headers)
 	}
 
 	pub fn modify_request_header(
@@ -26,29 +18,15 @@ impl App<'_> {
 		column: usize,
 		row: usize,
 	) -> anyhow::Result<()> {
-		let local_selected_request =
-			self.get_request_as_local_from_indexes(&(collection_index, request_index));
-
-		{
-			let mut selected_request = local_selected_request.write();
-
-			let header_type = match column {
-				0 => "key",
-				1 => "value",
-				_ => "",
-			};
-
-			info!("Header {header_type} set to \"{value}\"");
-
-			match column {
-				0 => selected_request.headers[row].data.0 = value.clone(),
-				1 => selected_request.headers[row].data.1 = value.clone(),
-				_ => {}
-			};
-		}
-
-		self.save_collection_to_file(collection_index);
-		Ok(())
+		self.modify_kv(
+			collection_index,
+			request_index,
+			value,
+			column,
+			row,
+			"Header",
+			|req| &mut req.headers,
+		)
 	}
 
 	pub fn create_new_header(
@@ -58,22 +36,14 @@ impl App<'_> {
 		key: String,
 		value: String,
 	) -> anyhow::Result<()> {
-		let local_selected_request =
-			self.get_request_as_local_from_indexes(&(collection_index, request_index));
-
-		{
-			let mut selected_request = local_selected_request.write();
-
-			info!("Key \"{key}\" with value \"{value}\" added to the headers");
-
-			selected_request.headers.push(KeyValue {
-				enabled: true,
-				data: (key, value),
-			});
-		}
-
-		self.save_collection_to_file(collection_index);
-		Ok(())
+		self.create_kv(
+			collection_index,
+			request_index,
+			key,
+			value,
+			"headers",
+			|req| &mut req.headers,
+		)
 	}
 
 	pub fn delete_header(
@@ -82,19 +52,9 @@ impl App<'_> {
 		request_index: usize,
 		row: usize,
 	) -> anyhow::Result<()> {
-		let local_selected_request =
-			self.get_request_as_local_from_indexes(&(collection_index, request_index));
-
-		{
-			let mut selected_request = local_selected_request.write();
-
-			info!("Header deleted");
-
-			selected_request.headers.remove(row);
-		}
-
-		self.save_collection_to_file(collection_index);
-		Ok(())
+		self.delete_kv(collection_index, request_index, row, "Header", |req| {
+			&mut req.headers
+		})
 	}
 
 	pub fn toggle_header(
@@ -104,29 +64,14 @@ impl App<'_> {
 		state: Option<bool>,
 		row: usize,
 	) -> anyhow::Result<()> {
-		let local_selected_request =
-			self.get_request_as_local_from_indexes(&(collection_index, request_index));
-
-		{
-			let mut selected_request = local_selected_request.write();
-
-			let new_state = match state {
-				None => {
-					let state = !selected_request.headers[row].enabled;
-					// Better user feedback
-					println!("{state}");
-					state
-				}
-				Some(state) => state,
-			};
-
-			info!("Header state set to \"{new_state}\"");
-
-			selected_request.headers[row].enabled = new_state;
-		}
-
-		self.save_collection_to_file(collection_index);
-		Ok(())
+		self.toggle_kv(
+			collection_index,
+			request_index,
+			state,
+			row,
+			"Header",
+			|req| &mut req.headers,
+		)
 	}
 
 	pub fn duplicate_header(
@@ -135,19 +80,8 @@ impl App<'_> {
 		request_index: usize,
 		row: usize,
 	) -> anyhow::Result<()> {
-		let local_selected_request =
-			self.get_request_as_local_from_indexes(&(collection_index, request_index));
-
-		{
-			let mut selected_request = local_selected_request.write();
-
-			info!("Header duplicated");
-
-			let header = selected_request.headers[row].clone();
-			selected_request.headers.insert(row, header);
-		}
-
-		self.save_collection_to_file(collection_index);
-		Ok(())
+		self.duplicate_kv(collection_index, request_index, row, "Header", |req| {
+			&mut req.headers
+		})
 	}
 }

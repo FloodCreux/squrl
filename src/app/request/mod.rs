@@ -2,6 +2,7 @@ pub mod auth;
 pub mod export;
 pub mod headers;
 pub mod http;
+mod key_value_crud;
 pub mod query_params;
 pub mod scripts;
 pub mod send;
