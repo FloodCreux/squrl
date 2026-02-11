@@ -1,7 +1,5 @@
 use crate::app::app::App;
 use crate::models::auth::auth::Auth;
-use crate::models::auth::basic::BasicAuth;
-use crate::models::auth::bearer_token::BearerToken;
 use tracing::info;
 
 impl App<'_> {

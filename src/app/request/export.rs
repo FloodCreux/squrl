@@ -100,47 +100,7 @@ impl App<'_> {
 
         /* Auth */
 
-        output += &match &request.auth {
-            Auth::NoAuth => String::new(),
-            Auth::BasicAuth(BasicAuth { username, password }) => {
-                let username = self.replace_env_keys_by_value(username);
-                let password = self.replace_env_keys_by_value(password);
-
-                format!("\nAuthorization: {}", encode_basic_auth(&username, &password))
-            },
-            Auth::BearerToken(BearerToken { token }) => {
-                let bearer_token = self.replace_env_keys_by_value(token);
-
-                format!("\nAuthorization: Bearer {}", bearer_token)
-            },
-            Auth::JwtToken(JwtToken { algorithm, secret_type, secret, payload }) => {
-                let secret = self.replace_env_keys_by_value(secret);
-                let payload = self.replace_env_keys_by_value(payload);
-
-                let token = jwt_do_jaat(algorithm, secret_type, secret, payload)?;
-                format!("\nAuthorization: Bearer {}", token)
-            }
-            Auth::Digest(Digest { username, password, domains, realm, nonce, opaque, stale, algorithm, qop, user_hash, charset, nc }) => {
-                let digest_header = digest_to_authorization_header(
-                    username,
-                    password,
-                    url.path(),
-                    domains.clone(),
-                    realm.clone(),
-                    nonce.clone(),
-                    opaque.clone(),
-                    *stale,
-                    algorithm,
-                    &qop,
-                    *user_hash,
-                    &charset,
-                    *nc
-                );
-
-                format!("\nAuthorization: {}", digest_header)
-            }
-        };
-
+        output += &self.resolve_auth_header_value(&request.auth, url.as_str());
         /* Body */
 
         output += &match &http_request.body {
@@ -241,46 +201,7 @@ impl App<'_> {
 
         /* Auth */
 
-        output += &match &request.auth {
-            Auth::NoAuth => String::new(),
-            Auth::BasicAuth(BasicAuth { username, password }) => {
-                let username = self.replace_env_keys_by_value(username);
-                let password = self.replace_env_keys_by_value(password);
-
-                format!("\n--header '{}' \\", encode_basic_auth(&username, &password))
-            },
-            Auth::BearerToken(BearerToken { token }) => {
-                let bearer_token = self.replace_env_keys_by_value(token);
-
-                format!("\n--header 'Authorization: Bearer {}' \\", bearer_token)
-            },
-            Auth::JwtToken(JwtToken { algorithm, secret_type, secret, payload }) => {
-                let secret = self.replace_env_keys_by_value(secret);
-                let payload = self.replace_env_keys_by_value(payload);
-
-                let token = jwt_do_jaat(algorithm, secret_type, secret, payload)?;
-                format!("\n--header 'Authorization: Bearer {}' \\", token)
-            },
-            Auth::Digest(Digest { username, password, domains, realm, nonce, opaque, stale, algorithm, qop, user_hash, charset, nc }) => {
-                let digest_header = digest_to_authorization_header(
-                    username,
-                    password,
-                    url.path(),
-                    domains.clone(),
-                    realm.clone(),
-                    nonce.clone(),
-                    opaque.clone(),
-                    *stale,
-                    algorithm,
-                    &qop,
-                    *user_hash,
-                    &charset,
-                    *nc
-                );
-
-                format!("\n--header 'Authorization: Bearer {}' \\", digest_header)
-            }
-        };
+        output += &self.resolve_auth_header_value(&request.auth, url.as_str());
 
         /* Headers */
 
@@ -369,46 +290,7 @@ impl App<'_> {
 
         /* Auth */
 
-        headers_str += &match &request.auth {
-            Auth::NoAuth => String::new(),
-            Auth::BasicAuth(BasicAuth { username, password }) => {
-                let username = self.replace_env_keys_by_value(username);
-                let password = self.replace_env_keys_by_value(password);
-
-                format!("\n    'Authorization' => '{}',", escape(encode_basic_auth(&username, &password), escape_char))
-            },
-            Auth::BearerToken(BearerToken { token }) => {
-                let bearer_token = self.replace_env_keys_by_value(token);
-
-                format!("\n    'Authorization' => 'Bearer {}',", escape(bearer_token, escape_char))
-            },
-            Auth::JwtToken(JwtToken { algorithm, secret_type, secret, payload }) => {
-                let secret = self.replace_env_keys_by_value(secret);
-                let payload = self.replace_env_keys_by_value(payload);
-
-                let token = jwt_do_jaat(algorithm, secret_type, secret, payload)?;
-                format!("\n    'Authorization' => 'Bearer {}',", escape(token, escape_char))
-            },
-            Auth::Digest(Digest { username, password, domains, realm, nonce, opaque, stale, algorithm, qop, user_hash, charset, nc }) => {
-                let digest_header = digest_to_authorization_header(
-                    username,
-                    password,
-                    url.path(),
-                    domains.clone(),
-                    realm.clone(),
-                    nonce.clone(),
-                    opaque.clone(),
-                    *stale,
-                    algorithm,
-                    &qop,
-                    *user_hash,
-                    &charset,
-                    *nc
-                );
-
-                format!("\n    'Authorization' => '{}',", escape(digest_header, escape_char))
-            }
-        };
+        headers_str += &self.resolve_auth_header_value(&request.auth, url.as_str());
 
         /* Headers */
 
@@ -548,44 +430,7 @@ impl App<'_> {
         output += "  headers: { \n";
 
         /* Auth */
-        match &request.auth {
-            Auth::NoAuth => {},
-            Auth::BasicAuth(BasicAuth { username, password }) => {
-                let username = self.replace_env_keys_by_value(username);
-                let password = self.replace_env_keys_by_value(password);
-                output += &format!("    'Authorization': '{}',\n", escape(encode_basic_auth(&username, &password), escape_char));
-            },
-            Auth::BearerToken(BearerToken { token }) => {
-                let bearer_token = self.replace_env_keys_by_value(token);
-                output += &format!("    'Authorization': 'Bearer {}',\n", escape(bearer_token, escape_char));
-            },
-            Auth::JwtToken(JwtToken { algorithm, secret_type, secret, payload }) => {
-                let secret = self.replace_env_keys_by_value(secret);
-                let payload = self.replace_env_keys_by_value(payload);
-
-                let token = jwt_do_jaat(algorithm, secret_type, secret, payload)?;
-                output += &format!("    'Authorization': 'Bearer {}',\n", escape(token, escape_char));
-            },
-            Auth::Digest(Digest { username, password, domains, realm, nonce, opaque, stale, algorithm, qop, user_hash, charset, nc }) => {
-                let digest_header = digest_to_authorization_header(
-                    username,
-                    password,
-                    url.path(),
-                    domains.clone(),
-                    realm.clone(),
-                    nonce.clone(),
-                    opaque.clone(),
-                    *stale,
-                    algorithm,
-                    &qop,
-                    *user_hash,
-                    &charset,
-                    *nc
-                );
-
-                output += &format!("    'Authorization': '{}',\n", escape(digest_header, escape_char))
-            }
-        };
+        output += &self.resolve_auth_header_value(&request.auth, url.as_str());
 
         /* Regular Headers */
         for (header, value) in &headers {
@@ -687,6 +532,50 @@ impl App<'_> {
         output += "  });";
 
         Ok(output)
+    }
+
+
+    fn resolve_auth_header_value(&self, auth: &Auth, url_path: &str) -> String {
+        match auth {
+            Auth::NoAuth => String::new(),
+            Auth::BasicAuth(BasicAuth { username, password }) => {
+                let username = self.replace_env_keys_by_value(username);
+                let password = self.replace_env_keys_by_value(password);
+
+                format!("\nAuthorization: {}", encode_basic_auth(&username, &password))
+            },
+            Auth::BearerToken(BearerToken { token }) => {
+                let bearer_token = self.replace_env_keys_by_value(token);
+
+                format!("\nAuthorization: Bearer {}", bearer_token)
+            },
+            Auth::JwtToken(JwtToken { algorithm, secret_type, secret, payload }) => {
+                let secret = self.replace_env_keys_by_value(secret);
+                let payload = self.replace_env_keys_by_value(payload);
+
+                let token = jwt_do_jaat(algorithm, secret_type, secret, payload).unwrap();
+                format!("\nAuthorization: Bearer {}", token)
+            }
+            Auth::Digest(Digest { username, password, domains, realm, nonce, opaque, stale, algorithm, qop, user_hash, charset, nc }) => {
+                let digest_header = digest_to_authorization_header(
+                    username,
+                    password,
+                    url_path,
+                    domains.clone(),
+                    realm.clone(),
+                    nonce.clone(),
+                    opaque.clone(),
+                    *stale,
+                    algorithm,
+                    &qop,
+                    *user_hash,
+                    &charset,
+                    *nc
+                );
+
+                format!("\nAuthorization: {}", digest_header)
+            }
+        }
     }
     
     fn rust_request(&self, mut output: String, request: &Request, url: Url, headers: Vec<(String, String)>) -> anyhow::Result<String> {
@@ -898,6 +787,8 @@ impl App<'_> {
 
         Ok(output)
     }
+
+
 }
 
 fn encode_basic_auth(username: &String, password: &String) -> String {
