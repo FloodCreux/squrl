@@ -25,6 +25,9 @@ impl App<'_> {
 				ImportType::OpenApi(openapi_import) => {
 					self.import_openapi_collection(openapi_import)
 				}
+				ImportType::HttpFile(http_file_import) => {
+					self.import_http_file(http_file_import)
+				}
 			},
 			Man(_) => generate_man_pages(),
 			Request(request_command) => self.handle_request_command(request_command).await,

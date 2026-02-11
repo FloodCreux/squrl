@@ -19,7 +19,11 @@ nest! {
 
 			/// Import an Open Api file
 			#[clap(alias = "openapi")]
-			OpenApi(OpenApiImport)
+			OpenApi(OpenApiImport),
+
+			/// Import an .http file
+			#[clap(alias = "http-file")]
+			HttpFile(HttpFileImport)
 		}
 	}
 }
@@ -79,5 +83,23 @@ pub struct OpenApiImport {
 
 	/// Max depth at which import should stop creating nested collections and only get the deeper requests
 	#[arg(long)]
+	pub max_depth: Option<u16>,
+}
+
+#[derive(clap::Args, Debug, Clone)]
+pub struct HttpFileImport {
+	/// Path to the .http file or folder containing .http files
+	#[clap(value_hint = clap::ValueHint::AnyPath)]
+	pub import_path: PathBuf,
+
+	/// Collection name (defaults to file/directory name)
+	pub collection_name: Option<String>,
+
+	/// Search for deeper files
+	#[arg(short, long)]
+	pub recursive: bool,
+
+	/// Max depth at which import should stop creating nested collections and only get the deeper requests
+	#[arg(long, requires = "recursive")]
 	pub max_depth: Option<u16>,
 }

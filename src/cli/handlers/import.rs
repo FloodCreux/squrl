@@ -11,10 +11,12 @@ use reqwest::Url;
 use crate::app::app::App;
 use crate::cli::args::ARGS;
 use crate::cli::commands::import::CurlImport;
+use crate::cli::commands::import::HttpFileImport;
 use crate::cli::commands::import::OpenApiImport;
 use crate::cli::commands::import::PostmanEnvImport;
 use crate::cli::commands::import::PostmanImport;
 use crate::cli::import::curl;
+use crate::cli::import::http_file;
 use crate::cli::import::openapi;
 use crate::cli::import::openapi::ImportOpenApiError;
 use crate::cli::import::postman_collection;
@@ -297,6 +299,72 @@ impl App<'_> {
 
 		// Save the collection to file
 		self.save_collection_to_file(self.collections.len() - 1);
+
+		Ok(())
+	}
+
+	pub fn import_http_file(&mut self, http_file_import: &HttpFileImport) -> anyhow::Result<()> {
+		let path_buf = &http_file_import.import_path;
+		let recursive = &http_file_import.recursive;
+		let max_depth = http_file_import.max_depth.unwrap_or(99);
+
+		println!("Parsing .http file(s)");
+
+		// Derive collection name from argument or from path
+		let collection_name = match &http_file_import.collection_name {
+			Some(name) => name.clone(),
+			None => path_buf
+				.file_stem()
+				.unwrap_or_default()
+				.to_str()
+				.unwrap_or("http-import")
+				.to_string(),
+		};
+
+		println!("Collection name: {}", collection_name);
+
+		let (collection_index, collection) = match self
+			.collections
+			.par_iter_mut()
+			.enumerate()
+			.find_any(|(_, collection)| collection.name == collection_name.as_str())
+		{
+			Some((index, collection)) => (index, collection),
+			None => {
+				println!("Collection does not exist. Creating it...");
+
+				let file_format = self.config.get_preferred_collection_file_format();
+
+				let collection = Collection {
+					name: collection_name.clone(),
+					last_position: Some(self.collections.len() - 1),
+					requests: vec![],
+					path: ARGS.directory.as_ref().unwrap().join(format!(
+						"{}.{}",
+						collection_name,
+						file_format.to_string()
+					)),
+					file_format,
+				};
+
+				self.collections.push(collection);
+
+				(
+					self.collections.len() - 1,
+					self.collections.last_mut().unwrap(),
+				)
+			}
+		};
+
+		let requests = if path_buf.is_file() {
+			http_file::parse_http_file(path_buf)?
+		} else {
+			http_file::parse_http_files_recursively(path_buf, *recursive, max_depth)?
+		};
+
+		collection.requests.extend(requests);
+
+		self.save_collection_to_file(collection_index);
 
 		Ok(())
 	}

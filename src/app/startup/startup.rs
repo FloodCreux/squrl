@@ -2,10 +2,12 @@ use crate::app::app::App;
 use crate::app::log::LogCounterLayer;
 use crate::app::startup::startup::AppMode::{CLI, TUI};
 use crate::cli::args::{ARGS, Command};
+use crate::cli::import::http_file;
 use crate::errors::panic_error;
-use crate::models::collection::CollectionFileFormat;
+use crate::models::collection::{Collection, CollectionFileFormat};
 use clap_verbosity_flag::log::LevelFilter;
 use std::fs::{File, OpenOptions};
+use std::path::PathBuf;
 use tracing::trace;
 use tracing_log::AsTrace;
 use tracing_subscriber::layer::SubscriberExt;
@@ -141,6 +143,65 @@ impl<'a> App<'a> {
 				.unwrap_or(usize::MAX)
 				.cmp(&b.last_position.unwrap_or(usize::MAX))
 		});
+
+		// Auto-load .http files from a "requests" subdirectory if we're in a git repo
+		// Added after the save loop and sort to avoid saving ephemeral collections to disk
+		if let Some(cwd) = std::env::current_dir().ok() {
+			let requests_dir = cwd.join("requests");
+			if cwd.join(".git").exists() && requests_dir.is_dir() {
+				let collection_name = cwd
+					.file_name()
+					.map(|n| n.to_str().unwrap_or("http-requests"))
+					.unwrap_or("http-requests")
+					.to_string();
+
+				let http_file_paths: Vec<PathBuf> = match requests_dir.read_dir() {
+					Ok(entries) => entries
+						.filter_map(|e| e.ok())
+						.map(|e| e.path())
+						.filter(|p| {
+							p.is_file() && p.extension().map_or(false, |ext| ext == "http")
+						})
+						.collect(),
+					Err(_) => vec![],
+				};
+
+				if !http_file_paths.is_empty() {
+					trace!(
+						"Found {} .http file(s) in requests/ directory, creating ephemeral collection \"{}\"",
+						http_file_paths.len(),
+						collection_name
+					);
+
+					let mut requests = vec![];
+
+					for http_path in &http_file_paths {
+						match http_file::parse_http_file(http_path) {
+							Ok(parsed_requests) => requests.extend(parsed_requests),
+							Err(e) => {
+								trace!(
+									"Could not parse .http file \"{}\": {}",
+									http_path.display(),
+									e
+								);
+							}
+						}
+					}
+
+					if !requests.is_empty() {
+						let collection = Collection {
+							name: collection_name,
+							last_position: None,
+							requests,
+							path: PathBuf::new(), // Ephemeral — no file path
+							file_format: CollectionFileFormat::default(),
+						};
+
+						self.collections.push(collection);
+					}
+				}
+			}
+		}
 	}
 
 	fn create_log_file(&mut self) -> File {
