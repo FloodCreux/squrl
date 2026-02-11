@@ -1,8 +1,8 @@
 use ratatui::Frame;
 use ratatui::layout::Direction::Vertical;
 use ratatui::layout::{Constraint, Layout, Rect};
-use ratatui::style::Stylize;
-use ratatui::text::Line;
+use ratatui::style::{Color, Modifier, Stylize};
+use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph, Tabs};
 use strum::{Display, EnumIter, FromRepr};
 
@@ -63,46 +63,6 @@ impl App<'_> {
 			],
 		};
 
-		let param_tabs = allowed_tabs.iter().map(|tab| {
-			let text = match tab {
-				RequestParamsTabs::QueryParams => match request.params.is_empty() {
-					true => tab.to_string(),
-					false => format!("{} ({})", tab.to_string(), request.params.len()),
-				},
-				RequestParamsTabs::Auth => match request.auth {
-					NoAuth => tab.to_string(),
-					BasicAuth(_) | BearerToken(_) | JwtToken(_) | Digest(_) => {
-						format!("{} ({})", tab.to_string(), request.auth.to_string())
-					}
-				},
-				RequestParamsTabs::Headers => match request.headers.is_empty() {
-					true => tab.to_string(),
-					false => format!("{} ({})", tab.to_string(), request.headers.len()),
-				},
-				RequestParamsTabs::Body => {
-					let http_request = request.get_http_request().unwrap();
-
-					match http_request.body {
-						NoBody => tab.to_string(),
-						Multipart(_) | Form(_) | File(_) | Raw(_) | Json(_) | Xml(_) | Html(_)
-						| Javascript(_) => format!("{} ({})", tab.to_string(), http_request.body.to_string()),
-					}
-				}
-				RequestParamsTabs::Message => {
-					let ws_request = request.get_ws_request().unwrap();
-
-					format!(
-						"{} ({})",
-						tab.to_string(),
-						ws_request.message_type.to_string()
-					)
-				}
-				RequestParamsTabs::Scripts => tab.to_string(),
-			};
-
-			text.fg(THEME.read().ui.font_color)
-		});
-
 		let selected_param_tab_index = match &request.protocol {
 			Protocol::HttpRequest(_) => match self.request_param_tab {
 				RequestParamsTabs::QueryParams => 0,
@@ -122,14 +82,92 @@ impl App<'_> {
 			},
 		};
 
-		let params_tabs = Tabs::new(param_tabs)
-			.highlight_style(THEME.read().others.selection_highlight_color)
-			.select(selected_param_tab_index)
-			.block(
-				Block::new()
-					.borders(Borders::BOTTOM)
-					.fg(THEME.read().ui.main_foreground_color),
-			);
+		let tab_texts: Vec<String> = allowed_tabs
+			.iter()
+			.map(|tab| match tab {
+				RequestParamsTabs::QueryParams => match request.params.is_empty() {
+					true => tab.to_string().to_uppercase(),
+					false => format!(
+						"{} ({})",
+						tab.to_string().to_uppercase(),
+						request.params.len()
+					),
+				},
+				RequestParamsTabs::Auth => match request.auth {
+					NoAuth => tab.to_string().to_uppercase(),
+					BasicAuth(_) | BearerToken(_) | JwtToken(_) | Digest(_) => {
+						format!(
+							"{} ({})",
+							tab.to_string().to_uppercase(),
+							request.auth.to_string()
+						)
+					}
+				},
+				RequestParamsTabs::Headers => match request.headers.is_empty() {
+					true => tab.to_string(),
+					false => format!(
+						"{} ({})",
+						tab.to_string().to_uppercase(),
+						request.headers.len()
+					),
+				},
+				RequestParamsTabs::Body => {
+					let http_request = request.get_http_request().unwrap();
+
+					match http_request.body {
+						NoBody => tab.to_string().to_uppercase(),
+						Multipart(_) | Form(_) | File(_) | Raw(_) | Json(_) | Xml(_) | Html(_)
+						| Javascript(_) => format!(
+							"{} ({})",
+							tab.to_string().to_uppercase(),
+							http_request.body.to_string()
+						),
+					}
+				}
+				RequestParamsTabs::Message => {
+					let ws_request = request.get_ws_request().unwrap();
+
+					format!(
+						"{} ({})",
+						tab.to_string().to_uppercase(),
+						ws_request.message_type.to_string()
+					)
+				}
+				RequestParamsTabs::Scripts => tab.to_string().to_uppercase(),
+			})
+			.collect();
+
+		let max_tab_width = tab_texts.iter().map(|t| t.len()).max().unwrap_or(0) + 4;
+
+		let param_tabs = tab_texts.iter().enumerate().map(|(index, text)| {
+			if index == selected_param_tab_index {
+				let inner_width = max_tab_width - 2; // total width minus "[" and "]"
+				let padded = format!("{:^inner_width$}", text);
+
+				Line::from(vec![
+					Span::raw("[")
+						.style(Modifier::BOLD)
+						.fg(THEME.read().ui.font_color)
+						.bg(Color::Reset),
+					Span::raw(padded)
+						.fg(THEME.read().ui.main_background_color)
+						.bg(THEME.read().ui.font_color),
+					Span::raw("]")
+						.style(Modifier::BOLD)
+						.fg(THEME.read().ui.font_color)
+						.bg(Color::Reset),
+				])
+			} else {
+				let padded = format!("{:^max_tab_width$}", text);
+				Line::from(padded).fg(THEME.read().ui.font_color)
+			}
+		});
+
+		let params_tabs = Tabs::new(param_tabs).select(None::<usize>).block(
+			Block::new()
+				.borders(Borders::BOTTOM)
+				.fg(THEME.read().ui.main_foreground_color),
+		);
 
 		frame.render_widget(params_tabs, request_params_layout[0]);
 

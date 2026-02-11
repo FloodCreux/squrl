@@ -76,6 +76,17 @@ impl App<'_> {
 			request_header_layout[1],
 		);
 
+		// REQUEST PARAMS
+
+		let params_block = Block::new()
+			.borders(Borders::RIGHT)
+			.fg(THEME.read().ui.main_foreground_color);
+
+		let request_params_area = params_block.inner(request_layout[2]);
+
+		frame.render_widget(params_block, request_layout[2]);
+		self.render_request_params(frame, request_params_area, &request);
+
 		// // REQUEST MAIN LAYOUT
 		//
 		// let request_main_layout_constraints = match self.request_view {
@@ -86,25 +97,6 @@ impl App<'_> {
 		//
 		// let request_main_layout =
 		// 	Layout::new(Horizontal, request_main_layout_constraints).split(request_layout[2]);
-		//
-		// let (should_render_params, should_render_result) = match self.request_view {
-		// 	RequestView::Normal => (true, true),
-		// 	RequestView::OnlyResult => (false, true),
-		// 	RequestView::OnlyParams => (true, false),
-		// };
-		//
-		// // REQUEST PARAMS
-		//
-		// if should_render_params {
-		// 	let params_block = Block::new()
-		// 		.borders(Borders::RIGHT)
-		// 		.fg(THEME.read().ui.main_foreground_color);
-		//
-		// 	let request_params_area = params_block.inner(request_main_layout[0]);
-		//
-		// 	frame.render_widget(params_block, request_main_layout[0]);
-		// 	self.render_request_params(frame, request_params_area, &request);
-		// }
 		//
 		// // REQUEST RESULT LAYOUT
 		//
