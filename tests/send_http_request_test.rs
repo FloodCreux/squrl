@@ -479,3 +479,179 @@ async fn test_duration_format() {
 		duration
 	);
 }
+
+#[tokio::test]
+async fn test_non_utf8_body_falls_back_to_hex_dump() {
+	let invalid_utf8: Vec<u8> = vec![0xFF, 0xFE, 0x00, 0x01];
+
+	let mut server = mockito::Server::new_async().await;
+	let mock = server
+		.mock("GET", "/binary")
+		.with_status(200)
+		.with_header("content-type", "application/octet-stream")
+		.with_body(invalid_utf8)
+		.create_async()
+		.await;
+
+	let url = format!("{}/binary", server.url());
+	let request_builder = build_request_builder(&url);
+	let local_request = build_local_request(5000);
+
+	let result = send_http_request(request_builder, local_request, &build_env()).await;
+	mock.assert_async().await;
+
+	let response = result.unwrap();
+	match response.content {
+		Some(ResponseContent::Body(body)) => {
+			// Non-UTF8 bytes are formatted with {:#X?} on Bytes, which uses byte-string debug format
+			assert!(
+				body.contains("\\xff") || body.contains("\\xfe"),
+				"Expected byte-string debug body, got: {}",
+				body
+			);
+		}
+		other => panic!("Expected Body content with hex dump, got {:?}", other),
+	}
+}
+
+#[tokio::test]
+async fn test_404_not_found_status() {
+	let mut server = mockito::Server::new_async().await;
+	let mock = server
+		.mock("GET", "/missing")
+		.with_status(404)
+		.with_body("Not Found")
+		.create_async()
+		.await;
+
+	let url = format!("{}/missing", server.url());
+	let request_builder = build_request_builder(&url);
+	let local_request = build_local_request(5000);
+
+	let result = send_http_request(request_builder, local_request, &build_env()).await;
+	mock.assert_async().await;
+
+	let response = result.unwrap();
+	assert_eq!(
+		response.status_code,
+		Some("404 Not Found".to_string())
+	);
+	match response.content {
+		Some(ResponseContent::Body(body)) => assert_eq!(body, "Not Found"),
+		other => panic!("Expected Body content, got {:?}", other),
+	}
+}
+
+#[tokio::test]
+async fn test_json_with_charset_in_content_type_still_pretty_prints() {
+	let mut server = mockito::Server::new_async().await;
+	let mock = server
+		.mock("GET", "/json-charset")
+		.with_status(200)
+		.with_header("content-type", "application/json; charset=utf-8")
+		.with_body(r#"{"a":1,"b":2}"#)
+		.create_async()
+		.await;
+
+	let url = format!("{}/json-charset", server.url());
+	let request_builder = build_request_builder(&url);
+	let local_request = build_local_request(5000);
+
+	let result = send_http_request(request_builder, local_request, &build_env()).await;
+	mock.assert_async().await;
+
+	let response = result.unwrap();
+	match response.content {
+		Some(ResponseContent::Body(body)) => {
+			assert!(
+				body.contains('\n'),
+				"Expected pretty-printed JSON even with charset param, got: {}",
+				body
+			);
+		}
+		other => panic!("Expected Body content, got {:?}", other),
+	}
+}
+
+#[tokio::test]
+async fn test_xml_body_is_not_pretty_printed() {
+	let xml = r#"<root><item>value</item></root>"#;
+
+	let mut server = mockito::Server::new_async().await;
+	let mock = server
+		.mock("GET", "/xml")
+		.with_status(200)
+		.with_header("content-type", "application/xml")
+		.with_body(xml)
+		.create_async()
+		.await;
+
+	let url = format!("{}/xml", server.url());
+	let request_builder = build_request_builder(&url);
+	let local_request = build_local_request(5000);
+
+	let result = send_http_request(request_builder, local_request, &build_env()).await;
+	mock.assert_async().await;
+
+	let response = result.unwrap();
+	match response.content {
+		// Only JSON gets pretty-printed; XML passes through as-is
+		Some(ResponseContent::Body(body)) => assert_eq!(body, xml),
+		other => panic!("Expected Body content, got {:?}", other),
+	}
+}
+
+#[tokio::test]
+async fn test_no_cookies_header_gives_empty_cookies() {
+	let mut server = mockito::Server::new_async().await;
+	let mock = server
+		.mock("GET", "/no-cookies")
+		.with_status(200)
+		.with_body("ok")
+		.create_async()
+		.await;
+
+	let url = format!("{}/no-cookies", server.url());
+	let request_builder = build_request_builder(&url);
+	let local_request = build_local_request(5000);
+
+	let result = send_http_request(request_builder, local_request, &build_env()).await;
+	mock.assert_async().await;
+
+	let response = result.unwrap();
+	// cookies field is Some("") when no set-cookie headers are present
+	assert_eq!(response.cookies, Some(String::new()));
+}
+
+#[tokio::test]
+async fn test_cancellation_token_is_reset_after_request() {
+	let mut server = mockito::Server::new_async().await;
+	let mock = server
+		.mock("GET", "/reset")
+		.with_status(200)
+		.with_body("ok")
+		.expect(2)
+		.create_async()
+		.await;
+
+	let url = format!("{}/reset", server.url());
+	let local_request = build_local_request(5000);
+
+	// First request
+	let request_builder = build_request_builder(&url);
+	let _ = send_http_request(request_builder, local_request.clone(), &build_env()).await;
+
+	// The cancellation token should be a fresh one, not already cancelled
+	assert!(
+		!local_request.read().cancellation_token.is_cancelled(),
+		"Cancellation token should be reset after request completes"
+	);
+
+	// Second request should succeed with the same local_request
+	let request_builder = build_request_builder(&url);
+	let result = send_http_request(request_builder, local_request, &build_env()).await;
+	mock.assert_async().await;
+
+	let response = result.unwrap();
+	assert_eq!(response.status_code, Some("200 OK".to_string()));
+}
