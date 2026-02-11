@@ -38,6 +38,15 @@ fmt:
 fmt-check:
     cargo fmt -- --check
 
+# Run pre-commit checks
+pre-commit: fmt-check lint
+
+# Install git pre-commit hook
+setup-hooks:
+    echo '#!/bin/sh\njust pre-commit' > .git/hooks/pre-commit
+    chmod +x .git/hooks/pre-commit
+    @echo "Pre-commit hook installed"
+
 # Clean build artifacts
 clean:
     cargo clean

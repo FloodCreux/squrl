@@ -6,11 +6,6 @@ edition = "2024"
 license = "MIT"
 readme = "README.md"
 
-
-exclude = [
-	".github"
-]
-
 [features]
 default = ["clipboard"]
 clipboard = ["arboard"]

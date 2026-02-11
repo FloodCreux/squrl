@@ -10,4 +10,3 @@ pub(crate) mod send;
 pub(crate) mod settings;
 pub(crate) mod try_request;
 pub(crate) mod url;
-pub(crate) mod ws;

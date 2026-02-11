@@ -1,3 +1,7 @@
 /target
 .ideas/
 .DS_Store
+result
+*.swp
+*.swo
+*~
