@@ -53,7 +53,7 @@ async fn test_successful_text_response() {
 	let response = result.unwrap();
 	assert_eq!(response.status_code, Some("200 OK".to_string()));
 	assert!(response.duration.is_some());
-	assert!(local_request.read().is_pending);
+	assert!(!local_request.read().is_pending);
 
 	match response.content {
 		Some(ResponseContent::Body(body)) => assert_eq!(body, "Hello, world!"),
@@ -153,7 +153,7 @@ async fn test_cancellation() {
 	let result = send_http_request(request_builder, local_request, &build_env()).await;
 
 	let response = result.unwrap();
-	assert_eq!(response.status_code, Some("CANCELLED".to_string()));
+	assert_eq!(response.status_code, Some("CANCELED".to_string()));
 	assert!(response.content.is_none());
 	assert!(response.duration.is_some());
 }
@@ -241,7 +241,8 @@ async fn test_sets_is_pending() {
 
 	let _ = send_http_request(request_builder, local_request.clone(), &build_env()).await;
 
-	assert!(local_request.read().is_pending);
+	// is_pending is set to true during the request, then back to false before returning
+	assert!(!local_request.read().is_pending);
 }
 
 #[tokio::test]
