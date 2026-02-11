@@ -20,7 +20,7 @@ impl App<'_> {
 			}
 		}
 
-		return Err(anyhow!(CollectionNotFound));
+		Err(anyhow!(CollectionNotFound))
 	}
 
 	pub fn find_collection_slash_request(
@@ -42,6 +42,6 @@ impl App<'_> {
 			return Err(anyhow!(RequestNotFound));
 		}
 
-		return Err(anyhow!(CollectionNotFound));
+		Err(anyhow!(CollectionNotFound))
 	}
 }

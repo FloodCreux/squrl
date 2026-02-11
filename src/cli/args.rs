@@ -141,7 +141,7 @@ lazy_static! {
 			config_directory,
 			command: args.command,
 			collection_filter: args.filter,
-			should_run_tui: args.tui,
+			// should_run_tui: args.tui,
 			should_save: !args.dry_run,
 			should_parse_directory,
 			verbosity: args.verbose,
@@ -170,7 +170,7 @@ fn get_app_config_dir() -> Option<PathBuf> {
 		None => None,
 	};
 
-	return config_directory;
+	config_directory
 }
 
 fn choose_app_directory(path_buf: Option<PathBuf>, config_directory: &Option<PathBuf>) -> PathBuf {
@@ -198,7 +198,7 @@ pub struct GlobalArgs {
 	pub config_directory: Option<PathBuf>,
 	pub command: Option<Command>,
 	pub collection_filter: Option<Regex>,
-	pub should_run_tui: bool,
+	// pub should_run_tui: bool,
 	pub should_save: bool,
 	pub should_parse_directory: bool,
 	pub verbosity: Verbosity,
