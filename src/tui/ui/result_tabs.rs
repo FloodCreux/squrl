@@ -149,17 +149,49 @@ impl App<'_> {
 		}
 		// If the selected request is not pending
 		else {
-			// REQUEST RESULT STATUS CODE
+			// REQUEST RESULT STATUS LINE
 
 			let status_code = match &request.response.status_code {
 				None => "",
 				Some(status_code) => status_code,
 			};
 
-			let status_code_paragraph = Paragraph::new(status_code)
-				.centered()
-				.fg(THEME.read().ui.secondary_foreground_color);
-			frame.render_widget(status_code_paragraph, request_result_layout[1]);
+			let request_duration = match &request.response.duration {
+				None => "",
+				Some(duration) => duration,
+			};
+
+			let request_size = match &request.response.content {
+				None => "0 KB".to_string(),
+				Some(content) => match content {
+					ResponseContent::Body(body) => {
+						let size_in_kb = body.len() as f64 / 1024.0;
+						format!("{} KB", size_in_kb)
+					}
+					ResponseContent::Image(_img) => "TODO".to_string(),
+				},
+			};
+
+			let status_chunks =
+				Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
+					.split(request_result_layout[1]);
+
+			let status_line = Line::from(vec![
+				Span::styled("STATUS: ", Style::default().fg(Color::White)),
+				Span::styled(
+					status_code,
+					Style::default().fg(status_code_color(status_code)),
+				),
+				Span::raw("   "),
+				Span::styled("TIME: ", Style::default().fg(Color::White)),
+				Span::styled(request_duration, Style::default().fg(Color::Yellow)),
+				Span::raw("   "),
+				Span::styled("SIZE: ", Style::default().fg(Color::White)),
+				Span::styled(request_size, Style::default().fg(Color::Blue)),
+			])
+			.bg(Color::Gray)
+			.style(Style::default().add_modifier(Modifier::BOLD));
+			frame.render_widget(status_line, status_chunks[0]);
 
 			// REQUEST RESULT CONTENT
 
@@ -409,5 +441,15 @@ impl App<'_> {
 
 		self.last_messages_area_size.0 = request_result_layout[2].width.saturating_sub(1);
 		self.last_messages_area_size.1 = request_result_layout[2].height.saturating_sub(1);
+	}
+}
+
+fn status_code_color(code: &str) -> Color {
+	match code.as_bytes().first() {
+		Some(b'2') => Color::Green,
+		Some(b'3') => Color::Cyan,
+		Some(b'4') => Color::Yellow,
+		Some(b'5') => Color::Red,
+		_ => Color::DarkGray,
 	}
 }
