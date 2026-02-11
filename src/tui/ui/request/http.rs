@@ -15,6 +15,11 @@ use ratatui::widgets::{Block, Borders, Padding, Paragraph};
 impl App<'_> {
 	pub fn render_http_request(&mut self, frame: &mut Frame, rect: Rect, request: Request) {
 		let request_name = request.name.clone();
+		let layout = Layout::new(
+			Vertical,
+			[Constraint::Percentage(25), Constraint::Percentage(75)],
+		)
+		.split(rect);
 
 		let request_block = Block::default()
 			.title(format!(" REQUEST: {} ", request_name))
@@ -27,9 +32,9 @@ impl App<'_> {
 			})
 			.fg(THEME.read().ui.font_color);
 
-		frame.render_widget(request_block, rect);
+		frame.render_widget(request_block, layout[0]);
 
-		let inner = rect.inner(Margin::new(1, 1));
+		let inner = layout[0].inner(Margin::new(1, 1));
 		let request_layout = Layout::new(
 			Vertical,
 			[
@@ -78,34 +83,17 @@ impl App<'_> {
 
 		// REQUEST PARAMS
 
-		let params_block = Block::new()
-			.borders(Borders::RIGHT)
-			.fg(THEME.read().ui.main_foreground_color);
+		let params_block = Block::new().fg(THEME.read().ui.main_foreground_color);
 
 		let request_params_area = params_block.inner(request_layout[2]);
 
 		frame.render_widget(params_block, request_layout[2]);
 		self.render_request_params(frame, request_params_area, &request);
 
-		// // REQUEST MAIN LAYOUT
-		//
-		// let request_main_layout_constraints = match self.request_view {
-		// 	RequestView::Normal => [Constraint::Percentage(50), Constraint::Percentage(50)],
-		// 	RequestView::OnlyResult => [Constraint::Percentage(0), Constraint::Percentage(100)],
-		// 	RequestView::OnlyParams => [Constraint::Percentage(100), Constraint::Percentage(0)],
-		// };
-		//
-		// let request_main_layout =
-		// 	Layout::new(Horizontal, request_main_layout_constraints).split(request_layout[2]);
-		//
-		// // REQUEST RESULT LAYOUT
-		//
-		// if should_render_result {
-		// 	let result_block = Block::new().fg(THEME.read().ui.main_foreground_color);
-		// 	let result_block_area = result_block.inner(request_main_layout[1]);
-		//
-		// 	frame.render_widget(result_block, request_main_layout[1]);
-		// 	self.render_request_result(frame, result_block_area, &request);
-		// }
+		let result_block = Block::new().fg(THEME.read().ui.main_foreground_color);
+		let result_block_area = result_block.inner(layout[1]);
+
+		frame.render_widget(result_block, layout[1]);
+		self.render_request_result(frame, result_block_area, &request);
 	}
 }

@@ -24,15 +24,15 @@ use crate::tui::utils::centered_rect::centered_rect;
 #[derive(Default, Clone, Copy, PartialOrd, PartialEq, Display, FromRepr, EnumIter)]
 pub enum RequestResultTabs {
 	#[default]
-	#[strum(to_string = "Result body")]
+	#[strum(to_string = "RESULT BODY")]
 	Body,
-	#[strum(to_string = "Messages")]
+	#[strum(to_string = "MESSAGES")]
 	Messages,
-	#[strum(to_string = "Cookies")]
+	#[strum(to_string = "COOKIES")]
 	Cookies,
-	#[strum(to_string = "Headers")]
+	#[strum(to_string = "HEADERS")]
 	Headers,
-	#[strum(to_string = "Console")]
+	#[strum(to_string = "CONSOLE")]
 	Console,
 }
 
