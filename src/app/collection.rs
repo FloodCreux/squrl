@@ -181,15 +181,16 @@ impl App<'_> {
 		collection_index: usize,
 		request_index: usize,
 	) -> anyhow::Result<()> {
-		self.with_request_write(collection_index, request_index, |req| {
-			info!("Request \"{}\" duplicated", req.name);
+		let local = self.get_request_as_local_from_indexes(&(collection_index, request_index));
+		let mut cloned = local.read().clone();
 
-			req.name = format!("{} copy", req.name);
-			self.collections[collection_index]
-				.requests
-				.insert(request_index + 1, Arc::new(RwLock::new(req.clone())));
-		});
+		info!("Request \"{}\" duplicated", cloned.name);
 
+		cloned.name = format!("{} copy", cloned.name);
+		self.collections[collection_index]
+			.requests
+			.insert(request_index + 1, Arc::new(RwLock::new(cloned)));
+		self.save_collection_to_file(collection_index);
 		Ok(())
 	}
 
