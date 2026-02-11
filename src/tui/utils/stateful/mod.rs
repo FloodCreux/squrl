@@ -9,6 +9,7 @@ pub(crate) mod settings_popup;
 pub(crate) mod stateful_custom_table;
 pub(crate) mod stateful_scrollbar;
 pub(crate) mod stateful_tree;
+pub(crate) mod table_navigation;
 pub(crate) mod text_input;
 pub(crate) mod text_input_selection;
 pub(crate) mod validation_popup;

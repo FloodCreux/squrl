@@ -11,7 +11,35 @@ use std::sync::Arc;
 use std::sync::atomic::Ordering;
 use strum::VariantArray;
 
+macro_rules! define_simple_state_setters {
+	($($fn_name:ident => $state:ident);* $(;)?) => {
+		$(
+			pub fn $fn_name(&mut self) {
+				self.set_app_state(AppState::$state);
+				self.update_inputs();
+			}
+		)*
+	};
+}
+
 impl App<'_> {
+	define_simple_state_setters! {
+		edit_request_url_state => EditingRequestUrl;
+		edit_request_param_state => EditingRequestParam;
+		edit_request_auth_username_state => EditingRequestAuthBasicUsername;
+		edit_request_auth_password_state => EditingRequestAuthBasicPassword;
+		edit_request_auth_bearer_token_state => EditingRequestAuthBearerToken;
+		edit_request_auth_jwt_secret_state => EditingRequestAuthJwtSecret;
+		edit_request_auth_jwt_payload_state => EditingRequestAuthJwtPayload;
+		edit_request_auth_digest_username_state => EditingRequestAuthDigestUsername;
+		edit_request_auth_digest_password_state => EditingRequestAuthDigestPassword;
+		edit_request_auth_digest_domains_state => EditingRequestAuthDigestDomains;
+		edit_request_auth_digest_realm_state => EditingRequestAuthDigestRealm;
+		edit_request_auth_digest_nonce_state => EditingRequestAuthDigestNonce;
+		edit_request_auth_digest_opaque_state => EditingRequestAuthDigestOpaque;
+		edit_request_header_state => EditingRequestHeader;
+	}
+
 	fn set_app_state(&mut self, app_state: AppState) {
 		match self.state {
 			AppState::Normal => self.was_last_state_selected_request = false,
@@ -81,28 +109,6 @@ impl App<'_> {
 
 		self.tui_update_cookies_table_selection();
 		self.set_app_state(AppState::DisplayingCookies);
-	}
-
-	#[allow(dead_code)]
-	pub fn edit_cookie_state(&mut self) {
-		let selection = self.cookies_popup.cookies_table.selection.unwrap();
-
-		let input_text = self.cookies_popup.cookies_table.rows[selection.0][selection.1].clone();
-
-		self.cookies_popup
-			.cookies_table
-			.selection_text_input
-			.clear();
-		self.cookies_popup
-			.cookies_table
-			.selection_text_input
-			.push_str(&input_text);
-		self.cookies_popup
-			.cookies_table
-			.selection_text_input
-			.move_cursor_line_end();
-
-		self.set_app_state(AppState::EditingCookies);
 	}
 
 	pub fn display_logs_state(&mut self) {
@@ -202,76 +208,6 @@ impl App<'_> {
 		self.set_app_state(AppState::SelectedRequest);
 		self.update_inputs();
 		self.reset_cursors();
-	}
-
-	pub fn edit_request_url_state(&mut self) {
-		self.set_app_state(AppState::EditingRequestUrl);
-		self.update_inputs();
-	}
-
-	pub fn edit_request_param_state(&mut self) {
-		self.set_app_state(AppState::EditingRequestParam);
-		self.update_inputs();
-	}
-
-	pub fn edit_request_auth_username_state(&mut self) {
-		self.set_app_state(AppState::EditingRequestAuthBasicUsername);
-		self.update_inputs();
-	}
-
-	pub fn edit_request_auth_password_state(&mut self) {
-		self.set_app_state(AppState::EditingRequestAuthBasicPassword);
-		self.update_inputs();
-	}
-
-	pub fn edit_request_auth_bearer_token_state(&mut self) {
-		self.set_app_state(AppState::EditingRequestAuthBearerToken);
-		self.update_inputs();
-	}
-
-	pub fn edit_request_auth_jwt_secret_state(&mut self) {
-		self.set_app_state(AppState::EditingRequestAuthJwtSecret);
-		self.update_inputs();
-	}
-
-	pub fn edit_request_auth_jwt_payload_state(&mut self) {
-		self.set_app_state(AppState::EditingRequestAuthJwtPayload);
-		self.update_inputs();
-	}
-
-	pub fn edit_request_auth_digest_username_state(&mut self) {
-		self.set_app_state(AppState::EditingRequestAuthDigestUsername);
-		self.update_inputs();
-	}
-
-	pub fn edit_request_auth_digest_password_state(&mut self) {
-		self.set_app_state(AppState::EditingRequestAuthDigestPassword);
-		self.update_inputs();
-	}
-
-	pub fn edit_request_auth_digest_domains_state(&mut self) {
-		self.set_app_state(AppState::EditingRequestAuthDigestDomains);
-		self.update_inputs();
-	}
-
-	pub fn edit_request_auth_digest_realm_state(&mut self) {
-		self.set_app_state(AppState::EditingRequestAuthDigestRealm);
-		self.update_inputs();
-	}
-
-	pub fn edit_request_auth_digest_nonce_state(&mut self) {
-		self.set_app_state(AppState::EditingRequestAuthDigestNonce);
-		self.update_inputs();
-	}
-
-	pub fn edit_request_auth_digest_opaque_state(&mut self) {
-		self.set_app_state(AppState::EditingRequestAuthDigestOpaque);
-		self.update_inputs();
-	}
-
-	pub fn edit_request_header_state(&mut self) {
-		self.set_app_state(AppState::EditingRequestHeader);
-		self.update_inputs();
 	}
 
 	pub fn edit_request_body_table_state(&mut self) {

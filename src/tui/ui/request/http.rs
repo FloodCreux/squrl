@@ -2,7 +2,6 @@ use crate::app::app::App;
 use crate::app::files::theme::THEME;
 use crate::models::request::Request;
 use crate::tui::app_states::AppState;
-use crate::tui::ui::views::RequestView;
 use crate::tui::utils::stateful::text_input::SingleLineTextInput;
 use ratatui::Frame;
 use ratatui::layout::Direction::{Horizontal, Vertical};

@@ -1,11 +1,12 @@
 use crate::app::files::theme::THEME;
 use crate::models::request::KeyValue;
+use crate::tui::utils::stateful::table_navigation::TableNavigation;
 use crate::tui::utils::stateful::text_input::{SingleLineTextInput, TextInput};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Direction::{Horizontal, Vertical};
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::prelude::{Line, Modifier, StatefulWidget, Style, Stylize, Widget};
-use ratatui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph};
+use ratatui::widgets::{List, ListItem, ListState, Paragraph};
 
 pub struct StatefulCustomTable<'a> {
 	pub left_state: ListState,
@@ -55,83 +56,37 @@ impl<'a> StatefulCustomTable<'a> {
 		}
 	}
 
-	fn decrement_x(&self, i: usize) -> usize {
-		if i == 0 { self.rows.len() - 1 } else { i - 1 }
-	}
-
-	fn increment_x(&self, i: usize) -> usize {
-		if i >= self.rows.len() - 1 { 0 } else { i + 1 }
-	}
-
 	pub fn change_y(&mut self) {
-		if self.rows.is_empty() || self.selection.is_none() {
-			return;
-		}
-
-		match self.selection.unwrap() {
-			(x, 0) => self.selection = Some((x, 1)),
-			(x, 1) => self.selection = Some((x, 0)),
-			(x, _) => self.selection = Some((x, 0)),
-		}
-
-		let x = self.selection.unwrap().0;
-
-		self.right_state.select(Some(x));
-		self.left_state.select(Some(x));
-	}
-
-	pub fn up(&mut self) {
-		if self.rows.is_empty() || self.selection.is_none() {
-			return;
-		}
-
-		let x = match self.selection.unwrap() {
-			(_, 0) => match self.left_state.selected() {
-				None => 0,
-				Some(i) => self.decrement_x(i),
-			},
-			(_, 1) => match self.right_state.selected() {
-				None => 0,
-				Some(i) => self.decrement_x(i),
-			},
-			(_, _) => 0,
-		};
-
-		self.left_state.select(Some(x));
-		self.right_state.select(Some(x));
-
-		match self.selection.unwrap() {
-			(_, y) => self.selection = Some((x, y)),
-		}
-	}
-
-	pub fn down(&mut self) {
-		if self.rows.is_empty() || self.selection.is_none() {
-			return;
-		}
-
-		let x = match self.selection.unwrap() {
-			(_, 0) => match self.left_state.selected() {
-				None => 0,
-				Some(i) => self.increment_x(i),
-			},
-			(_, 1) => match self.right_state.selected() {
-				None => 0,
-				Some(i) => self.increment_x(i),
-			},
-			(_, _) => 0,
-		};
-
-		self.left_state.select(Some(x));
-		self.right_state.select(Some(x));
-
-		match self.selection.unwrap() {
-			(_, y) => self.selection = Some((x, y)),
+		self.left();
+		// Sync list states after column toggle
+		if let Some((x, _)) = self.selection {
+			self.right_state.select(Some(x));
+			self.left_state.select(Some(x));
 		}
 	}
 
 	pub fn is_selected(&self) -> bool {
-		return self.selection.is_some();
+		self.selection.is_some()
+	}
+}
+
+impl TableNavigation for StatefulCustomTable<'_> {
+	fn rows_len(&self) -> usize { self.rows.len() }
+	fn columns_count(&self) -> usize { 2 }
+	fn selection(&self) -> Option<(usize, usize)> { self.selection }
+	fn set_selection(&mut self, selection: Option<(usize, usize)>) { self.selection = selection; }
+
+	fn select_row_in_all_states(&mut self, row: usize) {
+		self.left_state.select(Some(row));
+		self.right_state.select(Some(row));
+	}
+
+	fn selected_row_in_column(&self, col: usize) -> Option<usize> {
+		match col {
+			0 => self.left_state.selected(),
+			1 => self.right_state.selected(),
+			_ => None,
+		}
 	}
 }
 

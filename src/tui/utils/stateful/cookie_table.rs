@@ -1,44 +1,8 @@
 use cookie_store::Cookie;
-use ratatui::layout::Constraint;
 use ratatui::widgets::ListState;
-use strum::{Display, FromRepr};
 
+use crate::tui::utils::stateful::table_navigation::TableNavigation;
 use crate::tui::utils::stateful::text_input::TextInput;
-
-#[derive(Display, FromRepr)]
-pub enum CookieColumns {
-	#[strum(to_string = "URL")]
-	URL,
-	#[strum(to_string = "Name")]
-	Name,
-	#[strum(to_string = "Value")]
-	Value,
-	#[strum(to_string = "Path")]
-	Path,
-	#[strum(to_string = "Expires")]
-	Expires,
-	#[strum(to_string = "Http\nonly")]
-	HttpOnly,
-	#[strum(to_string = "Secure")]
-	Secure,
-	#[strum(to_string = "Same\nsite")]
-	SameSite,
-}
-
-impl CookieColumns {
-	pub fn constraints() -> [Constraint; 8] {
-		[
-			Constraint::Percentage(10),
-			Constraint::Percentage(15),
-			Constraint::Percentage(37),
-			Constraint::Percentage(10),
-			Constraint::Percentage(10),
-			Constraint::Percentage(6),
-			Constraint::Percentage(6),
-			Constraint::Percentage(6),
-		]
-	}
-}
 
 pub const COOKIES_COLUMNS_NUMBER: usize = 8;
 
@@ -70,99 +34,20 @@ impl Default for StatefulCookieTable {
 	}
 }
 
-impl StatefulCookieTable {
-	fn decrement_x(&self, i: usize) -> usize {
-		if i == 0 { self.rows.len() - 1 } else { i - 1 }
-	}
+impl TableNavigation for StatefulCookieTable {
+	fn rows_len(&self) -> usize { self.rows.len() }
+	fn columns_count(&self) -> usize { COOKIES_COLUMNS_NUMBER }
+	fn selection(&self) -> Option<(usize, usize)> { self.selection }
+	fn set_selection(&mut self, selection: Option<(usize, usize)>) { self.selection = selection; }
 
-	fn increment_x(&self, i: usize) -> usize {
-		if i >= self.rows.len() - 1 { 0 } else { i + 1 }
-	}
-
-	fn decrement_y(&self, i: usize) -> usize {
-		if i == 0 {
-			COOKIES_COLUMNS_NUMBER - 1
-		} else {
-			i - 1
-		}
-	}
-
-	pub fn increment_y(&mut self, i: usize) -> usize {
-		if i >= COOKIES_COLUMNS_NUMBER - 1 {
-			0
-		} else {
-			i + 1
-		}
-	}
-
-	pub fn up(&mut self) {
-		if self.rows.is_empty() || self.selection.is_none() {
-			return;
-		}
-
-		let selection = self.selection.unwrap();
-
-		let x = match self.lists_states[selection.1].selected() {
-			None => 0,
-			Some(i) => self.decrement_x(i),
-		};
-
+	fn select_row_in_all_states(&mut self, row: usize) {
 		for list_state in self.lists_states.iter_mut() {
-			list_state.select(Some(x));
-		}
-
-		match self.selection.unwrap() {
-			(_, y) => self.selection = Some((x, y)),
+			list_state.select(Some(row));
 		}
 	}
 
-	pub fn down(&mut self) {
-		if self.rows.is_empty() || self.selection.is_none() {
-			return;
-		}
-
-		let selection = self.selection.unwrap();
-
-		let x = match self.lists_states[selection.1].selected() {
-			None => 0,
-			Some(i) => self.increment_x(i),
-		};
-
-		for list_state in self.lists_states.iter_mut() {
-			list_state.select(Some(x));
-		}
-
-		match self.selection.unwrap() {
-			(_, y) => self.selection = Some((x, y)),
-		}
-	}
-
-	pub fn left(&mut self) {
-		if self.rows.is_empty() || self.selection.is_none() {
-			return;
-		}
-
-		let selection = self.selection.unwrap();
-
-		let y = self.decrement_y(selection.1);
-
-		match self.selection.unwrap() {
-			(x, _) => self.selection = Some((x, y)),
-		}
-	}
-
-	pub fn right(&mut self) {
-		if self.rows.is_empty() || self.selection.is_none() {
-			return;
-		}
-
-		let selection = self.selection.unwrap();
-
-		let y = self.increment_y(selection.1);
-
-		match self.selection.unwrap() {
-			(x, _) => self.selection = Some((x, y)),
-		}
+	fn selected_row_in_column(&self, col: usize) -> Option<usize> {
+		self.lists_states[col].selected()
 	}
 }
 

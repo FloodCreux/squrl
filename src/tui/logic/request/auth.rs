@@ -11,7 +11,36 @@ use crate::models::auth::jwt::{
 use crate::tui::ui::views::RequestView;
 use tracing::info;
 
+macro_rules! define_auth_modify_handlers {
+	($(
+		$fn_name:ident, $input_field:ident, $modifier:ident
+	);* $(;)?) => {
+		$(
+			pub fn $fn_name(&mut self) {
+				let input_text = self.$input_field.to_string();
+				let idx = &self.collections_tree.selected.unwrap();
+				self.$modifier(idx.0, idx.1, input_text);
+				self.select_request_state();
+			}
+		)*
+	};
+}
+
 impl App<'_> {
+	define_auth_modify_handlers! {
+		tui_modify_request_auth_basic_username, auth_basic_username_text_input, modify_request_auth_basic_username;
+		tui_modify_request_auth_basic_password, auth_basic_password_text_input, modify_request_auth_basic_password;
+		tui_modify_request_auth_bearer_token, auth_bearer_token_text_input, modify_request_auth_bearer_token;
+		tui_modify_request_auth_jwt_secret, auth_jwt_secret_text_input, modify_request_auth_jwt_secret;
+		tui_modify_request_auth_jwt_payload, auth_jwt_payload_text_area, modify_request_auth_jwt_payload;
+		tui_modify_request_auth_digest_username, auth_digest_username_text_input, modify_request_auth_digest_username;
+		tui_modify_request_auth_digest_password, auth_digest_password_text_input, modify_request_auth_digest_password;
+		tui_modify_request_auth_digest_domains, auth_digest_domains_text_input, modify_request_auth_digest_domains;
+		tui_modify_request_auth_digest_realm, auth_digest_realm_text_input, modify_request_auth_digest_realm;
+		tui_modify_request_auth_digest_nonce, auth_digest_nonce_text_input, modify_request_auth_digest_nonce;
+		tui_modify_request_auth_digest_opaque, auth_digest_opaque_text_input, modify_request_auth_digest_opaque;
+	}
+
 	pub fn tui_next_request_auth(&mut self) {
 		let selected_request_index = &self.collections_tree.selected.unwrap();
 		let local_selected_request = self.get_request_as_local_from_indexes(selected_request_index);
@@ -58,45 +87,6 @@ impl App<'_> {
 				_ => {}
 			},
 		}
-	}
-
-	pub fn tui_modify_request_auth_basic_username(&mut self) {
-		let input_text = self.auth_basic_username_text_input.to_string();
-		let selected_request_index = &self.collections_tree.selected.unwrap();
-
-		self.modify_request_auth_basic_username(
-			selected_request_index.0,
-			selected_request_index.1,
-			input_text,
-		);
-
-		self.select_request_state();
-	}
-
-	pub fn tui_modify_request_auth_basic_password(&mut self) {
-		let input_text = self.auth_basic_password_text_input.to_string();
-		let selected_request_index = &self.collections_tree.selected.unwrap();
-
-		self.modify_request_auth_basic_password(
-			selected_request_index.0,
-			selected_request_index.1,
-			input_text,
-		);
-
-		self.select_request_state();
-	}
-
-	pub fn tui_modify_request_auth_bearer_token(&mut self) {
-		let input_text = self.auth_bearer_token_text_input.to_string();
-		let selected_request_index = &self.collections_tree.selected.unwrap();
-
-		self.modify_request_auth_bearer_token(
-			selected_request_index.0,
-			selected_request_index.1,
-			input_text,
-		);
-
-		self.select_request_state();
 	}
 
 	pub fn tui_request_auth_move_left(&mut self) {
@@ -236,110 +226,6 @@ impl App<'_> {
 		}
 
 		self.save_collection_to_file(selected_request_index.0);
-		self.select_request_state();
-	}
-
-	pub fn tui_modify_request_auth_jwt_secret(&mut self) {
-		let input_text = self.auth_jwt_secret_text_input.to_string();
-		let selected_request_index = &self.collections_tree.selected.unwrap();
-
-		self.modify_request_auth_jwt_secret(
-			selected_request_index.0,
-			selected_request_index.1,
-			input_text,
-		);
-
-		self.select_request_state();
-	}
-
-	pub fn tui_modify_request_auth_jwt_payload(&mut self) {
-		let payload = self.auth_jwt_payload_text_area.to_string();
-		let selected_request_index = &self.collections_tree.selected.unwrap();
-
-		self.modify_request_auth_jwt_payload(
-			selected_request_index.0,
-			selected_request_index.1,
-			payload,
-		);
-
-		self.select_request_state();
-	}
-
-	pub fn tui_modify_request_auth_digest_username(&mut self) {
-		let input_text = self.auth_digest_username_text_input.to_string();
-		let selected_request_index = &self.collections_tree.selected.unwrap();
-
-		self.modify_request_auth_digest_username(
-			selected_request_index.0,
-			selected_request_index.1,
-			input_text,
-		);
-
-		self.select_request_state();
-	}
-
-	pub fn tui_modify_request_auth_digest_password(&mut self) {
-		let input_text = self.auth_digest_password_text_input.to_string();
-		let selected_request_index = &self.collections_tree.selected.unwrap();
-
-		self.modify_request_auth_digest_password(
-			selected_request_index.0,
-			selected_request_index.1,
-			input_text,
-		);
-
-		self.select_request_state();
-	}
-
-	pub fn tui_modify_request_auth_digest_domains(&mut self) {
-		let input_text = self.auth_digest_domains_text_input.to_string();
-		let selected_request_index = &self.collections_tree.selected.unwrap();
-
-		self.modify_request_auth_digest_domains(
-			selected_request_index.0,
-			selected_request_index.1,
-			input_text,
-		);
-
-		self.select_request_state();
-	}
-
-	pub fn tui_modify_request_auth_digest_realm(&mut self) {
-		let input_text = self.auth_digest_realm_text_input.to_string();
-		let selected_request_index = &self.collections_tree.selected.unwrap();
-
-		self.modify_request_auth_digest_realm(
-			selected_request_index.0,
-			selected_request_index.1,
-			input_text,
-		);
-
-		self.select_request_state();
-	}
-
-	pub fn tui_modify_request_auth_digest_nonce(&mut self) {
-		let input_text = self.auth_digest_nonce_text_input.to_string();
-		let selected_request_index = &self.collections_tree.selected.unwrap();
-
-		self.modify_request_auth_digest_nonce(
-			selected_request_index.0,
-			selected_request_index.1,
-			input_text,
-		);
-
-		self.select_request_state();
-	}
-
-	pub fn tui_modify_request_auth_digest_opaque(&mut self) {
-		let input_text = self.auth_digest_opaque_text_input.to_string();
-		let selected_request_index = &self.collections_tree.selected.unwrap();
-
-		self.modify_request_auth_digest_opaque(
-			selected_request_index.0,
-			selected_request_index.1,
-			input_text,
-		);
-
 		self.select_request_state();
 	}
 
