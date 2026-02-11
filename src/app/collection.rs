@@ -27,10 +27,7 @@ pub enum RequestError {
 
 impl App<'_> {
 	pub fn new_collection(&mut self, new_collection_name: String) -> anyhow::Result<()> {
-		let new_collection_name = new_collection_name
-			.trim()
-			.replace("/", "")
-			.replace("\"", "");
+		let new_collection_name = sanitize_name(new_collection_name);
 
 		if new_collection_name.is_empty() {
 			return Err(anyhow!(CollectionNameIsEmpty));
@@ -79,7 +76,7 @@ impl App<'_> {
 		collection_index: usize,
 		mut new_request: Request,
 	) -> Result<(), RequestError> {
-		new_request.name = new_request.name.trim().replace("/", "").replace("\"", "");
+		new_request.name = sanitize_name(new_request.name);
 
 		if new_request.name.is_empty() {
 			return Err(RequestNameIsEmpty);
@@ -132,7 +129,7 @@ impl App<'_> {
 		// Check that collection names are unique (like files)
 		for collection in &self.collections {
 			if new_collection_name == collection.name {
-				return Err(anyhow!(CollectionNameIsEmpty));
+				return Err(anyhow!(CollectionNameAlreadyExists));
 			}
 		}
 
@@ -218,4 +215,8 @@ impl App<'_> {
 			self.save_collection_to_file(index);
 		}
 	}
+}
+
+fn sanitize_name(name: String) -> String {
+	name.trim().replace("/", "").replace("\"", "")
 }
