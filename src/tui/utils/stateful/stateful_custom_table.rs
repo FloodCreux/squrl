@@ -149,54 +149,22 @@ impl<'a> StatefulWidget for &'a mut StatefulCustomTable<'_> {
 				headers_paragraph.render(area, buf);
 			}
 			Some(selection) => {
-				let layout =
-					Layout::new(Vertical, [Constraint::Length(2), Constraint::Fill(1)]).split(area);
-
-				let inner_layout = Layout::new(
-					Horizontal,
-					[Constraint::Percentage(50), Constraint::Percentage(50)],
-				)
-				.split(layout[0]);
-
-				let title = Paragraph::new(self.default_key)
-					.centered()
-					.block(
-						Block::new()
-							.borders(Borders::BOTTOM | Borders::RIGHT)
-							.fg(THEME.read().ui.secondary_foreground_color),
-					)
-					.fg(THEME.read().ui.secondary_foreground_color);
-
-				let form_value = Paragraph::new(self.default_value)
-					.centered()
-					.block(
-						Block::new()
-							.borders(Borders::BOTTOM)
-							.fg(THEME.read().ui.secondary_foreground_color),
-					)
-					.fg(THEME.read().ui.secondary_foreground_color);
-
-				title.render(inner_layout[0], buf);
-				form_value.render(inner_layout[1], buf);
+				let layout = Layout::new(Vertical, [Constraint::Fill(1)]).split(area);
 
 				let horizontal_margin = 2;
 
 				let table_layout = Layout::new(
 					Horizontal,
-					[Constraint::Percentage(50), Constraint::Percentage(50)],
+					[Constraint::Percentage(25), Constraint::Percentage(75)],
 				)
 				.horizontal_margin(horizontal_margin)
-				.split(layout[1]);
+				.split(layout[0]);
 
 				let mut left_list_style = Style::default();
 				let mut right_list_style = Style::default();
 
 				match selection.1 {
-					0 => {
-						left_list_style = left_list_style
-							.add_modifier(Modifier::BOLD)
-							.fg(THEME.read().others.selection_highlight_color)
-					}
+					0 => left_list_style = left_list_style.add_modifier(Modifier::BOLD),
 					1 => {
 						right_list_style = right_list_style
 							.add_modifier(Modifier::BOLD)
@@ -228,12 +196,12 @@ impl<'a> StatefulWidget for &'a mut StatefulCustomTable<'_> {
 
 				// Form input & cursor
 
-				let cell_with = layout[1].width / 2;
+				let cell_with = layout[0].width / 2;
 
 				let width_adjustment = match selection.1 {
 					0 => 0,
 					1 => {
-						let even_odd_adjustment = match layout[1].width % 2 {
+						let even_odd_adjustment = match layout[0].width % 2 {
 							1 => 1,
 							0 => 2,
 							_ => 0,
@@ -245,15 +213,20 @@ impl<'a> StatefulWidget for &'a mut StatefulCustomTable<'_> {
 				};
 
 				let height_adjustment =
-					(selection.0 - self.left_state.offset()) as u16 % layout[1].height;
+					(selection.0 - self.left_state.offset()) as u16 % layout[0].height;
 
-				let selection_position_x = layout[1].x + width_adjustment + horizontal_margin;
-				let selection_position_y = layout[1].y + height_adjustment;
+				let selection_position_x = layout[0].x + width_adjustment + horizontal_margin;
+				let selection_position_y = layout[0].y + height_adjustment;
+
+				let separator_offset = match selection.1 {
+					1 => 2u16,
+					_ => 0,
+				};
 
 				let text_rect = Rect::new(
-					selection_position_x,
+					selection_position_x + separator_offset,
 					selection_position_y,
-					cell_with.saturating_sub(horizontal_margin),
+					cell_with.saturating_sub(horizontal_margin + separator_offset),
 					1,
 				);
 

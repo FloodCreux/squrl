@@ -4,6 +4,7 @@ use crate::models::request::KeyValue;
 use crate::tui::logic::environment::tui_add_color_to_env_keys;
 use parking_lot::RwLock;
 use ratatui::prelude::Stylize;
+use ratatui::text::Span;
 use ratatui::widgets::ListItem;
 use std::sync::Arc;
 
@@ -16,7 +17,8 @@ pub fn key_value_vec_to_items_list<'a>(
 
 	for row in rows.iter() {
 		let key = tui_add_color_to_env_keys(local_env, row.data.0.to_owned());
-		let value = tui_add_color_to_env_keys(local_env, row.data.1.to_owned());
+		let mut value = tui_add_color_to_env_keys(local_env, row.data.1.to_owned());
+		value.spans.insert(0, Span::raw("│ "));
 
 		let mut key = ListItem::from(key);
 		let mut value = ListItem::from(value);
