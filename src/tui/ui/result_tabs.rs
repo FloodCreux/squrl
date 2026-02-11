@@ -3,7 +3,7 @@ use ratatui::Frame;
 use ratatui::layout::Direction::Vertical;
 use ratatui::layout::{Constraint, Layout, Margin, Rect};
 use ratatui::prelude::{Alignment, Style};
-use ratatui::style::Stylize;
+use ratatui::style::{Color, Modifier, Stylize};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph, Scrollbar, ScrollbarOrientation, Tabs, Wrap};
 use ratatui_image::StatefulImage;
@@ -70,52 +70,7 @@ impl App<'_> {
 			],
 		};
 
-		let result_tabs: Vec<Span> = allowed_tabs
-			.iter()
-			.filter_map(|tab| {
-				let text = match tab {
-					RequestResultTabs::Body => {
-						if let Some(duration) = &request.response.duration {
-							Some(format!("{} ({})", tab.to_string(), duration))
-						} else {
-							Some(format!("{}", tab.to_string()))
-						}
-					}
-					RequestResultTabs::Messages => {
-						let ws_request = request.get_ws_request().unwrap();
-
-						if !ws_request.messages.is_empty() {
-							Some(format!(
-								"{} ({})",
-								tab.to_string(),
-								ws_request.messages.len()
-							))
-						} else {
-							Some(format!("{}", tab.to_string()))
-						}
-					}
-					RequestResultTabs::Cookies | RequestResultTabs::Headers => {
-						Some(tab.to_string())
-					}
-					RequestResultTabs::Console => {
-						match (
-							&request.console_output.pre_request_output,
-							&request.console_output.post_request_output,
-						) {
-							(None, None) => None,
-							(_, _) => Some(tab.to_string()),
-						}
-					}
-				};
-
-				match text {
-					Some(text) => Some(Span::raw(text).fg(THEME.read().ui.font_color)),
-					None => None,
-				}
-			})
-			.collect();
-
-		let selected_result_tab_index = match &request.protocol {
+		let selected_request_tab_index = match &request.protocol {
 			Protocol::HttpRequest(_) => match self.request_result_tab {
 				RequestResultTabs::Body => 0,
 				RequestResultTabs::Cookies => 1,
@@ -132,14 +87,49 @@ impl App<'_> {
 			},
 		};
 
-		let result_tabs = Tabs::new(result_tabs)
-			.highlight_style(THEME.read().others.selection_highlight_color)
-			.select(selected_result_tab_index)
-			.block(
-				Block::new()
-					.borders(Borders::BOTTOM)
-					.fg(THEME.read().ui.main_foreground_color),
-			);
+		let tab_texts: Vec<String> = allowed_tabs
+			.iter()
+			.map(|tab| match tab {
+				RequestResultTabs::Body => tab.to_string().to_uppercase(),
+				RequestResultTabs::Messages => tab.to_string().to_uppercase(),
+				RequestResultTabs::Cookies | RequestResultTabs::Headers => {
+					tab.to_string().to_uppercase()
+				}
+				RequestResultTabs::Console => tab.to_string().to_uppercase(),
+			})
+			.collect();
+
+		let max_tab_width = tab_texts.iter().map(|t| t.len()).max().unwrap_or(0) + 4;
+
+		let result_tabs = tab_texts.iter().enumerate().map(|(index, text)| {
+			if index == selected_request_tab_index {
+				let inner_width = max_tab_width - 2; // total width minus "[" and "]"
+				let padded = format!("{:^inner_width$}", text);
+
+				Line::from(vec![
+					Span::raw("[")
+						.style(Modifier::BOLD)
+						.fg(THEME.read().ui.font_color)
+						.bg(Color::Reset),
+					Span::raw(padded)
+						.fg(THEME.read().ui.main_background_color)
+						.bg(THEME.read().ui.font_color),
+					Span::raw("]")
+						.style(Modifier::BOLD)
+						.fg(THEME.read().ui.font_color)
+						.bg(Color::Reset),
+				])
+			} else {
+				let padded = format!("{:^max_tab_width$}", text);
+				Line::from(padded).fg(THEME.read().ui.font_color)
+			}
+		});
+
+		let result_tabs = Tabs::new(result_tabs).select(None::<usize>).block(
+			Block::new()
+				.borders(Borders::BOTTOM)
+				.fg(THEME.read().ui.main_foreground_color),
+		);
 
 		frame.render_widget(result_tabs, request_result_layout[0]);
 
