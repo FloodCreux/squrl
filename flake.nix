@@ -9,20 +9,33 @@
     };
   };
 
-  outputs = { self, nixpkgs, rust-overlay }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      rust-overlay,
+    }:
     let
-      supportedSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
+      supportedSystems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "x86_64-darwin"
+        "aarch64-darwin"
+      ];
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
 
-      pkgsFor = system: import nixpkgs {
-        inherit system;
-        overlays = [ rust-overlay.overlays.default ];
-      };
+      pkgsFor =
+        system:
+        import nixpkgs {
+          inherit system;
+          overlays = [ rust-overlay.overlays.default ];
+        };
 
       rustToolchainFor = system: (pkgsFor system).rust-bin.nightly.latest.default;
     in
     {
-      packages = forAllSystems (system:
+      packages = forAllSystems (
+        system:
         let
           pkgs = pkgsFor system;
           rustToolchain = rustToolchainFor system;
@@ -39,41 +52,57 @@
               cmake
             ];
 
-            buildInputs = with pkgs; [
-              openssl
-            ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
-              pkgs.darwin.apple_sdk.frameworks.AppKit
-              pkgs.darwin.apple_sdk.frameworks.Security
-              pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
-            ];
+            buildInputs =
+              with pkgs;
+              [
+                openssl
+              ]
+              ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
+                pkgs.darwin.apple_sdk.frameworks.AppKit
+                pkgs.darwin.apple_sdk.frameworks.Security
+                pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+              ];
 
             env.OPENSSL_NO_VENDOR = 1;
           };
         }
       );
 
-      devShells = forAllSystems (system:
+      devShells = forAllSystems (
+        system:
         let
           pkgs = pkgsFor system;
           rustToolchain = (pkgsFor system).rust-bin.nightly.latest.default.override {
-            extensions = [ "rust-src" "rust-analyzer" "clippy" ];
+            extensions = [
+              "rust-src"
+              "rust-analyzer"
+              "clippy"
+            ];
           };
         in
         {
           default = pkgs.mkShell {
-            buildInputs = with pkgs; [
-              rustToolchain
-              pkg-config
-              cmake
-              openssl
-              just
-            ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
-              pkgs.darwin.apple_sdk.frameworks.AppKit
-              pkgs.darwin.apple_sdk.frameworks.Security
-              pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
-            ];
+            buildInputs =
+              with pkgs;
+              [
+                rustToolchain
+                pkg-config
+                cmake
+                openssl
+                just
+                pre-commit
+              ]
+              ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
+                pkgs.darwin.apple_sdk.frameworks.AppKit
+                pkgs.darwin.apple_sdk.frameworks.Security
+                pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+              ];
 
             env.OPENSSL_NO_VENDOR = 1;
+
+            shellHook = ''
+              echo "Run 'pre-commit install' to set up git hooks"
+            '';
           };
         }
       );

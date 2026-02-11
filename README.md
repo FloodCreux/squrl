@@ -172,6 +172,29 @@ just uninstall      # Remove all installed files
 
 Run `just` to see all available commands.
 
+### Pre-commit hooks
+
+This project uses [pre-commit](https://pre-commit.com/) to run checks before each commit. The hooks include formatting checks, linting, and validation.
+
+To set up pre-commit:
+
+```sh
+# Install pre-commit (choose one)
+pip install pre-commit
+# or
+brew install pre-commit
+# or via nix develop (included in devShell)
+
+# Install the git hooks
+pre-commit install
+```
+
+To run hooks manually on all files:
+
+```sh
+pre-commit run --all-files
+```
+
 ## License
 
 [MIT](LICENSE)
