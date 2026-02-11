@@ -51,6 +51,43 @@ setup-hooks:
 clean:
     cargo clean
 
+# ============================================================================
+# Security
+# ============================================================================
+
+# Run cargo-audit to check for known vulnerabilities
+audit:
+    cargo audit
+
+# Run cargo-deny to check advisories, licenses, and bans
+deny:
+    cargo deny check
+
+# Run all security checks
+security: audit deny
+
+# ============================================================================
+# Code Coverage
+# ============================================================================
+
+# Run tests with coverage using cargo-llvm-cov
+coverage:
+    cargo llvm-cov --all-features
+
+# Run tests with coverage and generate HTML report
+coverage-html:
+    cargo llvm-cov --all-features --html
+    @echo "Coverage report generated at target/llvm-cov/html/index.html"
+
+# Run tests with coverage and generate lcov report (for CI integration)
+coverage-lcov:
+    cargo llvm-cov --all-features --lcov --output-path target/llvm-cov/lcov.info
+    @echo "LCOV report generated at target/llvm-cov/lcov.info"
+
+# Run tests with coverage and open HTML report in browser
+coverage-open:
+    cargo llvm-cov --all-features --open
+
 # Set install prefix
 PREFIX := env("PREFIX", home_directory() / ".local")
 

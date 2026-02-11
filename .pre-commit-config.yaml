@@ -19,3 +19,10 @@ repos:
       - id: cargo-check
       - id: clippy
         args: ["--", "-D", "warnings"]
+
+  # Security scanning with cargo-deny
+  - repo: https://github.com/EmbarkStudios/cargo-deny
+    rev: 0.16.2
+    hooks:
+      - id: cargo-deny
+        args: ["check"]

@@ -77,6 +77,7 @@
               "rust-src"
               "rust-analyzer"
               "clippy"
+              "llvm-tools-preview"
             ];
           };
         in
@@ -91,6 +92,11 @@
                 openssl
                 just
                 pre-commit
+                # Security scanning
+                cargo-audit
+                cargo-deny
+                # Code coverage
+                cargo-llvm-cov
               ]
               ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
                 pkgs.darwin.apple_sdk.frameworks.AppKit
