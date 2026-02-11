@@ -8,7 +8,6 @@ use std::{env, fs};
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
 use parking_lot::RwLock;
-use rayon::prelude::*;
 use snailquote::unescape;
 use tracing::{info, trace, warn};
 
@@ -84,17 +83,14 @@ fn parse_line(entry: &[u8]) -> Option<(String, String)> {
 
 		let vline = line.as_bytes();
 
-		vline
-			.par_iter()
-			.position_first(|&x| x == b'=')
-			.and_then(|pos| {
-				from_utf8(&vline[..pos]).ok().and_then(|x| {
-					from_utf8(&vline[pos + 1..]).ok().and_then(|right| {
-						// The right hand side value can be a quoted string
-						unescape(right).ok().map(|y| (x.to_owned(), y))
-					})
+		vline.iter().position(|&x| x == b'=').and_then(|pos| {
+			from_utf8(&vline[..pos]).ok().and_then(|x| {
+				from_utf8(&vline[pos + 1..]).ok().and_then(|right| {
+					// The right hand side value can be a quoted string
+					unescape(right).ok().map(|y| (x.to_owned(), y))
 				})
 			})
+		})
 	})
 }
 
@@ -124,7 +120,6 @@ pub fn save_environment_to_file(environment: &Environment) {
 	let mut data: String = environment
 		.values
 		.iter()
-		.par_bridge()
 		.map(|(key, value)| format!("{key}={value}\n"))
 		.collect();
 

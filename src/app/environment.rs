@@ -2,7 +2,6 @@ use anyhow::anyhow;
 use chrono::Utc;
 use indexmap::map::MutableKeys;
 use parking_lot::RwLock;
-use rayon::prelude::*;
 use std::sync::Arc;
 use thiserror::Error;
 use tracing::{info, trace};
@@ -47,8 +46,8 @@ impl App<'_> {
 
 		let result = self
 			.environments
-			.par_iter()
-			.position_first(|environment| environment.read().name == environment_name);
+			.iter()
+			.position(|environment| environment.read().name == environment_name);
 
 		match result {
 			None => {

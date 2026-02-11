@@ -1,6 +1,5 @@
 use anyhow::anyhow;
 use ratatui::prelude::Stylize;
-use rayon::prelude::*;
 use thiserror::Error;
 use tracing::trace;
 
@@ -17,8 +16,8 @@ pub fn find_key(key_value_array: &Vec<KeyValue>, key: &str) -> anyhow::Result<us
 	trace!("Trying to find key \"{}\"", key);
 
 	let result = key_value_array
-		.par_iter()
-		.position_first(|key_value| key_value.data.0 == key);
+		.iter()
+		.position(|key_value| key_value.data.0 == key);
 
 	match result {
 		None => {
