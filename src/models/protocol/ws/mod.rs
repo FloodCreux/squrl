@@ -1,2 +1,2 @@
-pub mod message_type;
-pub mod ws;
+pub(crate) mod message_type;
+pub(crate) mod ws;

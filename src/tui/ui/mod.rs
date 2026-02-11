@@ -1,9 +1,9 @@
-pub mod collection;
-pub mod environments;
+pub(crate) mod collection;
+pub(crate) mod environments;
 mod homepage;
-pub mod param_tabs;
+pub(crate) mod param_tabs;
 mod popups;
 mod request;
-pub mod result_tabs;
-pub mod ui;
-pub mod views;
+pub(crate) mod result_tabs;
+pub(crate) mod ui;
+pub(crate) mod views;

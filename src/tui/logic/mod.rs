@@ -1,8 +1,8 @@
-pub mod change_app_state;
-pub mod collection;
-pub mod environment;
-pub mod inputs;
-pub mod param_tabs;
-pub mod request;
-pub mod result_tabs;
-pub mod utils;
+pub(crate) mod change_app_state;
+pub(crate) mod collection;
+pub(crate) mod environment;
+pub(crate) mod inputs;
+pub(crate) mod param_tabs;
+pub(crate) mod request;
+pub(crate) mod result_tabs;
+pub(crate) mod utils;

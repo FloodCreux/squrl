@@ -1,5 +1,5 @@
-pub mod auth;
-pub mod basic;
-pub mod bearer_token;
-pub mod digest;
-pub mod jwt;
+pub(crate) mod auth;
+pub(crate) mod basic;
+pub(crate) mod bearer_token;
+pub(crate) mod digest;
+pub(crate) mod jwt;

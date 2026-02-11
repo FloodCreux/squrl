@@ -1,6 +1,6 @@
-pub mod collection;
-pub mod config;
-pub mod environment;
-pub mod key_bindings;
-pub mod theme;
-pub mod utils;
+pub(crate) mod collection;
+pub(crate) mod config;
+pub(crate) mod environment;
+pub(crate) mod key_bindings;
+pub(crate) mod theme;
+pub(crate) mod utils;

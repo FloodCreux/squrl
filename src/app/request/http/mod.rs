@@ -1,3 +1,3 @@
-pub mod body;
-pub mod method;
+pub(crate) mod body;
+pub(crate) mod method;
 pub mod send;

@@ -1,6 +1,6 @@
-pub mod collection;
-pub mod completions;
-pub mod env;
-pub mod import;
-pub mod man;
-pub mod request;
+pub(crate) mod collection;
+pub(crate) mod completions;
+pub(crate) mod env;
+pub(crate) mod import;
+pub(crate) mod man;
+pub(crate) mod request;

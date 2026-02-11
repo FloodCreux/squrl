@@ -1,2 +1,2 @@
-pub mod arguments_validators;
-pub mod collection;
+pub(crate) mod arguments_validators;
+pub(crate) mod collection;

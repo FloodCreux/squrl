@@ -1,7 +1,7 @@
-pub mod app_states;
-pub mod event_key_bindings;
-pub mod events;
-pub mod logic;
-pub mod macros;
-pub mod ui;
-pub mod utils;
+pub(crate) mod app_states;
+pub(crate) mod event_key_bindings;
+pub(crate) mod events;
+pub(crate) mod logic;
+pub(crate) mod macros;
+pub(crate) mod ui;
+pub(crate) mod utils;

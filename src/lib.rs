@@ -1,5 +1,5 @@
 pub mod app;
-pub mod cli;
-pub mod errors;
+pub(crate) mod cli;
+pub(crate) mod errors;
 pub mod models;
-pub mod tui;
+pub(crate) mod tui;

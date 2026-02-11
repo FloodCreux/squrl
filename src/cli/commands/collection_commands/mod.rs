@@ -1,1 +1,1 @@
-pub mod collection_commands;
+pub(crate) mod collection_commands;

@@ -1,9 +1,9 @@
-pub mod auth;
-pub mod collection;
+pub(crate) mod auth;
+pub(crate) mod collection;
 pub mod environment;
-pub mod export;
-pub mod protocol;
+pub(crate) mod export;
+pub(crate) mod protocol;
 pub mod request;
 pub mod response;
-pub mod scripts;
+pub(crate) mod scripts;
 pub mod settings;

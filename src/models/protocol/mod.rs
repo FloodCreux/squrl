@@ -1,3 +1,3 @@
-pub mod http;
-pub mod protocol;
-pub mod ws;
+pub(crate) mod http;
+pub(crate) mod protocol;
+pub(crate) mod ws;
