@@ -90,7 +90,17 @@ impl App<'_> {
 		frame.render_widget(params_block, request_layout[2]);
 		self.render_request_params(frame, request_params_area, &request);
 
-		let result_block = Block::new().fg(THEME.read().ui.main_foreground_color);
+		let result_block = Block::default()
+			.title(" RESPONSE ")
+			.title_alignment(Alignment::Left)
+			.borders(Borders::ALL)
+			.border_set(border::Set {
+				vertical_left: " ",
+				vertical_right: " ",
+				..border::PLAIN
+			})
+			.fg(THEME.read().ui.font_color);
+
 		let result_block_area = result_block.inner(layout[1]);
 
 		frame.render_widget(result_block, layout[1]);
