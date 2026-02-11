@@ -115,9 +115,10 @@ impl App<'_> {
 
 		let collections_length = collections.len();
 
+		let start_index = self.collections.len();
 		self.collections.extend(collections);
 
-		for collection_index in 0..collections_length {
+		for collection_index in start_index..start_index + collections_length {
 			self.save_collection_to_file(collection_index);
 		}
 
