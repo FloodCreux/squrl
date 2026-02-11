@@ -19,8 +19,24 @@ A terminal HTTP client built with Rust, powered by [ratatui](https://github.com/
 
 ## Installation
 
+### Pre-built binary (recommended)
+
 ```sh
-cargo install --path .
+curl -fsSL https://codeberg.org/flood-mike/squrl/raw/branch/main/curl-install.sh | sh
+```
+
+### Build from source
+
+```sh
+git clone https://codeberg.org/flood-mike/squrl.git
+cd squrl
+./install.sh
+```
+
+### Using just
+
+```sh
+just install
 ```
 
 ## Usage
@@ -150,6 +166,8 @@ just lint           # Run clippy lints
 just fmt            # Format code
 just fmt-check      # Check formatting
 just clean          # Clean build artifacts
+just install        # Install binary, completions, and man page
+just uninstall      # Remove all installed files
 ```
 
 Run `just` to see all available commands.

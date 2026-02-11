@@ -1,5 +1,5 @@
-### Get Health
-GET https://phare-share-dev.privatelink.eastus2.azmk8s.io/api/v1/health
+### List Users
+GET https://jsonplaceholder.typicode.com/users
 
 ### Get User by ID
 GET https://jsonplaceholder.typicode.com/users/1
