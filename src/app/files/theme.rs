@@ -11,6 +11,7 @@ use tracing::{trace, warn};
 
 use crate::app::app::App;
 use crate::app::files::utils::expand_tilde;
+use crate::cli::args::ARGS;
 use crate::errors::panic_error;
 
 nest! {
@@ -155,11 +156,21 @@ lazy_static! {
 impl App<'_> {
 	pub fn parse_theme_file(&mut self) {
 		let path = match env::var("SQURL_THEME") {
-			// If the ATAC_THEME environment variable exists
+			// If the SQURL_THEME environment variable exists
 			Ok(env_theme) => expand_tilde(PathBuf::from(env_theme)),
 			Err(_) => {
-				warn!("No theme file found, using default");
-				return;
+				let default_path = ARGS
+					.user_config_directory
+					.as_ref()
+					.map(|dir| dir.join("theme.toml"));
+
+				match default_path {
+					Some(p) if p.exists() => p,
+					_ => {
+						warn!("No theme file found, using default");
+						return;
+					}
+				}
 			}
 		};
 

@@ -13,17 +13,20 @@ use tracing::{trace, warn};
 
 use crate::app::app::App;
 use crate::app::files::utils::expand_tilde;
+use crate::cli::args::ARGS;
 use crate::errors::panic_error;
 
 #[derive(Default, Copy, Clone, Deserialize)]
+#[serde(default)]
 pub struct KeyBindingsConfig {
 	pub keybindings: KeyBindings,
 }
 
 nest! {
 	#[derive(Copy, Clone, Deserialize)]
+	#[serde(default)]
 	pub struct KeyBindings {
-		pub main_menu: #[derive(Copy, Clone, Deserialize)] pub struct MainMenu {
+		pub main_menu: #[derive(Copy, Clone, Deserialize)] #[serde(default)] pub struct MainMenu {
 			/// ctrl-c is implemented by default
 			pub exit: KeyCombination,
 
@@ -40,10 +43,10 @@ nest! {
 			pub display_logs: KeyCombination,
 		},
 
-		pub generic: #[derive(Copy, Clone, Deserialize)] pub struct Generic {
+		pub generic: #[derive(Copy, Clone, Deserialize)] #[serde(default)] pub struct Generic {
 			pub display_help: KeyCombination,
 
-			pub text_input: #[derive(Copy, Clone, Deserialize)] pub struct TextInput {
+			pub text_input: #[derive(Copy, Clone, Deserialize)] #[serde(default)] pub struct TextInput {
 				pub quit_without_saving: KeyCombination,
 				pub save_and_quit_single_line: KeyCombination,
 				pub save_and_quit_area: KeyCombination,
@@ -60,7 +63,7 @@ nest! {
 			},
 
 			/// Navigation in tables, popups, up and down in the collections list
-			pub navigation: #[derive(Copy, Clone, Deserialize)] pub struct Navigation {
+			pub navigation: #[derive(Copy, Clone, Deserialize)] #[serde(default)] pub struct Navigation {
 				pub move_cursor_up: KeyCombination,
 				pub move_cursor_down: KeyCombination,
 				pub move_cursor_left: KeyCombination,
@@ -77,7 +80,7 @@ nest! {
 				pub select: KeyCombination,
 			},
 
-			pub list_and_table_actions: #[derive(Copy, Clone, Deserialize)] pub struct ListAndTableActions {
+			pub list_and_table_actions: #[derive(Copy, Clone, Deserialize)] #[serde(default)] pub struct ListAndTableActions {
 				pub create_element: KeyCombination,
 				pub delete_element: KeyCombination,
 				pub edit_element: KeyCombination,
@@ -89,7 +92,7 @@ nest! {
 			}
 		},
 
-		pub request_selected: #[derive(Copy, Clone, Deserialize)] pub struct RequestSelected {
+		pub request_selected: #[derive(Copy, Clone, Deserialize)] #[serde(default)] pub struct RequestSelected {
 			pub param_next_tab: KeyCombination,
 			pub change_url: KeyCombination,
 			pub change_method: KeyCombination,
@@ -101,13 +104,13 @@ nest! {
 			pub send_request: KeyCombination,
 			pub alt_send_request: KeyCombination,
 
-			pub param_tabs: #[derive(Copy, Clone, Deserialize)] pub struct ParamTabs {
+			pub param_tabs: #[derive(Copy, Clone, Deserialize)] #[serde(default)] pub struct ParamTabs {
 				pub change_auth_method: KeyCombination,
 				pub change_body_content_type: KeyCombination,
 				pub change_message_type: KeyCombination,
 			},
 
-			pub result_tabs: #[derive(Copy, Clone, Deserialize)] pub struct ResultTabs {
+			pub result_tabs: #[derive(Copy, Clone, Deserialize)] #[serde(default)] pub struct ResultTabs {
 				pub scroll_up: KeyCombination,
 				pub scroll_down: KeyCombination,
 				pub scroll_left: KeyCombination,
@@ -154,91 +157,141 @@ pub struct CustomTextArea {
 	pub move_cursor_line_end: KeyCombination,
 }
 
+impl Default for MainMenu {
+	fn default() -> Self {
+		MainMenu {
+			exit: key!(q),
+
+			expand_collection: key!(right),
+			unselect_request: key!(left),
+
+			move_request_up: key!(ctrl - up),
+			move_request_down: key!(ctrl - down),
+
+			next_environment: key!(e),
+
+			display_env_editor: key!(ctrl - e),
+			display_cookies: key!(c),
+			display_logs: key!(l),
+		}
+	}
+}
+
+impl Default for Generic {
+	fn default() -> Self {
+		Generic {
+			display_help: key!(Ctrl - h),
+			text_input: TextInput::default(),
+			navigation: Navigation::default(),
+			list_and_table_actions: ListAndTableActions::default(),
+		}
+	}
+}
+
+impl Default for TextInput {
+	fn default() -> Self {
+		TextInput {
+			quit_without_saving: key!(esc),
+			save_and_quit_single_line: key!(enter),
+			save_and_quit_area: key!(ctrl - s),
+			mode: TextAreaMode::Default,
+		}
+	}
+}
+
+impl Default for TextAreaMode {
+	fn default() -> Self {
+		TextAreaMode::Default
+	}
+}
+
+impl Default for Navigation {
+	fn default() -> Self {
+		Navigation {
+			move_cursor_up: key!(up),
+			move_cursor_down: key!(down),
+			move_cursor_left: key!(left),
+			move_cursor_right: key!(right),
+
+			alt_move_cursor_up: key!(Up),
+			alt_move_cursor_down: key!(Down),
+			alt_move_cursor_left: key!(Left),
+			alt_move_cursor_right: key!(Right),
+
+			go_back: key!(esc),
+			select: key!(enter),
+		}
+	}
+}
+
+impl Default for ListAndTableActions {
+	fn default() -> Self {
+		ListAndTableActions {
+			create_element: key!(n),
+			delete_element: key!(d),
+			edit_element: key!(enter),
+			rename_element: key!(r),
+			toggle_element: key!(t),
+			duplicate_element: key!(ctrl - d),
+		}
+	}
+}
+
+impl Default for RequestSelected {
+	fn default() -> Self {
+		RequestSelected {
+			param_next_tab: key!(tab),
+
+			change_url: key!(u),
+			change_method: key!(m),
+
+			request_settings: key!(s),
+			export_request: key!(shift - E),
+
+			next_view: key!(v),
+
+			// Used to be ctrl + enter, but it doesn't register right on many platforms
+			// https://github.com/crossterm-rs/crossterm/issues/685
+			send_request: key!(space),
+			alt_send_request: key!(ctrl - enter),
+
+			param_tabs: ParamTabs::default(),
+			result_tabs: ResultTabs::default(),
+		}
+	}
+}
+
+impl Default for ParamTabs {
+	fn default() -> Self {
+		ParamTabs {
+			change_auth_method: key!(ctrl - a),
+			change_body_content_type: key!(ctrl - b),
+			change_message_type: key!(ctrl - m),
+		}
+	}
+}
+
+impl Default for ResultTabs {
+	fn default() -> Self {
+		ResultTabs {
+			scroll_up: key!(ctrl - up),
+			scroll_down: key!(ctrl - down),
+			scroll_left: key!(ctrl - left),
+			scroll_right: key!(ctrl - right),
+
+			yank_response_part: key!(y),
+
+			result_next_tab: key!(shift - backtab),
+		}
+	}
+}
+
 impl Default for KeyBindings {
 	fn default() -> Self {
 		KeyBindings {
-			main_menu: MainMenu {
-				exit: key!(q),
-
-				expand_collection: key!(right),
-				unselect_request: key!(left),
-
-				move_request_up: key!(ctrl - up),
-				move_request_down: key!(ctrl - down),
-
-				next_environment: key!(e),
-
-				display_env_editor: key!(ctrl - e),
-				display_cookies: key!(c),
-				display_logs: key!(l),
-			},
-
-			generic: Generic {
-				display_help: key!(Ctrl - h),
-
-				text_input: TextInput {
-					quit_without_saving: key!(esc),
-					save_and_quit_single_line: key!(enter),
-					save_and_quit_area: key!(ctrl - s),
-					mode: TextAreaMode::Default,
-				},
-
-				navigation: Navigation {
-					move_cursor_up: key!(up),
-					move_cursor_down: key!(down),
-					move_cursor_left: key!(left),
-					move_cursor_right: key!(right),
-
-					alt_move_cursor_up: key!(Up),
-					alt_move_cursor_down: key!(Down),
-					alt_move_cursor_left: key!(Left),
-					alt_move_cursor_right: key!(Right),
-
-					go_back: key!(esc),
-					select: key!(enter),
-				},
-				list_and_table_actions: ListAndTableActions {
-					create_element: key!(n),
-					delete_element: key!(d),
-					edit_element: key!(enter),
-					rename_element: key!(r),
-					toggle_element: key!(t),
-					duplicate_element: key!(ctrl - d),
-				},
-			},
-
-			request_selected: RequestSelected {
-				param_next_tab: key!(tab),
-
-				change_url: key!(u),
-				change_method: key!(m),
-
-				request_settings: key!(s),
-				export_request: key!(shift - E),
-
-				next_view: key!(v),
-
-				// Used to be ctrl + enter, but it doesn't register right on many platforms
-				// https://github.com/crossterm-rs/crossterm/issues/685
-				send_request: key!(space),
-				alt_send_request: key!(ctrl - enter),
-
-				param_tabs: ParamTabs {
-					change_auth_method: key!(ctrl - a),
-					change_body_content_type: key!(ctrl - b),
-					change_message_type: key!(ctrl - m),
-				},
-				result_tabs: ResultTabs {
-					scroll_up: key!(ctrl - up),
-					scroll_down: key!(ctrl - down),
-					scroll_left: key!(ctrl - left),
-					scroll_right: key!(ctrl - right),
-
-					yank_response_part: key!(y),
-
-					result_next_tab: key!(shift - backtab),
-				},
-			},
+			main_menu: MainMenu::default(),
+			generic: Generic::default(),
+			request_selected: RequestSelected::default(),
 		}
 	}
 }
@@ -276,12 +329,22 @@ impl Default for CustomTextArea {
 
 impl App<'_> {
 	pub fn parse_key_bindings_file(&mut self) {
-		let path = match env::var("ATAC_KEY_BINDINGS") {
-			// If the ATAC_KEY_BINDINGS environment variable exists
+		let path = match env::var("SQURL_KEY_BINDINGS") {
+			// If the SQURL_KEY_BINDINGS environment variable exists
 			Ok(env_key_bindings) => expand_tilde(PathBuf::from(env_key_bindings)),
 			Err(_) => {
-				warn!("No key bindings file found, using default");
-				return;
+				let default_path = ARGS
+					.user_config_directory
+					.as_ref()
+					.map(|dir| dir.join("keybindings.toml"));
+
+				match default_path {
+					Some(p) if p.exists() => p,
+					_ => {
+						warn!("No key bindings file found, using default");
+						return;
+					}
+				}
 			}
 		};
 

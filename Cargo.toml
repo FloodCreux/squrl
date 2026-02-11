@@ -32,7 +32,7 @@ cookie_store = "0.22.0"
 ratatui = { version = "0.30.0", features = ["serde"] }
 ## Used to parse, use key bindings files and some utilities
 crokey = "1.4.0"
-## Display big texts. Only used for displaying ATAC in the homepage.
+## Display big texts. Only used for displaying SQURL in the homepage.
 tui-big-text = "0.8.2"
 ## Display tree-like lists. Used for displaying the collections.
 tui-tree-widget = { version = "0.24.0" }

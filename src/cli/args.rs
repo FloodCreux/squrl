@@ -13,7 +13,7 @@ use crate::errors::panic_error;
 use clap::builder::Styles;
 use clap::{Parser, Subcommand};
 use clap_verbosity_flag::Verbosity;
-use directories::ProjectDirs;
+use directories::{ProjectDirs, UserDirs};
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -121,6 +121,7 @@ lazy_static! {
 		let args = Args::parse();
 
 		let config_directory = get_app_config_dir();
+		let user_config_directory = get_user_config_dir();
 
 		let (directory, should_parse_directory) = match &args.command {
 			// CLI
@@ -139,6 +140,7 @@ lazy_static! {
 		GlobalArgs {
 			directory,
 			config_directory,
+			user_config_directory,
 			command: args.command,
 			collection_filter: args.filter,
 			// should_run_tui: args.tui,
@@ -151,7 +153,7 @@ lazy_static! {
 }
 
 fn get_app_config_dir() -> Option<PathBuf> {
-	let project_directory = ProjectDirs::from("com", "FloodCreux", "SQURL");
+	let project_directory = ProjectDirs::from("com", "flood-creux", "squrl");
 
 	let config_directory = match project_directory {
 		Some(project_directory) => {
@@ -171,6 +173,16 @@ fn get_app_config_dir() -> Option<PathBuf> {
 	};
 
 	config_directory
+}
+
+fn get_user_config_dir() -> Option<PathBuf> {
+	let home = UserDirs::new()?.home_dir().to_path_buf();
+	let dir = home.join(".config").join("squrl");
+	if !dir.exists() {
+		fs::create_dir_all(&dir).ok();
+	}
+
+	Some(dir)
 }
 
 fn choose_app_directory(path_buf: Option<PathBuf>, config_directory: &Option<PathBuf>) -> PathBuf {
@@ -196,6 +208,7 @@ fn choose_app_directory(path_buf: Option<PathBuf>, config_directory: &Option<Pat
 pub struct GlobalArgs {
 	pub directory: Option<PathBuf>,
 	pub config_directory: Option<PathBuf>,
+	pub user_config_directory: Option<PathBuf>,
 	pub command: Option<Command>,
 	pub collection_filter: Option<Regex>,
 	// pub should_run_tui: bool,

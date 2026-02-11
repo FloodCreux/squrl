@@ -89,10 +89,10 @@ impl<'a> App<'a> {
 			if file_name.starts_with(".env.") {
 				self.add_environment_from_file(&path);
 				continue;
-			} else if file_name == "atac.toml" {
+			} else if file_name == "squrl.toml" {
 				self.parse_config_file(&path);
 				continue;
-			} else if file_name == "atac.log" {
+			} else if file_name == "squrl.log" {
 				trace!("Log file is not parsable");
 				continue;
 			}
@@ -120,6 +120,15 @@ impl<'a> App<'a> {
 			}
 		}
 
+		if let Some(user_config_dir) = &ARGS.user_config_directory {
+			if ARGS.config_directory.as_ref() != Some(user_config_dir) {
+				let user_global_config_path = user_config_dir.join("global.toml");
+				if user_global_config_path.exists() {
+					self.parse_global_config_file(&user_global_config_path);
+				}
+			}
+		}
+
 		// Ensures that legacy collections and requests gets save as their new version
 		if ARGS.should_save {
 			for index in 0..self.collections.len() {
@@ -135,7 +144,7 @@ impl<'a> App<'a> {
 	}
 
 	fn create_log_file(&mut self) -> File {
-		let path = ARGS.directory.as_ref().unwrap().join("atac.log");
+		let path = ARGS.directory.as_ref().unwrap().join("squrl.log");
 
 		let log_file = match OpenOptions::new()
 			.write(true)

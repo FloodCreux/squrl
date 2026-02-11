@@ -107,7 +107,7 @@ squrl --dry-run           # Test without saving changes
 
 ## Configuration
 
-squrl reads its config from `atac.toml` in the working directory:
+squrl reads its config from `squrl.toml` in the working directory:
 
 ```toml
 disable_syntax_highlighting = false

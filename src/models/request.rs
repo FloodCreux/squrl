@@ -94,7 +94,7 @@ lazy_static! {
 			enabled: true,
 			data: (
 				String::from("user-agent"),
-				format!("ATAC/v{}", env!("CARGO_PKG_VERSION"))
+				format!("SQURL/v{}", env!("CARGO_PKG_VERSION"))
 			),
 		},
 		KeyValue {
