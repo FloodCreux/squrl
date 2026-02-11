@@ -31,83 +31,57 @@ impl App<'_> {
 		&mut self,
 		collection_index: usize,
 		request_index: usize,
-		basic_auth_username: String,
+		username: String,
 	) {
-		let local_selected_request =
-			self.get_request_as_local_from_indexes(&(collection_index, request_index));
-
-		{
-			let mut selected_request = local_selected_request.write();
-
-			info!("Auth basic username set to \"{}\"", basic_auth_username);
-
-			match &selected_request.auth {
-				Auth::BasicAuth(BasicAuth { password, .. }) => {
-					selected_request.auth = Auth::BasicAuth(BasicAuth {
-						username: basic_auth_username,
-						password: password.to_string(),
-					});
+		self.modify_auth_field(
+			collection_index,
+			request_index,
+			"basic username",
+			&username,
+			|auth| {
+				if let Auth::BasicAuth(basic) = auth {
+					basic.username = username.clone();
 				}
-				_ => {}
-			}
-		}
-
-		self.save_collection_to_file(collection_index);
+			},
+		);
 	}
 
 	pub fn modify_request_auth_basic_password(
 		&mut self,
 		collection_index: usize,
 		request_index: usize,
-		basic_auth_password: String,
+		password: String,
 	) {
-		let local_selected_request =
-			self.get_request_as_local_from_indexes(&(collection_index, request_index));
-
-		{
-			let mut selected_request = local_selected_request.write();
-
-			info!("Auth basic password set to \"{}\"", basic_auth_password);
-
-			match &selected_request.auth {
-				Auth::BasicAuth(BasicAuth { username, .. }) => {
-					selected_request.auth = Auth::BasicAuth(BasicAuth {
-						username: username.to_string(),
-						password: basic_auth_password,
-					});
+		self.modify_auth_field(
+			collection_index,
+			request_index,
+			"basic password",
+			&password,
+			|auth| {
+				if let Auth::BasicAuth(basic) = auth {
+					basic.password = password.clone();
 				}
-				_ => {}
-			}
-		}
-
-		self.save_collection_to_file(collection_index);
+			},
+		);
 	}
 
 	pub fn modify_request_auth_bearer_token(
 		&mut self,
 		collection_index: usize,
 		request_index: usize,
-		bearer_token: String,
+		token: String,
 	) {
-		let local_selected_request =
-			self.get_request_as_local_from_indexes(&(collection_index, request_index));
-
-		{
-			let mut selected_request = local_selected_request.write();
-
-			info!("Auth bearer token set to \"{}\"", bearer_token);
-
-			match &selected_request.auth {
-				Auth::BearerToken(BearerToken { .. }) => {
-					selected_request.auth = Auth::BearerToken(BearerToken {
-						token: bearer_token,
-					});
+		self.modify_auth_field(
+			collection_index,
+			request_index,
+			"bearer token",
+			&token,
+			|auth| {
+				if let Auth::BearerToken(bearer) = auth {
+					bearer.token = token.clone();
 				}
-				_ => {}
-			}
-		}
-
-		self.save_collection_to_file(collection_index);
+			},
+		);
 	}
 
 	pub fn modify_request_auth_jwt_secret(
@@ -116,19 +90,17 @@ impl App<'_> {
 		request_index: usize,
 		secret: String,
 	) {
-		let local_selected_request =
-			self.get_request_as_local_from_indexes(&(collection_index, request_index));
-
-		{
-			let mut selected_request = local_selected_request.write();
-			let jwt_token = selected_request.auth.get_jwt_mut();
-
-			info!("Auth JWT secret set to \"{}\"", secret);
-
-			jwt_token.secret = secret.to_string();
-		}
-
-		self.save_collection_to_file(collection_index);
+		self.modify_auth_field(
+			collection_index,
+			request_index,
+			"JWT secret",
+			&secret,
+			|auth| {
+				if let Auth::JwtToken(token) = auth {
+					token.secret = secret.clone();
+				}
+			},
+		);
 	}
 
 	pub fn modify_request_auth_jwt_payload(
@@ -137,19 +109,17 @@ impl App<'_> {
 		request_index: usize,
 		payload: String,
 	) {
-		let local_selected_request =
-			self.get_request_as_local_from_indexes(&(collection_index, request_index));
-
-		{
-			let mut selected_request = local_selected_request.write();
-			let jwt_token = selected_request.auth.get_jwt_mut();
-
-			info!("Auth JWT payload set to \"{}\"", payload);
-
-			jwt_token.payload = payload;
-		}
-
-		self.save_collection_to_file(collection_index);
+		self.modify_auth_field(
+			collection_index,
+			request_index,
+			"JWT payload",
+			&payload,
+			|auth| {
+				if let Auth::JwtToken(token) = auth {
+					token.payload = payload.clone();
+				}
+			},
+		);
 	}
 
 	pub fn modify_request_auth_digest_username(
@@ -158,19 +128,17 @@ impl App<'_> {
 		request_index: usize,
 		username: String,
 	) {
-		let local_selected_request =
-			self.get_request_as_local_from_indexes(&(collection_index, request_index));
-
-		{
-			let mut selected_request = local_selected_request.write();
-			let digest = selected_request.auth.get_digest_mut();
-
-			info!("Auth digest username set to \"{}\"", username);
-
-			digest.username = username.to_string();
-		}
-
-		self.save_collection_to_file(collection_index);
+		self.modify_auth_field(
+			collection_index,
+			request_index,
+			"Digest username",
+			&username,
+			|auth| {
+				if let Auth::Digest(digest) = auth {
+					digest.username = username.clone();
+				}
+			},
+		);
 	}
 
 	pub fn modify_request_auth_digest_password(
@@ -179,19 +147,17 @@ impl App<'_> {
 		request_index: usize,
 		password: String,
 	) {
-		let local_selected_request =
-			self.get_request_as_local_from_indexes(&(collection_index, request_index));
-
-		{
-			let mut selected_request = local_selected_request.write();
-			let digest = selected_request.auth.get_digest_mut();
-
-			info!("Auth digest password set to \"{}\"", password);
-
-			digest.password = password.to_string();
-		}
-
-		self.save_collection_to_file(collection_index);
+		self.modify_auth_field(
+			collection_index,
+			request_index,
+			"Digest password",
+			&password,
+			|auth| {
+				if let Auth::Digest(digest) = auth {
+					digest.password = password.clone();
+				}
+			},
+		);
 	}
 
 	pub fn modify_request_auth_digest_domains(
@@ -200,19 +166,17 @@ impl App<'_> {
 		request_index: usize,
 		domains: String,
 	) {
-		let local_selected_request =
-			self.get_request_as_local_from_indexes(&(collection_index, request_index));
-
-		{
-			let mut selected_request = local_selected_request.write();
-			let digest = selected_request.auth.get_digest_mut();
-
-			info!("Auth digest domains set to \"{}\"", domains);
-
-			digest.domains = domains.to_string();
-		}
-
-		self.save_collection_to_file(collection_index);
+		self.modify_auth_field(
+			collection_index,
+			request_index,
+			"Digest domains",
+			&domains,
+			|auth| {
+				if let Auth::Digest(digest) = auth {
+					digest.domains = domains.clone();
+				}
+			},
+		);
 	}
 
 	pub fn modify_request_auth_digest_realm(
@@ -221,19 +185,17 @@ impl App<'_> {
 		request_index: usize,
 		realm: String,
 	) {
-		let local_selected_request =
-			self.get_request_as_local_from_indexes(&(collection_index, request_index));
-
-		{
-			let mut selected_request = local_selected_request.write();
-			let digest = selected_request.auth.get_digest_mut();
-
-			info!("Auth digest realm set to \"{}\"", realm);
-
-			digest.realm = realm.to_string();
-		}
-
-		self.save_collection_to_file(collection_index);
+		self.modify_auth_field(
+			collection_index,
+			request_index,
+			"Digest realm",
+			&realm,
+			|auth| {
+				if let Auth::Digest(digest) = auth {
+					digest.realm = realm.clone();
+				}
+			},
+		);
 	}
 
 	pub fn modify_request_auth_digest_nonce(
@@ -242,19 +204,17 @@ impl App<'_> {
 		request_index: usize,
 		nonce: String,
 	) {
-		let local_selected_request =
-			self.get_request_as_local_from_indexes(&(collection_index, request_index));
-
-		{
-			let mut selected_request = local_selected_request.write();
-			let digest = selected_request.auth.get_digest_mut();
-
-			info!("Auth digest nonce set to \"{}\"", nonce);
-
-			digest.nonce = nonce.to_string();
-		}
-
-		self.save_collection_to_file(collection_index);
+		self.modify_auth_field(
+			collection_index,
+			request_index,
+			"Digest nonce",
+			&nonce,
+			|auth| {
+				if let Auth::Digest(digest) = auth {
+					digest.nonce = nonce.clone();
+				}
+			},
+		);
 	}
 
 	pub fn modify_request_auth_digest_opaque(
@@ -263,18 +223,30 @@ impl App<'_> {
 		request_index: usize,
 		opaque: String,
 	) {
-		let local_selected_request =
-			self.get_request_as_local_from_indexes(&(collection_index, request_index));
+		self.modify_auth_field(
+			collection_index,
+			request_index,
+			"Digest opaque",
+			&opaque,
+			|auth| {
+				if let Auth::Digest(digest) = auth {
+					digest.opaque = opaque.clone();
+				}
+			},
+		);
+	}
 
-		{
-			let mut selected_request = local_selected_request.write();
-			let digest = selected_request.auth.get_digest_mut();
-
-			info!("Auth digest opaque set to \"{}\"", opaque);
-
-			digest.opaque = opaque.to_string();
-		}
-
-		self.save_collection_to_file(collection_index);
+	fn modify_auth_field(
+		&mut self,
+		collection_index: usize,
+		request_index: usize,
+		field_name: &str,
+		value: &str,
+		mutate: impl FnOnce(&mut Auth),
+	) {
+		self.with_request_write(collection_index, request_index, |req| {
+			info!("Auth {field_name} set to \"{value}\"");
+			mutate(&mut req.auth);
+		});
 	}
 }
