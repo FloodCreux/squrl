@@ -14,6 +14,31 @@ impl App<'_> {
 
 		let inner_block_area = block.inner(rect);
 
+		let description_string = r#"
+                                   xxxxxxxxxx                                                           
+                               xxxxxxxxxxxxxxxxxx                                                       
+                             +xxxxxxxxxxxxxxxxxxxxx               x                                     
+                            xxxxxxxxxxxxxxxxxxxxxxxxx             xxx                                   
+                            xxxxxxxxxxxXxxxxxxxxxxxxxx            xxx                                   
+                            xxxxxxxxxxxxxxxxxxxxxxxxxx            +xxx                                  
+                            xxxxxxxxxxxxxXxxxxxxxxxxxxx       ;;;;;;;;;;                                
+                            xxxxxxxxxxxxxxxxxxxxxxxxxxx      ;;;;;.   ;;;;                              
+                             xxxxxxxxxxxXxxxxxxxxxxxxxx.    ;;;;;      ;;;;                             
+                                 xxxxxxXxxxxxxxxxxxxxxxx   ;;;;;;   &&  ;;;;                            
+                                      Xxxxxxxxxxx;;;;;;;;;;;;;;;;;;      ;;;                            
+                                     Xxxxxxxxxx;;;;;;;;;;;;;;;;;;;;;;;;;;;;;                            
+                                    Xxxxxxxxx;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;x                            
+                                   XXxxxxxxx;;;;;;;;;;;;;+++++++++  :;;.                                
+                                   Xxxxxxxxx;;;;;;;;;;+++++++++++++++.                                  
+                                   Xxxxxxxxx;;;;;;;;;+++++++++++++++++++++                              
+                                   Xxxxxxxxx;;;;;;;;+++++++++++ +++++                                   
+                                   xxxxxxxxx;;;;;;;++++++++++++                                         
+                                    Xxxxxxxxx;;;;;+++++++++++++                                         
+                                     Xxxxxxxxx;;;;++++++++++++                                          
+                                       xxxxxxxx;;++++++++++++++                                         
+                                           xxxxxx+++++++++++++++                                        
+			"#;
+
 		let inner_layout = Layout::new(
 			Vertical,
 			[
@@ -21,7 +46,7 @@ impl App<'_> {
 				Constraint::Length(1),
 				Constraint::Length(1),
 				Constraint::Length(4),
-				Constraint::Length(1),
+				Constraint::Length(description_string.lines().count() as u16),
 				Constraint::Percentage(50),
 			],
 		)
@@ -49,7 +74,7 @@ impl App<'_> {
 		let welcome_to = Paragraph::new("Welcome to")
 			.centered()
 			.fg(THEME.read().ui.secondary_foreground_color);
-		let description = Paragraph::new("")
+		let description = Paragraph::new(description_string)
 			.centered()
 			.fg(THEME.read().ui.main_foreground_color);
 
