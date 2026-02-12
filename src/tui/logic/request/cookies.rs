@@ -4,18 +4,30 @@ use reqwest::Url;
 
 impl App<'_> {
 	pub fn tui_update_cookies_table_selection(&mut self) {
-		match self.cookies_popup.cookies_table.rows.is_empty() {
+		match self.core.cookies_popup.cookies_table.rows.is_empty() {
 			false => {
-				self.cookies_popup.cookies_table.selection = Some((0, 0));
+				self.core.cookies_popup.cookies_table.selection = Some((0, 0));
 
-				for table_state in self.cookies_popup.cookies_table.lists_states.iter_mut() {
+				for table_state in self
+					.core
+					.cookies_popup
+					.cookies_table
+					.lists_states
+					.iter_mut()
+				{
 					table_state.select(Some(0));
 				}
 			}
 			true => {
-				self.cookies_popup.cookies_table.selection = None;
+				self.core.cookies_popup.cookies_table.selection = None;
 
-				for table_state in self.cookies_popup.cookies_table.lists_states.iter_mut() {
+				for table_state in self
+					.core
+					.cookies_popup
+					.cookies_table
+					.lists_states
+					.iter_mut()
+				{
 					table_state.select(None);
 				}
 			}
@@ -23,17 +35,22 @@ impl App<'_> {
 	}
 
 	pub fn tui_delete_cookie(&mut self) {
-		if self.cookies_popup.cookies_table.rows.is_empty()
-			|| self.cookies_popup.cookies_table.selection.is_none()
+		if self.core.cookies_popup.cookies_table.rows.is_empty()
+			|| self.core.cookies_popup.cookies_table.selection.is_none()
 		{
 			return;
 		}
 
-		let selection = self.cookies_popup.cookies_table.selection.unwrap();
-		let cookie_row = self.cookies_popup.cookies_table.rows.remove(selection.0);
+		let selection = self.core.cookies_popup.cookies_table.selection.unwrap();
+		let cookie_row = self
+			.core
+			.cookies_popup
+			.cookies_table
+			.rows
+			.remove(selection.0);
 
 		{
-			let mut local_cookie_store = self.cookies_popup.cookie_store.write().unwrap();
+			let mut local_cookie_store = self.core.cookies_popup.cookie_store.write().unwrap();
 
 			local_cookie_store.remove(&cookie_row[0], &cookie_row[3], &cookie_row[1]);
 		}
@@ -42,32 +59,33 @@ impl App<'_> {
 	}
 
 	pub fn tui_modify_cookie(&mut self) {
-		if self.cookies_popup.cookies_table.rows.is_empty()
-			|| self.cookies_popup.cookies_table.selection.is_none()
+		if self.core.cookies_popup.cookies_table.rows.is_empty()
+			|| self.core.cookies_popup.cookies_table.selection.is_none()
 		{
 			return;
 		}
 
-		let selection = self.cookies_popup.cookies_table.selection.unwrap();
+		let selection = self.core.cookies_popup.cookies_table.selection.unwrap();
 		let new_text = self
+			.core
 			.cookies_popup
 			.cookies_table
 			.selection_text_input
 			.to_string();
 
-		let row = &self.cookies_popup.cookies_table.rows[selection.0];
+		let row = &self.core.cookies_popup.cookies_table.rows[selection.0];
 		let old_domain = row[0].clone();
 		let old_name = row[1].clone();
 		let old_path = row[3].clone();
 
 		// Remove old cookie from the store
 		{
-			let mut local_cookie_store = self.cookies_popup.cookie_store.write().unwrap();
+			let mut local_cookie_store = self.core.cookies_popup.cookie_store.write().unwrap();
 			local_cookie_store.remove(&old_domain, &old_path, &old_name);
 		}
 
 		// Update the in-memory row with the new text
-		self.cookies_popup.cookies_table.rows[selection.0][selection.1] = new_text;
+		self.core.cookies_popup.cookies_table.rows[selection.0][selection.1] = new_text;
 
 		// Re-insert the cookie into the store
 		self.insert_cookie_row_into_store(selection.0);
@@ -88,21 +106,27 @@ impl App<'_> {
 			String::new(),     // SameSite
 		];
 
-		self.cookies_popup.cookies_table.rows.push(new_row);
+		self.core.cookies_popup.cookies_table.rows.push(new_row);
 
-		let new_row_index = self.cookies_popup.cookies_table.rows.len() - 1;
+		let new_row_index = self.core.cookies_popup.cookies_table.rows.len() - 1;
 
 		// Select the new row, Name column (index 1)
-		self.cookies_popup.cookies_table.selection = Some((new_row_index, 1));
+		self.core.cookies_popup.cookies_table.selection = Some((new_row_index, 1));
 
-		for list_state in self.cookies_popup.cookies_table.lists_states.iter_mut() {
+		for list_state in self
+			.core
+			.cookies_popup
+			.cookies_table
+			.lists_states
+			.iter_mut()
+		{
 			list_state.select(Some(new_row_index));
 		}
 	}
 
 	/// Build a Set-Cookie string from a cookie row and insert it into the cookie store.
 	fn insert_cookie_row_into_store(&mut self, row_index: usize) {
-		let row = &self.cookies_popup.cookies_table.rows[row_index];
+		let row = &self.core.cookies_popup.cookies_table.rows[row_index];
 
 		let domain = &row[0];
 		let name = &row[1];
@@ -145,7 +169,7 @@ impl App<'_> {
 		let url_string = format!("{}://{}{}", scheme, domain, path);
 
 		if let Ok(url) = Url::parse(&url_string) {
-			let mut local_cookie_store = self.cookies_popup.cookie_store.write().unwrap();
+			let mut local_cookie_store = self.core.cookies_popup.cookie_store.write().unwrap();
 			let _ = local_cookie_store.parse(&cookie_str, &url);
 		}
 	}

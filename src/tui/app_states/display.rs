@@ -78,7 +78,7 @@ impl App<'_> {
 
 			DeletingCollection | RenamingCollection => {
 				let collection_index = self.collections_tree.state.selected()[0];
-				let collection_name = &self.collections[collection_index].name;
+				let collection_name = &self.core.collections[collection_index].name;
 
 				Line::from(vec![
 					Span::raw("Collection > ").fg(THEME.read().ui.secondary_foreground_color),
@@ -94,7 +94,8 @@ impl App<'_> {
 				let selected = self.collections_tree.state.selected();
 				let collection_index = selected[0];
 				let folder_index = selected[1];
-				let folder_name = &self.collections[collection_index].folders[folder_index].name;
+				let folder_name =
+					&self.core.collections[collection_index].folders[folder_index].name;
 
 				Line::from(vec![
 					Span::raw("Folder > ").fg(THEME.read().ui.secondary_foreground_color),
@@ -112,9 +113,9 @@ impl App<'_> {
 					2 => {
 						let collection_index = selected[0];
 						let child_index = selected[1];
-						let folder_count = self.collections[collection_index].folders.len();
+						let folder_count = self.core.collections[collection_index].folders.len();
 						let request_index = child_index - folder_count;
-						self.collections[collection_index].requests[request_index]
+						self.core.collections[collection_index].requests[request_index]
 							.read()
 							.name
 							.clone()
@@ -123,7 +124,7 @@ impl App<'_> {
 						let collection_index = selected[0];
 						let folder_index = selected[1];
 						let request_index = selected[2];
-						self.collections[collection_index].folders[folder_index].requests
+						self.core.collections[collection_index].folders[folder_index].requests
 							[request_index]
 							.read()
 							.name

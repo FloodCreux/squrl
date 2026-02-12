@@ -35,7 +35,7 @@ impl App<'_> {
 
 		self.local_send_request(send_command, local_request).await?;
 
-		if self.config.should_save_requests_response() {
+		if self.core.config.should_save_requests_response() {
 			self.save_collection_to_file(collection_index);
 		}
 
@@ -48,7 +48,7 @@ impl App<'_> {
 		send_command: &SendCommand,
 	) -> anyhow::Result<()> {
 		let collection_index = self.find_collection(collection_name)?;
-		let collection = &self.collections[collection_index];
+		let collection = &self.core.collections[collection_index];
 
 		let mut requests: Vec<Arc<RwLock<Request>>> = vec![];
 
@@ -60,7 +60,7 @@ impl App<'_> {
 		for request in requests {
 			self.local_send_request(send_command, request).await?;
 
-			if self.config.should_save_requests_response() {
+			if self.core.config.should_save_requests_response() {
 				self.save_collection_to_file(collection_index);
 			}
 		}
@@ -79,7 +79,7 @@ impl App<'_> {
 
 			if let Some(env_name) = &send_command.env {
 				let env_index = self.find_environment(env_name)?;
-				self.selected_environment = env_index;
+				self.core.selected_environment = env_index;
 			};
 
 			if send_command.request_name {
@@ -116,7 +116,7 @@ impl App<'_> {
 					prepared_request,
 					local_request.clone(),
 					&local_env,
-					self.received_response.clone(),
+					self.core.received_response.clone(),
 				)
 				.await?
 			}
@@ -184,7 +184,7 @@ impl App<'_> {
 								},
 							)?;
 
-							let picker = match self.config.is_graphical_protocol_disabled() {
+							let picker = match self.core.config.is_graphical_protocol_disabled() {
 								true => Picker::halfblocks(),
 								false => Picker::from_query_stdio().unwrap_or(Picker::halfblocks()),
 							};

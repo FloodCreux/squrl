@@ -97,12 +97,13 @@ impl App<'_> {
 	}
 
 	pub fn display_cookies_state(&mut self) {
-		let local_cookie_store = Arc::clone(&self.cookies_popup.cookie_store);
+		let local_cookie_store = Arc::clone(&self.core.cookies_popup.cookie_store);
 
-		self.cookies_popup.cookies_table.rows = vec![];
+		self.core.cookies_popup.cookies_table.rows = vec![];
 
 		for cookie in local_cookie_store.read().unwrap().iter_any() {
-			self.cookies_popup
+			self.core
+				.cookies_popup
 				.cookies_table
 				.rows
 				.push(cookie_to_row(cookie))
@@ -113,11 +114,11 @@ impl App<'_> {
 	}
 
 	pub fn edit_cookie_state(&mut self) {
-		if self.cookies_popup.cookies_table.rows.is_empty() {
+		if self.core.cookies_popup.cookies_table.rows.is_empty() {
 			return;
 		}
 
-		let selection = match self.cookies_popup.cookies_table.selection {
+		let selection = match self.core.cookies_popup.cookies_table.selection {
 			Some(s) => s,
 			None => return,
 		};
@@ -127,21 +128,25 @@ impl App<'_> {
 			return;
 		}
 
-		let text = &self.cookies_popup.cookies_table.rows[selection.0][selection.1];
+		let text = &self.core.cookies_popup.cookies_table.rows[selection.0][selection.1];
 
-		self.cookies_popup
+		self.core
+			.cookies_popup
 			.cookies_table
 			.selection_text_input
 			.reset_mode();
-		self.cookies_popup
+		self.core
+			.cookies_popup
 			.cookies_table
 			.selection_text_input
 			.clear();
-		self.cookies_popup
+		self.core
+			.cookies_popup
 			.cookies_table
 			.selection_text_input
 			.push_str(text);
-		self.cookies_popup
+		self.core
+			.cookies_popup
 			.cookies_table
 			.selection_text_input
 			.move_cursor_line_end();
@@ -170,7 +175,7 @@ impl App<'_> {
 	pub fn choose_element_to_create_state(&mut self) {
 		self.creation_popup.selection = 0;
 
-		if self.collections.is_empty() {
+		if self.core.collections.is_empty() {
 			self.create_new_collection_state();
 		} else {
 			self.set_app_state(AppState::ChoosingElementToCreate);
@@ -182,7 +187,7 @@ impl App<'_> {
 	}
 
 	pub fn create_new_request_state(&mut self) {
-		let collections_length = self.collections.len();
+		let collections_length = self.core.collections.len();
 
 		// Cannot create a request if there is no collection
 		if collections_length == 0 {
@@ -202,7 +207,7 @@ impl App<'_> {
 		self.new_request_popup.max_collection_selection = collections_length;
 
 		// Pre-populate folder selection based on current tree position
-		let collection = &self.collections[popup_selected_collection_index];
+		let collection = &self.core.collections[popup_selected_collection_index];
 		self.new_request_popup.folder_count = collection.folders.len();
 
 		// If the user is currently inside a folder, pre-select that folder
@@ -241,7 +246,7 @@ impl App<'_> {
 	pub fn rename_collection_state(&mut self) {
 		let selected_request_index = self.collections_tree.state.selected();
 
-		let collection_name = &self.collections[selected_request_index[0]].name;
+		let collection_name = &self.core.collections[selected_request_index[0]].name;
 		self.rename_collection_input.clear();
 		self.rename_collection_input.push_str(collection_name);
 		self.rename_collection_input
@@ -258,9 +263,9 @@ impl App<'_> {
 			2 => {
 				let collection_index = selected[0];
 				let child_index = selected[1];
-				let folder_count = self.collections[collection_index].folders.len();
+				let folder_count = self.core.collections[collection_index].folders.len();
 				let request_index = child_index - folder_count;
-				self.collections[collection_index].requests[request_index]
+				self.core.collections[collection_index].requests[request_index]
 					.read()
 					.name
 					.clone()
@@ -269,7 +274,8 @@ impl App<'_> {
 				let collection_index = selected[0];
 				let folder_index = selected[1];
 				let request_index = selected[2];
-				self.collections[collection_index].folders[folder_index].requests[request_index]
+				self.core.collections[collection_index].folders[folder_index].requests
+					[request_index]
 					.read()
 					.name
 					.clone()
@@ -285,7 +291,7 @@ impl App<'_> {
 	}
 
 	pub fn create_new_folder_state(&mut self) {
-		let collections_length = self.collections.len();
+		let collections_length = self.core.collections.len();
 
 		// Cannot create a folder if there is no collection
 		if collections_length == 0 {
@@ -308,7 +314,7 @@ impl App<'_> {
 			let collection_index = selected[0];
 			let folder_index = selected[1];
 
-			let folder_name = &self.collections[collection_index].folders[folder_index].name;
+			let folder_name = &self.core.collections[collection_index].folders[folder_index].name;
 			self.rename_collection_input.clear();
 			self.rename_collection_input.push_str(folder_name);
 			self.rename_collection_input

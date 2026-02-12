@@ -28,17 +28,21 @@ pub enum EnvironmentError {
 
 impl App<'_> {
 	pub fn get_selected_env_as_local(&self) -> Option<Arc<RwLock<Environment>>> {
-		self.environments.get(self.selected_environment).cloned()
+		self.core
+			.environments
+			.get(self.core.selected_environment)
+			.cloned()
 	}
 
 	pub fn get_env_as_local_from_index(&self, index: usize) -> Option<Arc<RwLock<Environment>>> {
-		self.environments.get(index).cloned()
+		self.core.environments.get(index).cloned()
 	}
 
 	pub fn find_environment(&self, environment_name: &str) -> anyhow::Result<usize> {
 		trace!("Trying to find environment \"{environment_name}\"");
 
 		let result = self
+			.core
 			.environments
 			.iter()
 			.position(|environment| environment.read().name == environment_name);
@@ -237,7 +241,7 @@ impl App<'_> {
 	}
 
 	pub fn replace_env_keys_by_value(&self, input: &String) -> String {
-		if self.environments.is_empty() {
+		if self.core.environments.is_empty() {
 			return input.to_string();
 		}
 

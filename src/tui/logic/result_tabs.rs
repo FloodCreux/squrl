@@ -38,7 +38,7 @@ impl App<'_> {
 			},
 		};
 
-		*self.received_response.lock() = true;
+		*self.core.received_response.lock() = true;
 	}
 
 	pub fn tui_update_request_result_tab(&mut self) {

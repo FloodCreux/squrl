@@ -14,7 +14,7 @@ pub enum FindElementError {
 
 impl App<'_> {
 	pub fn find_collection(&mut self, collection_name: &str) -> anyhow::Result<usize> {
-		for (index, collection) in self.collections.iter().enumerate() {
+		for (index, collection) in self.core.collections.iter().enumerate() {
 			if collection.name == collection_name {
 				return Ok(index);
 			}
@@ -28,7 +28,7 @@ impl App<'_> {
 		collection_name: &str,
 		request_name: &str,
 	) -> anyhow::Result<(usize, usize)> {
-		for (collection_index, collection) in self.collections.iter().enumerate() {
+		for (collection_index, collection) in self.core.collections.iter().enumerate() {
 			if collection.name != collection_name {
 				continue;
 			}

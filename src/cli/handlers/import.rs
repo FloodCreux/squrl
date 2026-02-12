@@ -51,17 +51,17 @@ impl App<'_> {
 
 		println!("Collection name: {}", collection_name);
 
-		for existing_collection in &self.collections {
+		for existing_collection in &self.core.collections {
 			if existing_collection.name == collection_name {
 				return Err(anyhow!(CollectionAlreadyExists(collection_name)));
 			}
 		}
 
-		let file_format = self.config.get_preferred_collection_file_format();
+		let file_format = self.core.config.get_preferred_collection_file_format();
 
 		let mut collections: Vec<Collection> = vec![Collection {
 			name: collection_name.clone(),
-			last_position: Some(self.collections.len() - 1),
+			last_position: Some(self.core.collections.len() - 1),
 			folders: vec![],
 			requests: vec![],
 			path: ARGS
@@ -91,7 +91,7 @@ impl App<'_> {
 					let mut temp_nesting_prefix = String::new();
 					let new_collections: Vec<Collection> = vec![];
 
-					let file_format = self.config.get_preferred_collection_file_format();
+					let file_format = self.core.config.get_preferred_collection_file_format();
 
 					postman_collection::recursive_has_requests(
 						&mut item,
@@ -118,8 +118,8 @@ impl App<'_> {
 
 		let collections_length = collections.len();
 
-		let start_index = self.collections.len();
-		self.collections.extend(collections);
+		let start_index = self.core.collections.len();
+		self.core.collections.extend(collections);
 
 		for collection_index in start_index..start_index + collections_length {
 			self.save_collection_to_file(collection_index);
@@ -182,8 +182,8 @@ impl App<'_> {
 			env.values.insert(key, env_variable.value.clone());
 		}
 
-		let env_count = self.environments.len();
-		self.environments.push(Arc::new(RwLock::new(env)));
+		let env_count = self.core.environments.len();
+		self.core.environments.push(Arc::new(RwLock::new(env)));
 
 		self.save_environment_to_file(env_count);
 
@@ -236,7 +236,7 @@ impl App<'_> {
 		println!("Collection name: {}", collection_name);
 
 		// Check if collection already exists
-		for existing_collection in &self.collections {
+		for existing_collection in &self.core.collections {
 			if existing_collection.name == collection_name {
 				return Err(anyhow!(ImportOpenApiError::CollectionAlreadyExists(
 					collection_name
@@ -244,12 +244,12 @@ impl App<'_> {
 			}
 		}
 
-		let file_format = self.config.get_preferred_collection_file_format();
+		let file_format = self.core.config.get_preferred_collection_file_format();
 
 		// Create a new collection
 		let mut collection = Collection {
 			name: collection_name.clone(),
-			last_position: Some(self.collections.len() - 1),
+			last_position: Some(self.core.collections.len() - 1),
 			folders: vec![],
 			requests: Vec::new(),
 			path: ARGS
@@ -297,10 +297,10 @@ impl App<'_> {
 		);
 
 		// Add the collection to app's collections
-		self.collections.push(collection);
+		self.core.collections.push(collection);
 
 		// Save the collection to file
-		self.save_collection_to_file(self.collections.len() - 1);
+		self.save_collection_to_file(self.core.collections.len() - 1);
 
 		Ok(())
 	}
@@ -326,6 +326,7 @@ impl App<'_> {
 		println!("Collection name: {}", collection_name);
 
 		let (collection_index, collection) = match self
+			.core
 			.collections
 			.par_iter_mut()
 			.enumerate()
@@ -335,11 +336,11 @@ impl App<'_> {
 			None => {
 				println!("Collection does not exist. Creating it...");
 
-				let file_format = self.config.get_preferred_collection_file_format();
+				let file_format = self.core.config.get_preferred_collection_file_format();
 
 				let collection = Collection {
 					name: collection_name.clone(),
-					last_position: Some(self.collections.len() - 1),
+					last_position: Some(self.core.collections.len() - 1),
 					folders: vec![],
 					requests: vec![],
 					path: ARGS
@@ -350,11 +351,11 @@ impl App<'_> {
 					file_format,
 				};
 
-				self.collections.push(collection);
+				self.core.collections.push(collection);
 
 				(
-					self.collections.len() - 1,
-					self.collections.last_mut().unwrap(),
+					self.core.collections.len() - 1,
+					self.core.collections.last_mut().unwrap(),
 				)
 			}
 		};
@@ -384,6 +385,7 @@ impl App<'_> {
 		println!("Collection name: {}", collection_name);
 
 		let (collection_index, collection) = match self
+			.core
 			.collections
 			.par_iter_mut()
 			.enumerate()
@@ -393,11 +395,11 @@ impl App<'_> {
 			None => {
 				println!("Collection does not exist. Creating it...");
 
-				let file_format = self.config.get_preferred_collection_file_format();
+				let file_format = self.core.config.get_preferred_collection_file_format();
 
 				let collection = Collection {
 					name: collection_name.clone(),
-					last_position: Some(self.collections.len() - 1),
+					last_position: Some(self.core.collections.len() - 1),
 					folders: vec![],
 					requests: vec![],
 					path: ARGS.directory.as_ref().unwrap().join(format!(
@@ -408,11 +410,11 @@ impl App<'_> {
 					file_format,
 				};
 
-				self.collections.push(collection);
+				self.core.collections.push(collection);
 
 				(
-					self.collections.len() - 1,
-					self.collections.last_mut().unwrap(),
+					self.core.collections.len() - 1,
+					self.core.collections.last_mut().unwrap(),
 				)
 			}
 		};

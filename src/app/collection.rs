@@ -44,7 +44,7 @@ impl App<'_> {
 		}
 
 		// Check that collection names are unique (like files)
-		for collection in &self.collections {
+		for collection in &self.core.collections {
 			if new_collection_name == collection.name {
 				return Err(anyhow!(CollectionNameAlreadyExists));
 			}
@@ -52,9 +52,9 @@ impl App<'_> {
 
 		info!("Collection \"{new_collection_name}\" created");
 
-		let file_format = self.config.get_preferred_collection_file_format();
+		let file_format = self.core.config.get_preferred_collection_file_format();
 
-		let collections_len = self.collections.len();
+		let collections_len = self.core.collections.len();
 		let last_position = match collections_len == 0 {
 			true => None,
 			false => Some(collections_len - 1),
@@ -73,7 +73,7 @@ impl App<'_> {
 			file_format,
 		};
 
-		self.collections.push(new_collection);
+		self.core.collections.push(new_collection);
 
 		let collection_index = collections_len;
 
@@ -95,10 +95,10 @@ impl App<'_> {
 
 		info!(
 			"Request \"{}\" created in collection \"{}\"",
-			new_request.name, &self.collections[collection_index].name
+			new_request.name, &self.core.collections[collection_index].name
 		);
 
-		self.collections[collection_index]
+		self.core.collections[collection_index]
 			.requests
 			.push(Arc::new(RwLock::new(new_request)));
 		self.save_collection_to_file(collection_index);
@@ -118,7 +118,7 @@ impl App<'_> {
 			return Err(RequestNameIsEmpty);
 		}
 
-		let collection = &mut self.collections[collection_index];
+		let collection = &mut self.core.collections[collection_index];
 		let folder = &mut collection.folders[folder_index];
 
 		info!(
@@ -135,7 +135,7 @@ impl App<'_> {
 	pub fn delete_collection(&mut self, collection_index: usize) {
 		info!("Collection deleted");
 
-		let collection = self.collections.remove(collection_index);
+		let collection = self.core.collections.remove(collection_index);
 		self.delete_collection_file(collection);
 	}
 
@@ -146,7 +146,7 @@ impl App<'_> {
 	) -> anyhow::Result<()> {
 		info!("Request deleted");
 
-		self.collections[collection_index]
+		self.core.collections[collection_index]
 			.requests
 			.remove(request_index);
 		self.save_collection_to_file(collection_index);
@@ -164,7 +164,7 @@ impl App<'_> {
 		}
 
 		// Check that collection names are unique (like files)
-		for collection in &self.collections {
+		for collection in &self.core.collections {
 			if new_collection_name == collection.name {
 				return Err(anyhow!(CollectionNameAlreadyExists));
 			}
@@ -172,7 +172,7 @@ impl App<'_> {
 
 		info!("Collection renamed to \"{new_collection_name}\"");
 
-		self.collections[collection_index].name = new_collection_name.to_string();
+		self.core.collections[collection_index].name = new_collection_name.to_string();
 		self.save_collection_to_file(collection_index);
 
 		Ok(())
@@ -197,7 +197,7 @@ impl App<'_> {
 	}
 
 	pub fn duplicate_collection(&mut self, collection_index: usize) -> anyhow::Result<()> {
-		let mut collection = self.collections[collection_index].clone();
+		let mut collection = self.core.collections[collection_index].clone();
 
 		info!("Collection \"{}\" duplicated", collection.name);
 
@@ -207,7 +207,9 @@ impl App<'_> {
 			.as_ref()
 			.unwrap()
 			.join(format!("{}.{}", collection.name, collection.file_format));
-		self.collections.insert(collection_index + 1, collection);
+		self.core
+			.collections
+			.insert(collection_index + 1, collection);
 		self.save_collection_to_file(collection_index + 1);
 
 		Ok(())
@@ -224,7 +226,7 @@ impl App<'_> {
 		info!("Request \"{}\" duplicated", cloned.name);
 
 		cloned.name = format!("{} copy", cloned.name);
-		self.collections[collection_index]
+		self.core.collections[collection_index]
 			.requests
 			.insert(request_index + 1, Arc::new(RwLock::new(cloned)));
 		self.save_collection_to_file(collection_index);
@@ -232,8 +234,8 @@ impl App<'_> {
 	}
 
 	pub fn update_collections_last_position(&mut self) {
-		for index in 0..self.collections.len() {
-			let collection = &mut self.collections[index];
+		for index in 0..self.core.collections.len() {
+			let collection = &mut self.core.collections[index];
 			collection.last_position = Some(index);
 			self.save_collection_to_file(index);
 		}
@@ -253,7 +255,7 @@ impl App<'_> {
 		}
 
 		// Check for duplicate folder names within the collection
-		for folder in &self.collections[collection_index].folders {
+		for folder in &self.core.collections[collection_index].folders {
 			if new_folder_name == folder.name {
 				return Err(anyhow!(FolderNameAlreadyExists));
 			}
@@ -261,7 +263,7 @@ impl App<'_> {
 
 		info!(
 			"Folder \"{}\" created in collection \"{}\"",
-			new_folder_name, &self.collections[collection_index].name
+			new_folder_name, &self.core.collections[collection_index].name
 		);
 
 		let new_folder = Folder {
@@ -269,7 +271,9 @@ impl App<'_> {
 			requests: vec![],
 		};
 
-		self.collections[collection_index].folders.push(new_folder);
+		self.core.collections[collection_index]
+			.folders
+			.push(new_folder);
 		self.save_collection_to_file(collection_index);
 
 		Ok(())
@@ -279,12 +283,12 @@ impl App<'_> {
 	pub fn delete_folder(&mut self, collection_index: usize, folder_index: usize) {
 		info!("Folder deleted (requests moved to collection root)");
 
-		let folder = self.collections[collection_index]
+		let folder = self.core.collections[collection_index]
 			.folders
 			.remove(folder_index);
 
 		// Move all requests from the folder to the collection's root-level requests
-		self.collections[collection_index]
+		self.core.collections[collection_index]
 			.requests
 			.extend(folder.requests);
 
@@ -300,7 +304,7 @@ impl App<'_> {
 	) -> anyhow::Result<()> {
 		info!("Request deleted from folder");
 
-		self.collections[collection_index].folders[folder_index]
+		self.core.collections[collection_index].folders[folder_index]
 			.requests
 			.remove(request_index);
 		self.save_collection_to_file(collection_index);
@@ -321,7 +325,7 @@ impl App<'_> {
 		}
 
 		// Check for duplicate folder names
-		for folder in &self.collections[collection_index].folders {
+		for folder in &self.core.collections[collection_index].folders {
 			if new_folder_name == folder.name {
 				return Err(anyhow!(FolderNameAlreadyExists));
 			}
@@ -329,7 +333,7 @@ impl App<'_> {
 
 		info!("Folder renamed to \"{new_folder_name}\"");
 
-		self.collections[collection_index].folders[folder_index].name = new_folder_name;
+		self.core.collections[collection_index].folders[folder_index].name = new_folder_name;
 		self.save_collection_to_file(collection_index);
 
 		Ok(())
@@ -349,7 +353,7 @@ impl App<'_> {
 
 		info!("Request in folder renamed to \"{new_request_name}\"");
 
-		self.collections[collection_index].folders[folder_index].requests[request_index]
+		self.core.collections[collection_index].folders[folder_index].requests[request_index]
 			.write()
 			.name = new_request_name;
 		self.save_collection_to_file(collection_index);
@@ -362,13 +366,13 @@ impl App<'_> {
 		collection_index: usize,
 		folder_index: usize,
 	) -> anyhow::Result<()> {
-		let folder = self.collections[collection_index].folders[folder_index].clone();
+		let folder = self.core.collections[collection_index].folders[folder_index].clone();
 
 		info!("Folder \"{}\" duplicated", folder.name);
 
 		let mut cloned = folder;
 		cloned.name = format!("{} copy", cloned.name);
-		self.collections[collection_index]
+		self.core.collections[collection_index]
 			.folders
 			.insert(folder_index + 1, cloned);
 		self.save_collection_to_file(collection_index);
@@ -381,7 +385,7 @@ impl App<'_> {
 		folder_index: usize,
 		request_index: usize,
 	) -> anyhow::Result<()> {
-		let request = self.collections[collection_index].folders[folder_index].requests
+		let request = self.core.collections[collection_index].folders[folder_index].requests
 			[request_index]
 			.read()
 			.clone();
@@ -390,7 +394,7 @@ impl App<'_> {
 
 		let mut cloned = request;
 		cloned.name = format!("{} copy", cloned.name);
-		self.collections[collection_index].folders[folder_index]
+		self.core.collections[collection_index].folders[folder_index]
 			.requests
 			.insert(request_index + 1, Arc::new(RwLock::new(cloned)));
 		self.save_collection_to_file(collection_index);

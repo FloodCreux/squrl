@@ -215,7 +215,7 @@ impl App<'_> {
 								);
 							} else {
 								let lines: Vec<Line> =
-									if !self.config.is_syntax_highlighting_disabled()
+									if !self.core.config.is_syntax_highlighting_disabled()
 										&& self.syntax_highlighting.highlighted_body.is_some()
 									{
 										self.syntax_highlighting.highlighted_body.clone().unwrap()
@@ -225,7 +225,7 @@ impl App<'_> {
 
 								let mut body_paragraph = Paragraph::new(lines);
 
-								if self.config.should_wrap_body() {
+								if self.core.config.should_wrap_body() {
 									body_paragraph = body_paragraph
 										.wrap(Wrap::default())
 										.scroll((self.result_vertical_scrollbar.scroll, 0));
@@ -240,7 +240,7 @@ impl App<'_> {
 							}
 						}
 						ResponseContent::Image(image_response) => match &image_response.image {
-							_ if self.config.is_image_preview_disabled() => {
+							_ if self.core.config.is_image_preview_disabled() => {
 								let image_disabled_paragraph =
 									Paragraph::new("\nImage preview disabled").centered();
 								frame.render_widget(
@@ -249,12 +249,12 @@ impl App<'_> {
 								);
 							}
 							Some(image) => {
-								let picker = match self.config.is_graphical_protocol_disabled() {
-									true => Picker::halfblocks(),
-									false => {
-										Picker::from_query_stdio().unwrap_or(Picker::halfblocks())
-									}
-								};
+								let picker =
+									match self.core.config.is_graphical_protocol_disabled() {
+										true => Picker::halfblocks(),
+										false => Picker::from_query_stdio()
+											.unwrap_or(Picker::halfblocks()),
+									};
 
 								let mut image_static = picker.new_resize_protocol(image.clone());
 
@@ -442,7 +442,9 @@ impl App<'_> {
 			&mut self.result_vertical_scrollbar.state,
 		);
 
-		if !(self.config.should_wrap_body() && self.request_result_tab == RequestResultTabs::Body) {
+		if !(self.core.config.should_wrap_body()
+			&& self.request_result_tab == RequestResultTabs::Body)
+		{
 			frame.render_stateful_widget(
 				result_horizontal_scrollbar,
 				rect.inner(Margin {

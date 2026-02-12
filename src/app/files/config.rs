@@ -118,7 +118,7 @@ impl App<'_> {
 
 		config.set_should_skip_requests_response();
 
-		self.config = config;
+		self.core.config = config;
 
 		trace!("Config file parsed!");
 	}
@@ -147,40 +147,41 @@ impl App<'_> {
 
 		// Replace an attribute if it is not set
 
-		if self.config.theme.is_none() {
-			self.config.theme = global_config.theme;
+		if self.core.config.theme.is_none() {
+			self.core.config.theme = global_config.theme;
 		}
 
-		if self.config.disable_syntax_highlighting.is_none() {
-			self.config.disable_syntax_highlighting = global_config.disable_syntax_highlighting;
+		if self.core.config.disable_syntax_highlighting.is_none() {
+			self.core.config.disable_syntax_highlighting =
+				global_config.disable_syntax_highlighting;
 		}
 
-		if self.config.save_requests_response.is_none() {
-			self.config.save_requests_response = global_config.save_requests_response;
+		if self.core.config.save_requests_response.is_none() {
+			self.core.config.save_requests_response = global_config.save_requests_response;
 		}
 
-		if self.config.disable_images_preview.is_none() {
-			self.config.disable_images_preview = global_config.disable_images_preview;
+		if self.core.config.disable_images_preview.is_none() {
+			self.core.config.disable_images_preview = global_config.disable_images_preview;
 		}
 
-		if self.config.disable_graphical_protocol.is_none() {
-			self.config.disable_graphical_protocol = global_config.disable_graphical_protocol;
+		if self.core.config.disable_graphical_protocol.is_none() {
+			self.core.config.disable_graphical_protocol = global_config.disable_graphical_protocol;
 		}
 
-		if self.config.wrap_responses.is_none() {
-			self.config.wrap_responses = global_config.wrap_responses;
+		if self.core.config.wrap_responses.is_none() {
+			self.core.config.wrap_responses = global_config.wrap_responses;
 		}
 
-		if self.config.preferred_collection_file_format.is_none() {
-			self.config.preferred_collection_file_format =
+		if self.core.config.preferred_collection_file_format.is_none() {
+			self.core.config.preferred_collection_file_format =
 				global_config.preferred_collection_file_format;
 		}
 
-		if self.config.proxy.is_none() {
-			self.config.proxy = global_config.proxy;
+		if self.core.config.proxy.is_none() {
+			self.core.config.proxy = global_config.proxy;
 		}
 
-		self.config.set_should_skip_requests_response();
+		self.core.config.set_should_skip_requests_response();
 
 		trace!("Global config file parsed!");
 	}
@@ -211,7 +212,7 @@ impl App<'_> {
 		config.theme = Some(theme_name.to_string());
 
 		// Also update our local config
-		self.config.theme = Some(theme_name.to_string());
+		self.core.config.theme = Some(theme_name.to_string());
 
 		// Serialize and write
 		match toml::to_string_pretty(&config) {

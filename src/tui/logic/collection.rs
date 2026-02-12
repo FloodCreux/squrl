@@ -178,7 +178,7 @@ impl App<'_> {
 				// Check if this is a root request or a folder
 				let collection_index = selected[0];
 				let child_index = selected[1];
-				let folder_count = self.collections[collection_index].folders.len();
+				let folder_count = self.core.collections[collection_index].folders.len();
 				child_index >= folder_count
 			}
 			3 => true,
@@ -193,7 +193,7 @@ impl App<'_> {
 		if selected.len() == 2 {
 			let collection_index = selected[0];
 			let child_index = selected[1];
-			let folder_count = self.collections[collection_index].folders.len();
+			let folder_count = self.core.collections[collection_index].folders.len();
 			child_index < folder_count
 		} else {
 			false
@@ -203,7 +203,7 @@ impl App<'_> {
 	pub fn select_request(&mut self) {
 		if self.is_selection_a_request() {
 			let collection_index = self.collections_tree.state.selected()[0];
-			let folder_count = self.collections[collection_index].folders.len();
+			let folder_count = self.core.collections[collection_index].folders.len();
 			self.collections_tree
 				.set_selected_with_context(folder_count);
 			self.tui_update_request_param_tab();
@@ -221,7 +221,7 @@ impl App<'_> {
 				Protocol::WsRequest(_) => {}
 			}
 
-			*self.received_response.lock() = true;
+			*self.core.received_response.lock() = true;
 			self.select_request_state();
 		}
 	}
@@ -242,7 +242,7 @@ impl App<'_> {
 			2 => {
 				let collection_index = selected[0];
 				let child_index = selected[1];
-				let folder_count = self.collections[collection_index].folders.len();
+				let folder_count = self.core.collections[collection_index].folders.len();
 
 				if child_index < folder_count {
 					// This is a folder - toggle expand/collapse
@@ -338,7 +338,7 @@ impl App<'_> {
 			2 => {
 				let collection_index = selected[0];
 				let child_index = selected[1];
-				match self.collections[collection_index].resolve_child(child_index) {
+				match self.core.collections[collection_index].resolve_child(child_index) {
 					ChildRef::Folder(_) => self.delete_folder_state(),
 					ChildRef::RootRequest(_) => self.delete_request_state(),
 				}
@@ -371,7 +371,7 @@ impl App<'_> {
 				// Root-level request
 				let collection_index = selected[0];
 				let child_index = selected[1];
-				let folder_count = self.collections[collection_index].folders.len();
+				let folder_count = self.core.collections[collection_index].folders.len();
 				let request_index = child_index - folder_count;
 
 				match self.delete_request(collection_index, request_index) {
@@ -419,7 +419,7 @@ impl App<'_> {
 			2 => {
 				let collection_index = selected[0];
 				let child_index = selected[1];
-				match self.collections[collection_index].resolve_child(child_index) {
+				match self.core.collections[collection_index].resolve_child(child_index) {
 					ChildRef::Folder(_) => self.rename_folder_state(),
 					ChildRef::RootRequest(_) => self.rename_request_state(),
 				}
@@ -450,7 +450,7 @@ impl App<'_> {
 			2 => {
 				let collection_index = selected[0];
 				let child_index = selected[1];
-				let folder_count = self.collections[collection_index].folders.len();
+				let folder_count = self.core.collections[collection_index].folders.len();
 				let request_index = child_index - folder_count;
 
 				match self.rename_request(collection_index, request_index, new_request_name) {
@@ -507,7 +507,7 @@ impl App<'_> {
 			2 => {
 				let collection_index = selected[0];
 				let child_index = selected[1];
-				match self.collections[collection_index].resolve_child(child_index) {
+				match self.core.collections[collection_index].resolve_child(child_index) {
 					ChildRef::Folder(folder_index) => {
 						let _ = self.duplicate_folder(collection_index, folder_index);
 					}
@@ -534,7 +534,7 @@ impl App<'_> {
 			2 => {
 				let collection_index = selected[0];
 				let child_index = selected[1];
-				match self.collections[collection_index].resolve_child(child_index) {
+				match self.core.collections[collection_index].resolve_child(child_index) {
 					ChildRef::Folder(_) => self.tui_move_folder_up(),
 					ChildRef::RootRequest(_) => self.tui_move_request_up(),
 				}
@@ -552,12 +552,12 @@ impl App<'_> {
 			return;
 		}
 
-		let collection = self.collections.remove(selection[0]);
+		let collection = self.core.collections.remove(selection[0]);
 
 		// Decrement selection
 		selection[0] -= 1;
 
-		self.collections.insert(selection[0], collection);
+		self.core.collections.insert(selection[0], collection);
 
 		// Update the selection in order to move with the element
 		self.collections_tree.state.select(selection.clone());
@@ -568,7 +568,7 @@ impl App<'_> {
 	pub fn tui_move_request_up(&mut self) {
 		let mut selection = self.collections_tree.state.selected().to_vec();
 		let collection_index = selection[0];
-		let folder_count = self.collections[collection_index].folders.len();
+		let folder_count = self.core.collections[collection_index].folders.len();
 
 		// Cannot move above the first root request (which is at tree index folder_count)
 		if selection[1] <= folder_count {
@@ -578,7 +578,7 @@ impl App<'_> {
 		let request_index = selection[1] - folder_count;
 
 		// Retrieve the request
-		let request = self.collections[collection_index]
+		let request = self.core.collections[collection_index]
 			.requests
 			.remove(request_index);
 
@@ -586,7 +586,7 @@ impl App<'_> {
 		selection[1] -= 1;
 
 		// Insert the request at its new index
-		self.collections[collection_index]
+		self.core.collections[collection_index]
 			.requests
 			.insert(request_index - 1, request);
 
@@ -606,13 +606,13 @@ impl App<'_> {
 			return;
 		}
 
-		let folder = self.collections[collection_index]
+		let folder = self.core.collections[collection_index]
 			.folders
 			.remove(folder_index);
 
 		selection[1] -= 1;
 
-		self.collections[collection_index]
+		self.core.collections[collection_index]
 			.folders
 			.insert(folder_index - 1, folder);
 
@@ -630,13 +630,13 @@ impl App<'_> {
 			return;
 		}
 
-		let request = self.collections[collection_index].folders[folder_index]
+		let request = self.core.collections[collection_index].folders[folder_index]
 			.requests
 			.remove(request_index);
 
 		selection[2] -= 1;
 
-		self.collections[collection_index].folders[folder_index]
+		self.core.collections[collection_index].folders[folder_index]
 			.requests
 			.insert(request_index - 1, request);
 
@@ -651,7 +651,7 @@ impl App<'_> {
 			2 => {
 				let collection_index = selected[0];
 				let child_index = selected[1];
-				match self.collections[collection_index].resolve_child(child_index) {
+				match self.core.collections[collection_index].resolve_child(child_index) {
 					ChildRef::Folder(_) => self.tui_move_folder_down(),
 					ChildRef::RootRequest(_) => self.tui_move_request_down(),
 				}
@@ -665,16 +665,16 @@ impl App<'_> {
 		let mut selection = self.collections_tree.state.selected().to_vec();
 
 		// Cannot increment selection further
-		if selection[0] == self.collections.len() - 1 {
+		if selection[0] == self.core.collections.len() - 1 {
 			return;
 		}
 
-		let collection = self.collections.remove(selection[0]);
+		let collection = self.core.collections.remove(selection[0]);
 
 		// Increment selection
 		selection[0] += 1;
 
-		self.collections.insert(selection[0], collection);
+		self.core.collections.insert(selection[0], collection);
 
 		// Update the selection in order to move with the element
 		self.collections_tree.state.select(selection.clone());
@@ -685,16 +685,16 @@ impl App<'_> {
 	pub fn tui_move_request_down(&mut self) {
 		let mut selection = self.collections_tree.state.selected().to_vec();
 		let collection_index = selection[0];
-		let folder_count = self.collections[collection_index].folders.len();
+		let folder_count = self.core.collections[collection_index].folders.len();
 		let request_index = selection[1] - folder_count;
 
 		// Cannot increment selection further
-		if request_index == self.collections[collection_index].requests.len() - 1 {
+		if request_index == self.core.collections[collection_index].requests.len() - 1 {
 			return;
 		}
 
 		// Retrieve the request
-		let request = self.collections[collection_index]
+		let request = self.core.collections[collection_index]
 			.requests
 			.remove(request_index);
 
@@ -702,7 +702,7 @@ impl App<'_> {
 		selection[1] += 1;
 
 		// Insert the request at its new index
-		self.collections[collection_index]
+		self.core.collections[collection_index]
 			.requests
 			.insert(request_index + 1, request);
 
@@ -717,17 +717,17 @@ impl App<'_> {
 		let collection_index = selection[0];
 		let folder_index = selection[1];
 
-		if folder_index == self.collections[collection_index].folders.len() - 1 {
+		if folder_index == self.core.collections[collection_index].folders.len() - 1 {
 			return;
 		}
 
-		let folder = self.collections[collection_index]
+		let folder = self.core.collections[collection_index]
 			.folders
 			.remove(folder_index);
 
 		selection[1] += 1;
 
-		self.collections[collection_index]
+		self.core.collections[collection_index]
 			.folders
 			.insert(folder_index + 1, folder);
 
@@ -742,20 +742,20 @@ impl App<'_> {
 		let request_index = selection[2];
 
 		if request_index
-			== self.collections[collection_index].folders[folder_index]
+			== self.core.collections[collection_index].folders[folder_index]
 				.requests
 				.len() - 1
 		{
 			return;
 		}
 
-		let request = self.collections[collection_index].folders[folder_index]
+		let request = self.core.collections[collection_index].folders[folder_index]
 			.requests
 			.remove(request_index);
 
 		selection[2] += 1;
 
-		self.collections[collection_index].folders[folder_index]
+		self.core.collections[collection_index].folders[folder_index]
 			.requests
 			.insert(request_index + 1, request);
 

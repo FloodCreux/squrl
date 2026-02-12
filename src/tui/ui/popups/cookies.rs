@@ -55,7 +55,7 @@ impl App<'_> {
 			frame.render_widget(paragraph, inner_cookies_layout[index]);
 		}
 
-		match self.cookies_popup.cookies_table.selection {
+		match self.core.cookies_popup.cookies_table.selection {
 			None => {
 				let cookies_lines = vec![
 					Line::default(),
@@ -93,7 +93,7 @@ impl App<'_> {
 			vec![],
 		];
 
-		for cookie in &self.cookies_popup.cookies_table.rows {
+		for cookie in &self.core.cookies_popup.cookies_table.rows {
 			for (index, value) in cookie.iter().enumerate() {
 				let value = ListItem::from(value.clone());
 
@@ -122,7 +122,7 @@ impl App<'_> {
 			frame.render_stateful_widget(
 				list,
 				table_layout[index],
-				&mut self.cookies_popup.cookies_table.lists_states[index].clone(),
+				&mut self.core.cookies_popup.cookies_table.lists_states[index].clone(),
 			);
 		}
 	}
@@ -139,7 +139,7 @@ impl App<'_> {
 
 		let col_area = table_layout[selection.1];
 
-		let row_offset = self.cookies_popup.cookies_table.lists_states[0].offset();
+		let row_offset = self.core.cookies_popup.cookies_table.lists_states[0].offset();
 		let visible_row = (selection.0 - row_offset) as u16;
 
 		if visible_row >= col_area.height {
@@ -152,17 +152,19 @@ impl App<'_> {
 		let blank = " ".repeat(text_rect.width as usize);
 		frame.render_widget(Paragraph::new(blank), text_rect);
 
-		self.cookies_popup
+		self.core
+			.cookies_popup
 			.cookies_table
 			.selection_text_input
 			.display_cursor = true;
-		self.cookies_popup
+		self.core
+			.cookies_popup
 			.cookies_table
 			.selection_text_input
 			.highlight_text = true;
 
 		frame.render_widget(
-			SingleLineTextInput(&mut self.cookies_popup.cookies_table.selection_text_input),
+			SingleLineTextInput(&mut self.core.cookies_popup.cookies_table.selection_text_input),
 			text_rect,
 		);
 	}

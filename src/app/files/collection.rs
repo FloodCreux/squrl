@@ -56,7 +56,7 @@ impl App<'_> {
 		collection.path = path_buf;
 		collection.file_format = file_format;
 
-		self.collections.push(collection);
+		self.core.collections.push(collection);
 
 		trace!("Collection file parsed!");
 	}
@@ -69,13 +69,13 @@ impl App<'_> {
 		}
 
 		// Auto-assign a file path for ephemeral collections on first save
-		if self.collections[collection_index]
+		if self.core.collections[collection_index]
 			.path
 			.as_os_str()
 			.is_empty()
 		{
-			let collection = &self.collections[collection_index];
-			let file_format = self.config.get_preferred_collection_file_format();
+			let collection = &self.core.collections[collection_index];
+			let file_format = self.core.config.get_preferred_collection_file_format();
 			let path = ARGS
 				.directory
 				.as_ref()
@@ -88,11 +88,11 @@ impl App<'_> {
 				path.display()
 			);
 
-			self.collections[collection_index].path = path;
-			self.collections[collection_index].file_format = file_format;
+			self.core.collections[collection_index].path = path;
+			self.core.collections[collection_index].file_format = file_format;
 		}
 
-		let collection = &self.collections[collection_index];
+		let collection = &self.core.collections[collection_index];
 
 		info!("Saving collection \"{}\"", collection.name);
 

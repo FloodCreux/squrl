@@ -43,13 +43,15 @@ impl App<'_> {
 			path: path_buf.to_path_buf(),
 		};
 
-		self.environments.push(Arc::new(RwLock::new(environment)));
+		self.core
+			.environments
+			.push(Arc::new(RwLock::new(environment)));
 
 		trace!("Environment file parsed!");
 	}
 
 	pub fn save_environment_to_file(&mut self, env_index: usize) {
-		let environment = self.environments[env_index].read();
+		let environment = self.core.environments[env_index].read();
 
 		save_environment_to_file(&environment);
 	}

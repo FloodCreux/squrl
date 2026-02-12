@@ -41,19 +41,19 @@ impl App<'_> {
 			}
 		}
 
-		let received_response = *self.received_response.lock();
+		let received_response = *self.core.received_response.lock();
 		if received_response {
 			self.tui_highlight_response_body_and_console();
 			self.tui_refresh_result_scrollbars();
 
-			if self.config.should_save_requests_response() {
+			if self.core.config.should_save_requests_response() {
 				let selection = self.collections_tree.state.selected().to_vec();
 				if !selection.is_empty() {
 					self.save_collection_to_file(selection[0]);
 				}
 			}
 
-			*self.received_response.lock() = false;
+			*self.core.received_response.lock() = false;
 		}
 	}
 
@@ -195,13 +195,13 @@ impl App<'_> {
 					.key_event(key, None),
 
 				/* Cookies */
-				AppEvent::CookiesMoveUp(_) => self.cookies_popup.cookies_table.up(),
-				AppEvent::CookiesMoveDown(_) => self.cookies_popup.cookies_table.down(),
-				AppEvent::CookiesMoveLeft(_) => self.cookies_popup.cookies_table.left(),
-				AppEvent::CookiesMoveRight(_) => self.cookies_popup.cookies_table.right(),
+				AppEvent::CookiesMoveUp(_) => self.core.cookies_popup.cookies_table.up(),
+				AppEvent::CookiesMoveDown(_) => self.core.cookies_popup.cookies_table.down(),
+				AppEvent::CookiesMoveLeft(_) => self.core.cookies_popup.cookies_table.left(),
+				AppEvent::CookiesMoveRight(_) => self.core.cookies_popup.cookies_table.right(),
 
 				AppEvent::EditCookie(_) => {
-					if self.cookies_popup.cookies_table.selection.is_some() {
+					if self.core.cookies_popup.cookies_table.selection.is_some() {
 						self.edit_cookie_state()
 					}
 				}
@@ -209,6 +209,7 @@ impl App<'_> {
 				AppEvent::DeleteCookie(_) => self.tui_delete_cookie(),
 
 				AppEvent::ModifyCookie(_) => match self
+					.core
 					.cookies_popup
 					.cookies_table
 					.selection_text_input
@@ -216,12 +217,14 @@ impl App<'_> {
 				{
 					true => self.tui_modify_cookie(),
 					false => self
+						.core
 						.cookies_popup
 						.cookies_table
 						.selection_text_input
 						.key_event(key, None),
 				},
 				AppEvent::CancelEditCookie(_) => match self
+					.core
 					.cookies_popup
 					.cookies_table
 					.selection_text_input
@@ -229,12 +232,14 @@ impl App<'_> {
 				{
 					true => self.display_cookies_state(),
 					false => self
+						.core
 						.cookies_popup
 						.cookies_table
 						.selection_text_input
 						.key_event(key, None),
 				},
 				AppEvent::KeyEventEditCookie(_) => self
+					.core
 					.cookies_popup
 					.cookies_table
 					.selection_text_input

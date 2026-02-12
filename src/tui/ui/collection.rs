@@ -13,6 +13,7 @@ use crate::app::files::theme::THEME;
 impl<'a> App<'a> {
 	pub(super) fn render_collections(&mut self, frame: &mut Frame, rect: Rect) {
 		let items: Vec<TreeItem<'a, usize>> = self
+			.core
 			.collections
 			.par_iter()
 			.enumerate()

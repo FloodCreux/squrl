@@ -85,7 +85,7 @@ impl App<'_> {
 
 			info!("Message sent");
 
-			*self.received_response.lock() = true;
+			*self.core.received_response.lock() = true;
 		}
 
 		self.tui_load_request_message_param_tab();

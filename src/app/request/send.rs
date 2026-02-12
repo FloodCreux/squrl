@@ -97,7 +97,7 @@ impl App<'_> {
 		/* PROXY */
 
 		if request.settings.use_config_proxy.as_bool() {
-			match &self.config.get_proxy() {
+			match &self.core.config.get_proxy() {
 				None => {}
 				Some(proxy) => {
 					match &proxy.http_proxy {
@@ -129,7 +129,7 @@ impl App<'_> {
 
 		/* COOKIES */
 
-		let local_cookie_store = Arc::clone(&self.cookies_popup.cookie_store);
+		let local_cookie_store = Arc::clone(&self.core.cookies_popup.cookie_store);
 		client_builder = client_builder.cookie_provider(local_cookie_store);
 
 		/* PRE-REQUEST SCRIPT */

@@ -30,7 +30,7 @@ impl App<'_> {
 		.split(area);
 
 		// Sync folder_count from the actual collection data (needed after collection changes)
-		let collection = &self.collections[self.new_request_popup.selected_collection];
+		let collection = &self.core.collections[self.new_request_popup.selected_collection];
 		self.new_request_popup.folder_count = collection.folders.len();
 
 		// Collection selector (row 0)
@@ -52,7 +52,8 @@ impl App<'_> {
 		let selected_folder_name = match self.new_request_popup.selected_folder {
 			None => "None (root)".to_string(),
 			Some(folder_index) if folder_index < self.new_request_popup.folder_count => {
-				self.collections[self.new_request_popup.selected_collection].folders[folder_index]
+				self.core.collections[self.new_request_popup.selected_collection].folders
+					[folder_index]
 					.name
 					.clone()
 			}

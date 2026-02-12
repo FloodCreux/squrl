@@ -16,10 +16,11 @@ impl App<'_> {
 	pub fn get_request_from_selection(&self, selected: &SelectedRequest) -> Arc<RwLock<Request>> {
 		match selected {
 			SelectedRequest::RootRequest(collection_index, request_index) => {
-				self.collections[*collection_index].requests[*request_index].clone()
+				self.core.collections[*collection_index].requests[*request_index].clone()
 			}
 			SelectedRequest::FolderRequest(collection_index, folder_index, request_index) => {
-				self.collections[*collection_index].folders[*folder_index].requests[*request_index]
+				self.core.collections[*collection_index].folders[*folder_index].requests
+					[*request_index]
 					.clone()
 			}
 		}
@@ -31,7 +32,7 @@ impl App<'_> {
 		&self,
 		selected_request_index: &(usize, usize),
 	) -> Arc<RwLock<Request>> {
-		self.collections[selected_request_index.0].requests[selected_request_index.1].clone()
+		self.core.collections[selected_request_index.0].requests[selected_request_index.1].clone()
 	}
 
 	pub fn with_request_write<F, R>(
@@ -43,7 +44,11 @@ impl App<'_> {
 	where
 		F: FnOnce(&mut Request) -> R,
 	{
-		// Check if this is actually a folder request by examining the current selection
+		// NOTE: `collections_tree.selected` is TUI state that lives on `App`
+		// (not `CoreState`). In CLI mode it is always `None`, so the fallback
+		// path through `get_request_as_local_from_indexes` is taken. This
+		// coupling is intentional: it lets us resolve folder requests without
+		// threading a selection parameter through every call site.
 		let local = match &self.collections_tree.selected {
 			Some(selected)
 				if selected.collection_index() == collection_index
@@ -71,7 +76,7 @@ impl App<'_> {
 	where
 		F: FnOnce(&mut Request) -> anyhow::Result<()>,
 	{
-		// Check if this is actually a folder request by examining the current selection
+		// See note in `with_request_write` about `collections_tree.selected`.
 		let local = match &self.collections_tree.selected {
 			Some(selected)
 				if selected.collection_index() == collection_index

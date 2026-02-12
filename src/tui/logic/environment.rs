@@ -12,10 +12,10 @@ use crate::models::request::KeyValue;
 
 impl App<'_> {
 	pub fn tui_next_environment(&mut self) {
-		if self.selected_environment + 1 < self.environments.len() {
-			self.selected_environment += 1;
+		if self.core.selected_environment + 1 < self.core.environments.len() {
+			self.core.selected_environment += 1;
 		} else {
-			self.selected_environment = 0;
+			self.core.selected_environment = 0;
 		}
 	}
 
@@ -40,7 +40,7 @@ impl App<'_> {
 	}
 
 	pub fn tui_modify_env_variable(&mut self) {
-		let selected_env_index = self.selected_environment;
+		let selected_env_index = self.core.selected_environment;
 		let (row, column) = self.env_editor_table.selection.unwrap();
 
 		let input_text = self.env_editor_table.selection_text_input.to_string();
@@ -60,7 +60,7 @@ impl App<'_> {
 	}
 
 	pub fn tui_create_env_variable(&mut self) {
-		let selected_env_index = self.selected_environment;
+		let selected_env_index = self.core.selected_environment;
 
 		match self.create_env_value(selected_env_index, None, String::from("VALUE")) {
 			Ok(_) => {}
@@ -76,7 +76,7 @@ impl App<'_> {
 		}
 
 		let (row, _) = self.env_editor_table.selection.unwrap();
-		let selected_env_index = self.selected_environment;
+		let selected_env_index = self.core.selected_environment;
 
 		match self.delete_env_index(selected_env_index, row) {
 			Ok(_) => {}

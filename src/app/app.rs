@@ -38,7 +38,23 @@ use crate::tui::utils::syntax_highlighting::SyntaxHighlighting;
 use arboard::Clipboard;
 use ratatui::prelude::{Line, Stylize};
 
+/// Core application state shared between TUI and CLI modes.
+///
+/// This struct holds the data that is needed by both the interactive TUI and
+/// the headless CLI: collections, environments, configuration, the cookie
+/// store, and the response-received signal.
+pub struct CoreState {
+	pub config: Config,
+	pub collections: Vec<Collection>,
+	pub environments: Vec<Arc<RwLock<Environment>>>,
+	pub selected_environment: usize,
+	pub cookies_popup: CookiesPopup,
+	pub received_response: Arc<Mutex<bool>>,
+}
+
 pub struct App<'a> {
+	pub core: CoreState,
+
 	pub tick_rate: Duration,
 	pub should_quit: bool,
 	pub should_display_help: bool,
@@ -46,25 +62,17 @@ pub struct App<'a> {
 	pub state: AppState,
 	pub was_last_state_selected_request: bool,
 
-	pub config: Config,
-
 	/* Help */
 	pub help_popup: HelpPopup,
 
 	/* Environments */
-	pub environments: Vec<Arc<RwLock<Environment>>>,
-	pub selected_environment: usize,
 	pub env_editor_table: StatefulCustomTable<'a>,
-
-	/* Cookies */
-	pub cookies_popup: CookiesPopup,
 
 	/* Logs */
 	pub logs_vertical_scrollbar: StatefulScrollbar,
 	pub logs_horizontal_scrollbar: StatefulScrollbar,
 
 	/* Collections */
-	pub collections: Vec<Collection>,
 	pub collections_tree: StatefulTree<'a>,
 
 	pub request_view: RequestView,
@@ -118,8 +126,6 @@ pub struct App<'a> {
 	pub request_settings_popup: SettingsPopup,
 
 	/* Response */
-	pub received_response: Arc<Mutex<bool>>,
-
 	pub result_throbber_state: ThrobberState,
 	pub result_vertical_scrollbar: StatefulScrollbar,
 	pub result_horizontal_scrollbar: StatefulScrollbar,
@@ -146,6 +152,15 @@ pub struct App<'a> {
 impl App<'_> {
 	pub fn new<'a>() -> anyhow::Result<App<'a>> {
 		Ok(App {
+			core: CoreState {
+				config: Config::default(),
+				collections: vec![],
+				environments: vec![],
+				selected_environment: 0,
+				cookies_popup: CookiesPopup::default(),
+				received_response: Arc::new(Mutex::new(false)),
+			},
+
 			tick_rate: TICK_RATE,
 			should_quit: false,
 			should_display_help: false,
@@ -153,14 +168,10 @@ impl App<'_> {
 			state: AppState::Normal,
 			was_last_state_selected_request: false,
 
-			config: Config::default(),
-
 			/* Help */
 			help_popup: HelpPopup::default(),
 
 			/* Environments */
-			environments: vec![],
-			selected_environment: 0,
 			env_editor_table: StatefulCustomTable::new(
 				vec![
 					Line::default(),
@@ -171,15 +182,11 @@ impl App<'_> {
 				"Value",
 			),
 
-			/* Cookies */
-			cookies_popup: CookiesPopup::default(),
-
 			/* Logs */
 			logs_vertical_scrollbar: StatefulScrollbar::default(),
 			logs_horizontal_scrollbar: StatefulScrollbar::default(),
 
 			/* Collections */
-			collections: vec![],
 			collections_tree: StatefulTree::default(),
 
 			request_view: RequestView::Normal,
@@ -267,7 +274,6 @@ impl App<'_> {
 
 			/* Response */
 			result_throbber_state: ThrobberState::default(),
-			received_response: Arc::new(Mutex::new(false)),
 			result_vertical_scrollbar: StatefulScrollbar::default(),
 			result_horizontal_scrollbar: StatefulScrollbar::default(),
 			response_body_text_area: TextInput::new_multiline(),

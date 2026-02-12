@@ -137,12 +137,12 @@ impl<'a> App<'a> {
 
 		// Ensures that legacy collections and requests gets save as their new version
 		if ARGS.should_save {
-			for index in 0..self.collections.len() {
+			for index in 0..self.core.collections.len() {
 				self.save_collection_to_file(index);
 			}
 		}
 
-		self.collections.sort_by(|a, b| {
+		self.core.collections.sort_by(|a, b| {
 			a.last_position
 				.unwrap_or(usize::MAX)
 				.cmp(&b.last_position.unwrap_or(usize::MAX))
@@ -241,7 +241,7 @@ impl<'a> App<'a> {
 						file_format: CollectionFileFormat::default(),
 					};
 
-					self.collections.push(collection);
+					self.core.collections.push(collection);
 				}
 			}
 		}

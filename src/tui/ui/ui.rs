@@ -50,7 +50,7 @@ impl<'a> App<'a> {
 		)
 		.split(main_layout[1]);
 
-		if self.environments.is_empty() {
+		if self.core.environments.is_empty() {
 			let env_and_collections_layout =
 				Layout::new(Vertical, [Constraint::Fill(1)]).split(inner_layout[0]);
 

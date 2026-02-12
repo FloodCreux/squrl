@@ -236,7 +236,7 @@ impl App<'_> {
 		}
 
 		// 4. Check config file theme field
-		if let Some(theme_name) = self.config.get_theme() {
+		if let Some(theme_name) = self.core.config.get_theme() {
 			trace!("Loading theme from config file: {}", theme_name);
 			match load_theme_by_name(theme_name, user_themes_dir.as_deref()) {
 				Ok(()) => return,

@@ -11,7 +11,7 @@ impl App<'_> {
 	) -> anyhow::Result<()> {
 		if let Some(environment_name) = &collection_command.env {
 			let environment_index = self.find_environment(environment_name)?;
-			self.selected_environment = environment_index;
+			self.core.selected_environment = environment_index;
 		}
 
 		match &collection_command.collection_subcommand {
@@ -40,7 +40,7 @@ impl App<'_> {
 	}
 
 	pub fn list_collections(&mut self, with_request_names: bool) -> anyhow::Result<()> {
-		for collection in &self.collections {
+		for collection in &self.core.collections {
 			print_collection(collection, !with_request_names, with_request_names);
 
 			if with_request_names {
@@ -57,7 +57,7 @@ impl App<'_> {
 		without_request_names: bool,
 	) -> anyhow::Result<()> {
 		let collection_index = self.find_collection(collection_name)?;
-		let collection = &self.collections[collection_index];
+		let collection = &self.core.collections[collection_index];
 
 		print_collection(collection, false, !without_request_names);
 
