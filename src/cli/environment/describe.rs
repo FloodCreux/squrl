@@ -3,7 +3,9 @@ use crate::app::files::environment::OS_ENV_VARS;
 
 impl App<'_> {
 	pub fn cli_describe_env(&mut self, env_index: usize, os_vars: bool) -> anyhow::Result<()> {
-		let local_env = self.get_env_as_local_from_index(env_index).unwrap();
+		let local_env = self
+			.get_env_as_local_from_index(env_index)
+			.expect("environment index should be valid");
 
 		{
 			let env = local_env.read();

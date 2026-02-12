@@ -7,9 +7,9 @@ use crate::models::request::Request;
 use crate::tui::utils::stateful::stateful_tree::SelectedRequest;
 
 impl App<'_> {
-	pub fn get_selected_request_as_local(&self) -> Arc<RwLock<Request>> {
-		let selected = &self.collections_tree.selected.unwrap();
-		self.get_request_from_selection(selected)
+	pub fn get_selected_request_as_local(&self) -> Option<Arc<RwLock<Request>>> {
+		let selected = self.collections_tree.selected.as_ref()?;
+		Some(self.get_request_from_selection(selected))
 	}
 
 	/// Resolve a request from a SelectedRequest enum.

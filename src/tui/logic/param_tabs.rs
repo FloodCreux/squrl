@@ -4,7 +4,9 @@ use crate::tui::ui::param_tabs::param_tabs::RequestParamsTabs;
 
 impl App<'_> {
 	pub fn tui_next_request_param_tab(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
+			return;
+		};
 		let selected_request = local_selected_request.read();
 
 		self.request_param_tab = match &selected_request.protocol {
@@ -30,7 +32,9 @@ impl App<'_> {
 	}
 
 	pub fn tui_update_request_param_tab(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
+			return;
+		};
 		let selected_request = local_selected_request.read();
 
 		match selected_request.protocol {

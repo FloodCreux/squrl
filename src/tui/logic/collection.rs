@@ -16,7 +16,9 @@ impl App<'_> {
 		self.reset_inputs_mode();
 		self.clear_inputs();
 
-		let local_selected_request = self.get_selected_request_as_local();
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
+			return;
+		};
 		let selected_request = local_selected_request.read();
 
 		self.url_text_input
@@ -25,7 +27,9 @@ impl App<'_> {
 		self.headers_table.rows = selected_request.headers.clone();
 
 		if !selected_request.params.is_empty() {
-			let selection = self.query_params_table.selection.unwrap();
+			let Some(selection) = self.query_params_table.selection else {
+				return;
+			};
 
 			let param_text = match selection {
 				(x, 0) => selected_request.params[x].data.0.clone(),
@@ -89,7 +93,9 @@ impl App<'_> {
 		}
 
 		if !selected_request.headers.is_empty() {
-			let selection = self.headers_table.selection.unwrap();
+			let Some(selection) = self.headers_table.selection else {
+				return;
+			};
 
 			let header_text = match selection {
 				(x, 0) => selected_request.headers[x].data.0.clone(),
@@ -112,7 +118,9 @@ impl App<'_> {
 					self.body_form_table.rows = form.clone();
 
 					if !form.is_empty() {
-						let selection = self.body_form_table.selection.unwrap();
+						let Some(selection) = self.body_form_table.selection else {
+							return;
+						};
 
 						let form_text = match selection {
 							(x, 0) => form[x].data.0.clone(),
@@ -211,7 +219,9 @@ impl App<'_> {
 			self.tui_update_query_params_selection();
 			self.tui_update_headers_selection();
 
-			let local_selected_request = self.get_selected_request_as_local();
+			let Some(local_selected_request) = self.get_selected_request_as_local() else {
+				return;
+			};
 			let selected_request = local_selected_request.read();
 
 			match selected_request.protocol {

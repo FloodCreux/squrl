@@ -23,7 +23,7 @@ impl<'a> App<'a> {
 		let tree_items = self.collections_tree.items.clone();
 
 		let collections_tree = Tree::new(&tree_items)
-			.unwrap()
+			.expect("tree construction should succeed with valid items")
 			.highlight_style(Style::default().add_modifier(Modifier::BOLD))
 			.highlight_symbol(">")
 			.node_closed_symbol("")

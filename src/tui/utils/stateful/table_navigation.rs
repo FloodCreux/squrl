@@ -19,7 +19,9 @@ pub trait TableNavigation {
 			return;
 		}
 
-		let sel = self.selection().unwrap();
+		let sel = self
+			.selection()
+			.expect("selection should exist after guard");
 
 		let x = match self.selected_row_in_column(sel.1) {
 			None => 0,
@@ -35,7 +37,9 @@ pub trait TableNavigation {
 			return;
 		}
 
-		let sel = self.selection().unwrap();
+		let sel = self
+			.selection()
+			.expect("selection should exist after guard");
 
 		let x = match self.selected_row_in_column(sel.1) {
 			None => 0,
@@ -51,7 +55,9 @@ pub trait TableNavigation {
 			return;
 		}
 
-		let sel = self.selection().unwrap();
+		let sel = self
+			.selection()
+			.expect("selection should exist after guard");
 		let y = wrapping_decrement(sel.1, self.columns_count());
 		self.set_selection(Some((sel.0, y)));
 	}

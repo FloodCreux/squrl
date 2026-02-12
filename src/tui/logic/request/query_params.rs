@@ -3,7 +3,9 @@ use crate::app::app::App;
 impl App<'_> {
 	/// Reset selection of if params are provided, either set it to none
 	pub fn tui_update_query_params_selection(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
+			return;
+		};
 		let selected_request = local_selected_request.read();
 
 		match selected_request.params.is_empty() {
@@ -14,9 +16,13 @@ impl App<'_> {
 
 	pub fn tui_modify_request_query_param(&mut self) {
 		let input_text = self.query_params_table.selection_text_input.to_string();
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 
-		let selection = self.query_params_table.selection.unwrap();
+		let Some(selection) = self.query_params_table.selection else {
+			return;
+		};
 
 		match self.modify_request_query_param(
 			selected.collection_index(),
@@ -33,7 +39,9 @@ impl App<'_> {
 	}
 
 	pub fn tui_create_new_query_param(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 
 		match self.create_new_query_param(
 			selected.collection_index(),
@@ -54,8 +62,12 @@ impl App<'_> {
 			return;
 		}
 
-		let selection = self.query_params_table.selection.unwrap();
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selection) = self.query_params_table.selection else {
+			return;
+		};
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 
 		match self.delete_query_param(
 			selected.collection_index(),
@@ -75,8 +87,13 @@ impl App<'_> {
 			return;
 		}
 
-		let row = self.query_params_table.selection.unwrap().0;
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selection) = self.query_params_table.selection else {
+			return;
+		};
+		let row = selection.0;
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 
 		match self.toggle_query_param(
 			selected.collection_index(),
@@ -96,8 +113,13 @@ impl App<'_> {
 			return;
 		}
 
-		let row = self.query_params_table.selection.unwrap().0;
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selection) = self.query_params_table.selection else {
+			return;
+		};
+		let row = selection.0;
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 
 		match self.duplicate_query_param(selected.collection_index(), selected.request_index(), row)
 		{

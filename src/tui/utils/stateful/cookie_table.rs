@@ -101,13 +101,12 @@ impl StatefulCookieTable {
 	}
 
 	pub fn up(&mut self) {
-		if self.rows.is_empty() || self.selection.is_none() {
+		let Some((_, y)) = self.selection else { return };
+		if self.rows.is_empty() {
 			return;
 		}
 
-		let selection = self.selection.unwrap();
-
-		let x = match self.lists_states[selection.1].selected() {
+		let x = match self.lists_states[y].selected() {
 			None => 0,
 			Some(i) => self.decrement_x(i),
 		};
@@ -116,18 +115,16 @@ impl StatefulCookieTable {
 			list_state.select(Some(x));
 		}
 
-		let (_, y) = self.selection.unwrap();
 		self.selection = Some((x, y))
 	}
 
 	pub fn down(&mut self) {
-		if self.rows.is_empty() || self.selection.is_none() {
+		let Some((_, y)) = self.selection else { return };
+		if self.rows.is_empty() {
 			return;
 		}
 
-		let selection = self.selection.unwrap();
-
-		let x = match self.lists_states[selection.1].selected() {
+		let x = match self.lists_states[y].selected() {
 			None => 0,
 			Some(i) => self.increment_x(i),
 		};
@@ -136,33 +133,32 @@ impl StatefulCookieTable {
 			list_state.select(Some(x));
 		}
 
-		let (_, y) = self.selection.unwrap();
 		self.selection = Some((x, y))
 	}
 
 	pub fn left(&mut self) {
-		if self.rows.is_empty() || self.selection.is_none() {
+		let Some((x, col)) = self.selection else {
+			return;
+		};
+		if self.rows.is_empty() {
 			return;
 		}
 
-		let selection = self.selection.unwrap();
+		let y = self.decrement_y(col);
 
-		let y = self.decrement_y(selection.1);
-
-		let (x, _) = self.selection.unwrap();
 		self.selection = Some((x, y))
 	}
 
 	pub fn right(&mut self) {
-		if self.rows.is_empty() || self.selection.is_none() {
+		let Some((x, col)) = self.selection else {
+			return;
+		};
+		if self.rows.is_empty() {
 			return;
 		}
 
-		let selection = self.selection.unwrap();
+		let y = self.increment_y(col);
 
-		let y = self.increment_y(selection.1);
-
-		let (x, _) = self.selection.unwrap();
 		self.selection = Some((x, y))
 	}
 }
@@ -182,7 +178,10 @@ pub fn cookie_to_row(cookie: &Cookie) -> [String; COOKIES_COLUMNS_NUMBER] {
 		match cookie.expires() {
 			None => String::new(),
 			Some(expiration) => match expiration.is_datetime() {
-				true => expiration.datetime().unwrap().to_string(),
+				true => expiration
+					.datetime()
+					.expect("datetime should exist when is_datetime is true")
+					.to_string(),
 				false => String::from("session"),
 			},
 		},

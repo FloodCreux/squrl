@@ -67,7 +67,7 @@ impl App<'_> {
 			path: ARGS
 				.directory
 				.as_ref()
-				.unwrap()
+				.expect("--directory argument is required")
 				.join(format!("{}.{}", collection_name, file_format)),
 			file_format,
 		}];
@@ -161,7 +161,11 @@ impl App<'_> {
 			".env.{}",
 			postman_environment.name.to_lowercase().replace(" ", "_")
 		);
-		let path = ARGS.directory.as_ref().unwrap().join(filename);
+		let path = ARGS
+			.directory
+			.as_ref()
+			.expect("--directory argument is required")
+			.join(filename);
 
 		let mut env = Environment {
 			name: postman_environment.name,
@@ -255,7 +259,7 @@ impl App<'_> {
 			path: ARGS
 				.directory
 				.as_ref()
-				.unwrap()
+				.expect("--directory argument is required")
 				.join(format!("{}.{}", collection_name, file_format)),
 			file_format,
 		};
@@ -346,7 +350,7 @@ impl App<'_> {
 					path: ARGS
 						.directory
 						.as_ref()
-						.unwrap()
+						.expect("--directory argument is required")
 						.join(format!("{}.{}", collection_name, file_format)),
 					file_format,
 				};
@@ -355,7 +359,10 @@ impl App<'_> {
 
 				(
 					self.core.collections.len() - 1,
-					self.core.collections.last_mut().unwrap(),
+					self.core
+						.collections
+						.last_mut()
+						.expect("collections should not be empty after push"),
 				)
 			}
 		};
@@ -402,11 +409,11 @@ impl App<'_> {
 					last_position: Some(self.core.collections.len() - 1),
 					folders: vec![],
 					requests: vec![],
-					path: ARGS.directory.as_ref().unwrap().join(format!(
-						"{}.{}",
-						collection_name.clone(),
-						file_format
-					)),
+					path: ARGS
+						.directory
+						.as_ref()
+						.expect("--directory argument is required")
+						.join(format!("{}.{}", collection_name.clone(), file_format)),
 					file_format,
 				};
 
@@ -414,13 +421,21 @@ impl App<'_> {
 
 				(
 					self.core.collections.len() - 1,
-					self.core.collections.last_mut().unwrap(),
+					self.core
+						.collections
+						.last_mut()
+						.expect("collections should not be empty after push"),
 				)
 			}
 		};
 
 		let request_name = match request_name {
-			None => path_buf.file_stem().unwrap().to_str().unwrap().to_string(),
+			None => path_buf
+				.file_stem()
+				.expect("file should have a stem")
+				.to_str()
+				.expect("file stem should be valid UTF-8")
+				.to_string(),
 			Some(request_name) => request_name.clone(),
 		};
 

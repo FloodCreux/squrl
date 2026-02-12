@@ -647,7 +647,8 @@ impl App<'_> {
 				let secret = self.replace_env_keys_by_value(secret);
 				let payload = self.replace_env_keys_by_value(payload);
 
-				let token = jwt_do_jaat(algorithm, secret_type, secret, payload).unwrap();
+				let token = jwt_do_jaat(algorithm, secret_type, secret, payload)
+					.expect("JWT token generation should succeed");
 				format!("\nAuthorization: Bearer {}", token)
 			}
 			Auth::Digest(Digest {

@@ -79,7 +79,7 @@ impl App<'_> {
 			let path = ARGS
 				.directory
 				.as_ref()
-				.unwrap()
+				.expect("directory argument should be set")
 				.join(format!("{}.{file_format}", collection.name));
 
 			info!(

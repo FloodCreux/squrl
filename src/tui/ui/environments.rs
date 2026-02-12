@@ -9,7 +9,9 @@ use crate::app::files::theme::THEME;
 
 impl<'a> App<'a> {
 	pub(super) fn render_environments(&mut self, frame: &mut Frame, rect: Rect) {
-		let local_env = self.get_selected_env_as_local().unwrap();
+		let Some(local_env) = self.get_selected_env_as_local() else {
+			return;
+		};
 		let env = local_env.read();
 
 		let current_environment = env.name.clone();

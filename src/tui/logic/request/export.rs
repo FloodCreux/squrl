@@ -5,7 +5,9 @@ use rayon::prelude::*;
 
 impl App<'_> {
 	pub fn tui_export_request(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
+			return;
+		};
 
 		{
 			let selected_request = local_selected_request.read();
@@ -27,7 +29,8 @@ impl App<'_> {
 					.par_lines()
 					.map(|line| Line::from(line.to_string()))
 					.collect(),
-				Some(extension) => highlight(&export_result, extension).unwrap(),
+				Some(extension) => highlight(&export_result, extension)
+					.expect("syntax highlighting should succeed"),
 			};
 
 			self.display_request_export.vertical_scrollbar.top();

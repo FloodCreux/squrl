@@ -232,7 +232,7 @@ pub fn parse_http_content(content: &str) -> anyhow::Result<Vec<Arc<RwLock<Reques
 		let protocol = if is_websocket {
 			Protocol::WsRequest(WsRequest::default())
 		} else {
-			let method = method.unwrap();
+			let method = method.expect("HTTP method should be present");
 
 			let body = if body_string.is_empty() {
 				NoBody

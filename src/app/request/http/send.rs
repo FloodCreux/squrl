@@ -93,7 +93,7 @@ pub async fn send_http_request(
 
 				let response_content = match is_image {
 					true => {
-						let content = response.bytes().await.unwrap();
+						let content = response.bytes().await.expect("response bytes should be readable");
 						let image = image::load_from_memory(content.as_ref());
 
 						ResponseContent::Image(ImageResponse {

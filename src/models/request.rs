@@ -189,9 +189,9 @@ impl Request {
 
 	pub fn update_url_and_params(&mut self, url: String) {
 		static PATH_PARAMS_RE: LazyLock<Regex> =
-			LazyLock::new(|| Regex::new(r"(\{+[\w-]+}+)").unwrap());
+			LazyLock::new(|| Regex::new(r"(\{+[\w-]+}+)").expect("valid path params regex"));
 		static QUERY_PARAMS_RE: LazyLock<Regex> =
-			LazyLock::new(|| Regex::new(r"(&?([^=]+)=([^&]+))").unwrap());
+			LazyLock::new(|| Regex::new(r"(&?([^=]+)=([^&]+))").expect("valid query params regex"));
 
 		let url_parts = url.trim().split_once("?");
 

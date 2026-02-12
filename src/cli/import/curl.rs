@@ -60,7 +60,11 @@ pub fn parse_requests_recursively(
 		}
 
 		// Will use the file name as the request name
-		let file_name = entry.file_name().to_str().unwrap().to_string();
+		let file_name = entry
+			.file_name()
+			.to_str()
+			.expect("file name should be valid UTF-8")
+			.to_string();
 		let request = parse_request(&entry.path().to_path_buf(), file_name)?;
 
 		requests.push(request);
@@ -121,7 +125,12 @@ pub fn parse_request(path: &PathBuf, request_name: String) -> anyhow::Result<Arc
 		.filter(|(header_name, _)| header_name.as_str() != "authorization") // Exclude Authorization header, as that will be handled by the auth field
 		.map(|(k, v)| KeyValue {
 			enabled: true,
-			data: (k.to_string(), v.to_str().unwrap().to_string()),
+			data: (
+				k.to_string(),
+				v.to_str()
+					.expect("header value should be valid UTF-8")
+					.to_string(),
+			),
 		})
 		.collect();
 
@@ -140,7 +149,9 @@ pub fn parse_request(path: &PathBuf, request_name: String) -> anyhow::Result<Arc
 					.par_bridge()
 					.find_map_any(|(header_name, value)| {
 						match header_name.as_str() == "authorization" {
-							true => Some(value.to_str().unwrap()),
+							true => {
+								Some(value.to_str().expect("header value should be valid UTF-8"))
+							}
 							false => None,
 						}
 					});

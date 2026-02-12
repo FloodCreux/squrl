@@ -439,7 +439,11 @@ pub fn get_file_content_with_name(path: PathBuf) -> std::io::Result<(Vec<u8>, St
 
 	file.read_to_end(&mut buffer)?;
 
-	let file_name = path.file_name().unwrap().to_str().unwrap();
+	let file_name = path
+		.file_name()
+		.expect("path should have a file name")
+		.to_str()
+		.expect("file name should be valid UTF-8");
 
 	Ok((buffer, file_name.to_string()))
 }

@@ -53,9 +53,9 @@ pub fn execute_pre_request_script(
 	// Instantiate the execution context
 	let mut context = Context::default();
 
-	let request_json = serde_json::to_string(request).unwrap();
+	let request_json = serde_json::to_string(request).expect("request should serialize to JSON");
 	let env_json = match &env {
-		Some(env) => serde_json::to_string(env).unwrap(),
+		Some(env) => serde_json::to_string(env).expect("environment should serialize to JSON"),
 		None => String::from("undefined"),
 	};
 
@@ -84,7 +84,10 @@ pub fn execute_pre_request_script(
 		Err(error) => return (None, env, error.to_string()),
 	};
 
-	let stringed_result = result.as_string().unwrap().to_std_string_escaped();
+	let stringed_result = result
+		.as_string()
+		.expect("script result should be a string")
+		.to_std_string_escaped();
 
 	let (result_request, result_env_values, console_output) =
 		match serde_json::from_str::<(Request, Option<IndexMap<String, String>>, String)>(
@@ -111,9 +114,9 @@ pub fn execute_post_request_script(
 	// Instantiate the execution context
 	let mut context = Context::default();
 
-	let response_json = serde_json::to_string(response).unwrap();
+	let response_json = serde_json::to_string(response).expect("response should serialize to JSON");
 	let env_json = match &env {
-		Some(env) => serde_json::to_string(env).unwrap(),
+		Some(env) => serde_json::to_string(env).expect("environment should serialize to JSON"),
 		None => String::from("undefined"),
 	};
 
@@ -142,7 +145,10 @@ pub fn execute_post_request_script(
 		Err(error) => return (None, env, error.to_string()),
 	};
 
-	let stringed_result = result.as_string().unwrap().to_std_string_escaped();
+	let stringed_result = result
+		.as_string()
+		.expect("script result should be a string")
+		.to_std_string_escaped();
 
 	let (response_result, result_env_values, console_output) =
 		match serde_json::from_str::<(RequestResponse, Option<IndexMap<String, String>>, String)>(

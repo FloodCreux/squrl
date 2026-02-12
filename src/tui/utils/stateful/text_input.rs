@@ -373,7 +373,7 @@ impl TextInput {
 
 		self.event_handler
 			.as_mut()
-			.unwrap()
+			.expect("event_handler should be initialized before handling key events")
 			.on_key_event(key_event, &mut self.state);
 
 		if let Some(terminal) = terminal

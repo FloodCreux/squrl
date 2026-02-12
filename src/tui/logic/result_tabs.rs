@@ -10,7 +10,9 @@ use std::str::Lines;
 
 impl App<'_> {
 	pub fn tui_next_request_result_tab(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
+			return;
+		};
 		let selected_request = local_selected_request.read();
 
 		self.request_result_tab = match self.request_result_tab {
@@ -18,7 +20,9 @@ impl App<'_> {
 			RequestResultTabs::Messages => RequestResultTabs::Cookies,
 			RequestResultTabs::Cookies => RequestResultTabs::Headers,
 			RequestResultTabs::Headers => {
-				let local_selected_request = self.get_selected_request_as_local();
+				let Some(local_selected_request) = self.get_selected_request_as_local() else {
+					return;
+				};
 				let selected_request = local_selected_request.read();
 
 				match (
@@ -42,7 +46,9 @@ impl App<'_> {
 	}
 
 	pub fn tui_update_request_result_tab(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
+			return;
+		};
 		let selected_request = local_selected_request.read();
 
 		if self.request_result_tab == RequestResultTabs::Console
@@ -72,7 +78,9 @@ impl App<'_> {
 	}
 
 	pub fn tui_highlight_response_body_and_console(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
+			return;
+		};
 		let selected_request = local_selected_request.write();
 
 		self.syntax_highlighting.highlighted_body = None;
@@ -89,8 +97,8 @@ impl App<'_> {
 		if let Some(pre_request_console_output) =
 			&selected_request.console_output.pre_request_output
 		{
-			let mut highlighted_console_output =
-				highlight(pre_request_console_output, "json").unwrap();
+			let mut highlighted_console_output = highlight(pre_request_console_output, "json")
+				.expect("syntax highlighting should succeed");
 
 			highlighted_console_output.insert(0, Line::default());
 			highlighted_console_output.insert(
@@ -113,8 +121,8 @@ impl App<'_> {
 		if let Some(post_request_console_output) =
 			&selected_request.console_output.post_request_output
 		{
-			let mut highlighted_console_output =
-				highlight(post_request_console_output, "json").unwrap();
+			let mut highlighted_console_output = highlight(post_request_console_output, "json")
+				.expect("syntax highlighting should succeed");
 
 			highlighted_console_output.insert(0, Line::default());
 			highlighted_console_output.insert(
@@ -140,7 +148,9 @@ impl App<'_> {
 		let vertical_max: u16;
 		let horizontal_max: u16;
 
-		let local_selected_request = self.get_selected_request_as_local();
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
+			return;
+		};
 		let selected_request = local_selected_request.read();
 
 		match self.request_result_tab {

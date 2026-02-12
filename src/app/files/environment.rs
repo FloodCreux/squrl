@@ -24,9 +24,9 @@ impl App<'_> {
 	pub fn add_environment_from_file(&mut self, path_buf: &Path) {
 		let file_name = path_buf
 			.file_name()
-			.unwrap()
+			.expect("path should have a file name")
 			.to_str()
-			.unwrap()
+			.expect("file name should be valid UTF-8")
 			.to_string()
 			.replace(".env.", "");
 

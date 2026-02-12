@@ -7,9 +7,13 @@ use crate::models::protocol::http::body::{ContentType, next_content_type};
 impl App<'_> {
 	/// Reset selection if body form data is provided, either set it to none
 	pub fn tui_update_body_table_selection(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
+			return;
+		};
 		let selected_request = local_selected_request.read();
-		let selected_http_request = selected_request.get_http_request().unwrap();
+		let selected_http_request = selected_request
+			.get_http_request()
+			.expect("request should be HTTP");
 
 		{
 			if let Ok(form) = selected_http_request.body.get_form() {
@@ -22,9 +26,13 @@ impl App<'_> {
 	}
 
 	pub fn tui_modify_request_form_data(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 
-		let selection = self.body_form_table.selection.unwrap();
+		let Some(selection) = self.body_form_table.selection else {
+			return;
+		};
 		let input_text = self.body_form_table.selection_text_input.to_string();
 
 		if self
@@ -44,7 +52,9 @@ impl App<'_> {
 	}
 
 	pub fn tui_create_new_form_data(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 
 		if self
 			.create_new_form_data(
@@ -67,8 +77,12 @@ impl App<'_> {
 			return;
 		}
 
-		let selection = self.body_form_table.selection.unwrap();
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selection) = self.body_form_table.selection else {
+			return;
+		};
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 
 		if self
 			.delete_form_data(
@@ -90,8 +104,12 @@ impl App<'_> {
 			return;
 		}
 
-		let selection = self.body_form_table.selection.unwrap();
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selection) = self.body_form_table.selection else {
+			return;
+		};
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 
 		if self
 			.toggle_form_data(
@@ -113,8 +131,12 @@ impl App<'_> {
 			return;
 		}
 
-		let selection = self.body_form_table.selection.unwrap();
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selection) = self.body_form_table.selection else {
+			return;
+		};
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 
 		if self
 			.duplicate_form_data(
@@ -131,12 +153,16 @@ impl App<'_> {
 	}
 
 	pub fn tui_modify_request_body(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
 			let mut selected_request = local_selected_request.write();
-			let selected_http_request = selected_request.get_http_request_mut().unwrap();
+			let selected_http_request = selected_request
+				.get_http_request_mut()
+				.expect("request should be HTTP");
 
 			let body_form = &self.body_form_table.rows;
 			let body_file = self.body_file_text_input.to_string();
@@ -164,12 +190,16 @@ impl App<'_> {
 	}
 
 	pub fn tui_next_request_content_type(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
 			let mut selected_request = local_selected_request.write();
-			let selected_http_request = selected_request.get_http_request_mut().unwrap();
+			let selected_http_request = selected_request
+				.get_http_request_mut()
+				.expect("request should be HTTP");
 
 			let new_content_type = next_content_type(&selected_http_request.body);
 

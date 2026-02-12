@@ -218,7 +218,10 @@ impl App<'_> {
 									if !self.core.config.is_syntax_highlighting_disabled()
 										&& self.syntax_highlighting.highlighted_body.is_some()
 									{
-										self.syntax_highlighting.highlighted_body.clone().unwrap()
+										self.syntax_highlighting
+											.highlighted_body
+											.clone()
+											.expect("highlighted body should exist")
 									} else {
 										body.lines().map(Line::raw).collect()
 									};
@@ -276,7 +279,9 @@ impl App<'_> {
 					},
 				},
 				RequestResultTabs::Messages => {
-					let ws_request = request.get_ws_request().unwrap();
+					let ws_request = request
+						.get_ws_request()
+						.expect("request should be WebSocket");
 
 					let mut messages = vec![];
 					let mut last_sender: Option<&Sender> = None;

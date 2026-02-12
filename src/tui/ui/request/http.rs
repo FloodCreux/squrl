@@ -54,7 +54,7 @@ impl App<'_> {
 
 		// REQUEST METHOD
 
-		let http_request = request.get_http_request().unwrap();
+		let http_request = request.get_http_request().expect("request should be HTTP");
 		let method = http_request.method;
 
 		let method_block = Block::new()

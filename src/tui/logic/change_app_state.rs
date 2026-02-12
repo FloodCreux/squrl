@@ -76,9 +76,14 @@ impl App<'_> {
 			let env = local_env.read();
 
 			if !env.values.is_empty() {
-				let selection = self.env_editor_table.selection.unwrap();
+				let Some(selection) = self.env_editor_table.selection else {
+					return;
+				};
 
-				let pair = env.values.get_index(selection.0).unwrap();
+				let pair = env
+					.values
+					.get_index(selection.0)
+					.expect("selected index should be valid");
 				let text = match selection.1 {
 					0 => pair.0,
 					1 => pair.1,
@@ -101,7 +106,11 @@ impl App<'_> {
 
 		self.core.cookies_popup.cookies_table.rows = vec![];
 
-		for cookie in local_cookie_store.read().unwrap().iter_any() {
+		for cookie in local_cookie_store
+			.read()
+			.expect("cookie store lock poisoned")
+			.iter_any()
+		{
 			self.core
 				.cookies_popup
 				.cookies_table
@@ -332,11 +341,15 @@ impl App<'_> {
 	}
 
 	pub fn edit_request_body_table_state(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
+			return;
+		};
 
 		{
 			let selected_request = local_selected_request.read();
-			let selected_http_request = selected_request.get_http_request().unwrap();
+			let selected_http_request = selected_request
+				.get_http_request()
+				.expect("request should be HTTP");
 
 			match &selected_http_request.body {
 				ContentType::Multipart(form) | ContentType::Form(form) => {
@@ -354,11 +367,15 @@ impl App<'_> {
 	}
 
 	pub fn edit_request_body_file_or_string_state(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
+			return;
+		};
 
 		{
 			let selected_request = local_selected_request.read();
-			let selected_http_request = selected_request.get_http_request().unwrap();
+			let selected_http_request = selected_request
+				.get_http_request()
+				.expect("request should be HTTP");
 
 			match selected_http_request.body {
 				ContentType::File(_) => {
@@ -400,7 +417,9 @@ impl App<'_> {
 	pub fn edit_request_settings_state(&mut self) {
 		self.request_settings_popup.selection = 0;
 
-		let local_selected_request = self.get_selected_request_as_local();
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
+			return;
+		};
 		let selected_request = local_selected_request.read();
 
 		self.request_settings_popup.settings = selected_request.settings.to_vec();
@@ -411,7 +430,9 @@ impl App<'_> {
 	pub fn choose_request_export_format_state(&mut self) {
 		self.export_request.selection = 0;
 
-		let local_selected_request = self.get_selected_request_as_local();
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
+			return;
+		};
 		let selected_request = local_selected_request.read();
 
 		self.export_request.choices = match selected_request.protocol {
@@ -436,7 +457,9 @@ impl App<'_> {
 			return;
 		}
 
-		let local_selected_request = self.get_selected_request_as_local();
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
+			return;
+		};
 		let selected_request = local_selected_request.read();
 
 		debug!(

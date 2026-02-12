@@ -11,7 +11,9 @@ use tracing::info;
 
 impl App<'_> {
 	pub async fn tui_send_request(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
+			return;
+		};
 
 		{
 			let selected_request = local_selected_request.read();
@@ -54,9 +56,13 @@ impl App<'_> {
 					reason: String::new(),
 				})
 				.await
-				.unwrap();
+				.expect("WebSocket send close frame should succeed");
 
-			tx.lock().await.close().await.unwrap();
+			tx.lock()
+				.await
+				.close()
+				.await
+				.expect("WebSocket close should succeed");
 			return;
 		}
 
@@ -88,7 +94,9 @@ impl App<'_> {
 			}
 		};
 
-		let local_selected_request = self.get_selected_request_as_local();
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
+			return;
+		};
 		let local_env = self.get_selected_env_as_local();
 
 		let local_should_refresh_scrollbars = Arc::clone(&self.core.received_response);

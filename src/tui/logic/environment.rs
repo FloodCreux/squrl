@@ -20,7 +20,9 @@ impl App<'_> {
 	}
 
 	pub fn tui_update_env_variable_table(&mut self) {
-		let local_env = self.get_selected_env_as_local().unwrap();
+		let Some(local_env) = self.get_selected_env_as_local() else {
+			return;
+		};
 		let env = local_env.read();
 
 		let rows: Vec<KeyValue> = env
@@ -41,7 +43,9 @@ impl App<'_> {
 
 	pub fn tui_modify_env_variable(&mut self) {
 		let selected_env_index = self.core.selected_environment;
-		let (row, column) = self.env_editor_table.selection.unwrap();
+		let Some((row, column)) = self.env_editor_table.selection else {
+			return;
+		};
 
 		let input_text = self.env_editor_table.selection_text_input.to_string();
 
@@ -75,7 +79,9 @@ impl App<'_> {
 			return;
 		}
 
-		let (row, _) = self.env_editor_table.selection.unwrap();
+		let Some((row, _)) = self.env_editor_table.selection else {
+			return;
+		};
 		let selected_env_index = self.core.selected_environment;
 
 		match self.delete_env_index(selected_env_index, row) {
@@ -97,7 +103,7 @@ pub fn tui_add_color_to_env_keys<'a>(
 
 	let mut spans: Vec<Span> = vec![];
 
-	let regex = Regex::new(r"\{\{(\w+)}}").unwrap();
+	let regex = Regex::new(r"\{\{(\w+)}}").expect("valid env variable regex");
 	let mut tmp_index: usize = 0;
 
 	if let Some(local_env) = local_env {

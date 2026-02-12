@@ -41,7 +41,9 @@ impl App<'_> {
 			return;
 		}
 
-		let selection = self.core.cookies_popup.cookies_table.selection.unwrap();
+		let Some(selection) = self.core.cookies_popup.cookies_table.selection else {
+			return;
+		};
 		let cookie_row = self
 			.core
 			.cookies_popup
@@ -50,7 +52,12 @@ impl App<'_> {
 			.remove(selection.0);
 
 		{
-			let mut local_cookie_store = self.core.cookies_popup.cookie_store.write().unwrap();
+			let mut local_cookie_store = self
+				.core
+				.cookies_popup
+				.cookie_store
+				.write()
+				.expect("cookie store lock poisoned");
 
 			local_cookie_store.remove(&cookie_row[0], &cookie_row[3], &cookie_row[1]);
 		}
@@ -65,7 +72,9 @@ impl App<'_> {
 			return;
 		}
 
-		let selection = self.core.cookies_popup.cookies_table.selection.unwrap();
+		let Some(selection) = self.core.cookies_popup.cookies_table.selection else {
+			return;
+		};
 		let new_text = self
 			.core
 			.cookies_popup
@@ -80,7 +89,12 @@ impl App<'_> {
 
 		// Remove old cookie from the store
 		{
-			let mut local_cookie_store = self.core.cookies_popup.cookie_store.write().unwrap();
+			let mut local_cookie_store = self
+				.core
+				.cookies_popup
+				.cookie_store
+				.write()
+				.expect("cookie store lock poisoned");
 			local_cookie_store.remove(&old_domain, &old_path, &old_name);
 		}
 
@@ -169,7 +183,12 @@ impl App<'_> {
 		let url_string = format!("{}://{}{}", scheme, domain, path);
 
 		if let Ok(url) = Url::parse(&url_string) {
-			let mut local_cookie_store = self.core.cookies_popup.cookie_store.write().unwrap();
+			let mut local_cookie_store = self
+				.core
+				.cookies_popup
+				.cookie_store
+				.write()
+				.expect("cookie store lock poisoned");
 			let _ = local_cookie_store.parse(&cookie_str, &url);
 		}
 	}

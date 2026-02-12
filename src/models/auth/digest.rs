@@ -274,7 +274,7 @@ pub fn digest_to_authorization_header(
 
 	www_authenticate_header
 		.respond(&context)
-		.unwrap()
+		.expect("digest authentication response should succeed")
 		.to_header_string()
 }
 
@@ -428,7 +428,12 @@ fn parse_header_map(input: &str) -> Result<HashMap<String, String>, DigestError>
 			ParserState::P_VALUE_QUOTED => {
 				match c {
 					'"' => {
-						parsed.insert(current_token.unwrap().to_string(), current_value.clone());
+						parsed.insert(
+							current_token
+								.expect("token should exist in current parse state")
+								.to_string(),
+							current_value.clone(),
+						);
 
 						current_token = None;
 						current_value.clear();
@@ -445,7 +450,12 @@ fn parse_header_map(input: &str) -> Result<HashMap<String, String>, DigestError>
 			}
 			ParserState::P_VALUE_PLAIN => {
 				if c == ',' || c.is_ascii_whitespace() {
-					parsed.insert(current_token.unwrap().to_string(), current_value.clone());
+					parsed.insert(
+						current_token
+							.expect("token should exist in current parse state")
+							.to_string(),
+						current_value.clone(),
+					);
 
 					current_token = None;
 					current_value.clear();
@@ -464,7 +474,12 @@ fn parse_header_map(input: &str) -> Result<HashMap<String, String>, DigestError>
 
 	match state {
 		ParserState::P_VALUE_PLAIN => {
-			parsed.insert(current_token.unwrap().to_string(), current_value); // consume the value here
+			parsed.insert(
+				current_token
+					.expect("token should exist in current parse state")
+					.to_string(),
+				current_value,
+			); // consume the value here
 		}
 		ParserState::P_WHITE => {}
 		_ => return Err(InvalidHeaderSyntax(input.to_string())),

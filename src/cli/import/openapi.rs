@@ -407,9 +407,9 @@ pub fn generate_sample_json(
 	let sample_value = match &schema.schema_kind {
 		SchemaKind::Type(schema_type) => match schema_type {
 			Type::String(_) => serde_json::Value::String("string".to_string()),
-			Type::Number(_) => {
-				serde_json::Value::Number(serde_json::Number::from_f64(0.0).unwrap())
-			}
+			Type::Number(_) => serde_json::Value::Number(
+				serde_json::Number::from_f64(0.0).expect("0.0 is a valid f64 for JSON"),
+			),
 			Type::Integer(_) => serde_json::Value::Number(serde_json::Number::from(0)),
 			Type::Boolean(_) => serde_json::Value::Bool(false),
 			Type::Object(obj) => {

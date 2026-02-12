@@ -44,7 +44,9 @@ pub async fn send_ws_request(
 		let mut request = local_request.write();
 		request.is_pending = true;
 		let cancellation_token = request.cancellation_token.clone();
-		let ws_request = request.get_ws_request_mut().unwrap();
+		let ws_request = request
+			.get_ws_request_mut()
+			.expect("request should be WebSocket");
 		ws_request.is_connected = false;
 		cancellation_token
 	};
@@ -174,7 +176,9 @@ pub async fn send_ws_request(
 		request.is_pending = false;
 		request.cancellation_token = CancellationToken::new();
 
-		let ws_request = request.get_ws_request_mut().unwrap();
+		let ws_request = request
+			.get_ws_request_mut()
+			.expect("request should be WebSocket");
 		ws_request.messages = vec![];
 
 		if modified_response.status_code != Some(String::from("101 Switching Protocols")) {
@@ -189,15 +193,22 @@ pub async fn send_ws_request(
 	let local_request = local_request.clone();
 	let local_websocket = {
 		let request = local_request.read();
-		let ws_request = request.get_ws_request().unwrap();
-		ws_request.websocket.clone().unwrap()
+		let ws_request = request
+			.get_ws_request()
+			.expect("request should be WebSocket");
+		ws_request
+			.websocket
+			.clone()
+			.expect("WebSocket connection should exist")
 	};
 
 	tokio::spawn(async move {
 		'websocket_loop: loop {
 			if cancellation_token.is_cancelled() {
 				let mut request = local_request.write();
-				let ws_request = request.get_ws_request_mut().unwrap();
+				let ws_request = request
+					.get_ws_request_mut()
+					.expect("request should be WebSocket");
 				ws_request.is_connected = false;
 				break 'websocket_loop;
 			}
@@ -231,7 +242,9 @@ pub async fn send_ws_request(
 						};
 
 						let mut request = local_request.write();
-						let ws_request = request.get_ws_request_mut().unwrap();
+						let ws_request = request
+							.get_ws_request_mut()
+							.expect("request should be WebSocket");
 						ws_request.messages.push(Message {
 							timestamp: Local::now(),
 							content: message_type,
@@ -243,7 +256,9 @@ pub async fn send_ws_request(
 				}
 				Err(error) => {
 					let mut request = local_request.write();
-					let ws_request = request.get_ws_request_mut().unwrap();
+					let ws_request = request
+						.get_ws_request_mut()
+						.expect("request should be WebSocket");
 					ws_request.is_connected = false;
 					ws_request.messages.push(Message {
 						timestamp: Local::now(),

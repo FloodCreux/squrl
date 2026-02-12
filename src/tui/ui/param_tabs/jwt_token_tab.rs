@@ -27,7 +27,9 @@ impl App<'_> {
 		.split(area);
 
 		let (algorithm, secret_type) = {
-			let local_selected_request = self.get_selected_request_as_local();
+			let Some(local_selected_request) = self.get_selected_request_as_local() else {
+				return;
+			};
 			let selected_request = local_selected_request.read();
 			let jwt_token = selected_request.auth.get_jwt();
 

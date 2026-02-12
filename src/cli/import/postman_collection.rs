@@ -49,7 +49,10 @@ pub fn recursive_has_requests(
 	if is_folder(item) {
 		let mut requests: Vec<Arc<RwLock<Request>>> = vec![];
 
-		let mut folder_name = item.clone().name.unwrap();
+		let mut folder_name = item
+			.clone()
+			.name
+			.expect("postman folder should have a name");
 		folder_name = folder_name.replace("/", "-");
 		folder_name = folder_name.replace("\\", "-");
 		folder_name = folder_name.trim().to_string();
@@ -66,7 +69,11 @@ pub fn recursive_has_requests(
 
 			let mut has_sub_folders = false;
 
-			for mut sub_item in item.item.clone().unwrap() {
+			for mut sub_item in item
+				.item
+				.clone()
+				.expect("postman folder should have sub-items")
+			{
 				if let Some(request) = recursive_has_requests(
 					&mut sub_item,
 					collections,
@@ -97,7 +104,7 @@ pub fn recursive_has_requests(
 				path: ARGS
 					.directory
 					.as_ref()
-					.unwrap()
+					.expect("--directory argument is required")
 					.join(format!("{}.{}", collection_name, file_format)),
 				file_format,
 			};
@@ -131,7 +138,7 @@ pub fn is_folder(folder: &Items) -> bool {
 }
 
 pub fn parse_request(item: Items) -> anyhow::Result<Request> {
-	let item_name = item.name.clone().unwrap();
+	let item_name = item.name.clone().expect("postman item should have a name");
 
 	println!("\t\tFound request \"{}\"", item_name);
 
@@ -153,7 +160,7 @@ pub fn parse_request(item: Items) -> anyhow::Result<Request> {
 
 	/* REQUEST */
 
-	let item_request = item.request.unwrap();
+	let item_request = item.request.expect("postman item should have a request");
 
 	match &item_request {
 		RequestUnion::RequestClass(request_class) => {
@@ -162,7 +169,12 @@ pub fn parse_request(item: Items) -> anyhow::Result<Request> {
 			if let Some(url) = &request_class.url {
 				match url {
 					Url::String(url) => request.url = url.to_string(),
-					Url::UrlClass(url_class) => request.url = url_class.raw.clone().unwrap(),
+					Url::UrlClass(url_class) => {
+						request.url = url_class
+							.raw
+							.clone()
+							.expect("postman URL should have a raw value")
+					}
 				}
 			}
 
@@ -356,8 +368,20 @@ pub fn retrieve_auth(request_class: &RequestClass) -> Option<anyhow::Result<Auth
 
 			for basic_attribute in basic_attributes {
 				match basic_attribute.key.as_str() {
-					"username" => username = basic_attribute.value.unwrap().as_str()?.to_string(),
-					"password" => password = basic_attribute.value.unwrap().as_str()?.to_string(),
+					"username" => {
+						username = basic_attribute
+							.value
+							.expect("basic auth attribute should have a value")
+							.as_str()?
+							.to_string()
+					}
+					"password" => {
+						password = basic_attribute
+							.value
+							.expect("basic auth attribute should have a value")
+							.as_str()?
+							.to_string()
+					}
 					_ => {}
 				}
 			}
@@ -371,7 +395,11 @@ pub fn retrieve_auth(request_class: &RequestClass) -> Option<anyhow::Result<Auth
 
 			for bearer_token_attribute in bearer_token_attributes {
 				if bearer_token_attribute.key.as_str() == "token" {
-					bearer_token = bearer_token_attribute.value.unwrap().as_str()?.to_string()
+					bearer_token = bearer_token_attribute
+						.value
+						.expect("bearer token attribute should have a value")
+						.as_str()?
+						.to_string()
 				}
 			}
 
@@ -390,17 +418,39 @@ pub fn retrieve_auth(request_class: &RequestClass) -> Option<anyhow::Result<Auth
 
 			for jwt_attribute in jwt_attributes {
 				match jwt_attribute.key.as_str() {
-					"algorithm" => algorithm = jwt_attribute.value.unwrap().as_str()?.to_string(),
-					"secret" => secret = jwt_attribute.value.unwrap().as_str()?.to_string(),
-					"payload" => payload = jwt_attribute.value.unwrap().as_str()?.to_string(),
+					"algorithm" => {
+						algorithm = jwt_attribute
+							.value
+							.expect("JWT attribute should have a value")
+							.as_str()?
+							.to_string()
+					}
+					"secret" => {
+						secret = jwt_attribute
+							.value
+							.expect("JWT attribute should have a value")
+							.as_str()?
+							.to_string()
+					}
+					"payload" => {
+						payload = jwt_attribute
+							.value
+							.expect("JWT attribute should have a value")
+							.as_str()?
+							.to_string()
+					}
 					"isSecretBase64Encoded" => {
-						is_secret_base64 = jwt_attribute.value.unwrap().as_bool()?
+						is_secret_base64 = jwt_attribute
+							.value
+							.expect("JWT attribute should have a value")
+							.as_bool()?
 					}
 					_ => {}
 				}
 			}
 
-			let algorithm = JwtAlgorithm::from_str(&algorithm, true).unwrap();
+			let algorithm =
+				JwtAlgorithm::from_str(&algorithm, true).expect("JWT algorithm should be valid");
 			let mut secret_type = algorithm.default_secret_type();
 
 			match algorithm {
@@ -431,7 +481,11 @@ pub fn retrieve_auth(request_class: &RequestClass) -> Option<anyhow::Result<Auth
 			let mut qop = DigestQop::default();
 
 			for digest_attribute in digest_attributes {
-				let value = digest_attribute.value.unwrap().as_str()?.to_string();
+				let value = digest_attribute
+					.value
+					.expect("digest attribute should have a value")
+					.as_str()?
+					.to_string();
 
 				match digest_attribute.key.as_str() {
 					"username" => username = value,

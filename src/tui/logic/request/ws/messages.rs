@@ -10,14 +10,18 @@ use tracing::info;
 
 impl App<'_> {
 	pub async fn tui_send_request_message(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 		let local_selected_request = self.get_request_from_selection(&selected);
 
 		// Build the message and clone the tx Arc while holding the write guard,
 		// then drop the guard before awaiting the async send.
 		let send_info = {
 			let mut selected_request = local_selected_request.write();
-			let selected_ws_request = selected_request.get_ws_request_mut().unwrap();
+			let selected_ws_request = selected_request
+				.get_ws_request_mut()
+				.expect("request should be WebSocket");
 
 			info!("Sending message");
 
@@ -75,7 +79,9 @@ impl App<'_> {
 			// Re-acquire write guard to record the sent message.
 			{
 				let mut selected_request = local_selected_request.write();
-				let selected_ws_request = selected_request.get_ws_request_mut().unwrap();
+				let selected_ws_request = selected_request
+					.get_ws_request_mut()
+					.expect("request should be WebSocket");
 				selected_ws_request.messages.push(Message {
 					timestamp: Local::now(),
 					content: message_type,
@@ -93,12 +99,16 @@ impl App<'_> {
 	}
 
 	pub fn tui_next_request_message_type(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
 			let mut selected_request = local_selected_request.write();
-			let selected_ws_request = selected_request.get_ws_request_mut().unwrap();
+			let selected_ws_request = selected_request
+				.get_ws_request_mut()
+				.expect("request should be WebSocket");
 
 			let next_message_type = next_message_type(&selected_ws_request.message_type);
 
@@ -111,9 +121,13 @@ impl App<'_> {
 	}
 
 	pub fn get_messages_lines_count(&self) -> usize {
-		let local_selected_request = self.get_selected_request_as_local();
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
+			return 0;
+		};
 		let selected_request = local_selected_request.read();
-		let ws_request = selected_request.get_ws_request().unwrap();
+		let ws_request = selected_request
+			.get_ws_request()
+			.expect("request should be WebSocket");
 
 		let mut line_count = 0;
 		let mut last_sender = None;

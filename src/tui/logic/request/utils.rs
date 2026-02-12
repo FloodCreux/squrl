@@ -10,11 +10,9 @@ impl App<'_> {
 	#[cfg(feature = "clipboard")]
 	/// Copy the response's body content to the clipboard if it's present, otherwise does nothing
 	pub fn copy_response_body_content_to_clipboard(&mut self) {
-		if self.clipboard.is_none() {
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
 			return;
-		}
-
-		let local_selected_request = self.get_selected_request_as_local();
+		};
 		let selected_request = local_selected_request.read();
 
 		match self.request_result_tab {
@@ -22,9 +20,10 @@ impl App<'_> {
 				None => {}
 				Some(content) => match content {
 					ResponseContent::Body(body) => {
-						self.clipboard
-							.as_mut()
-							.unwrap()
+						let Some(clipboard) = self.clipboard.as_mut() else {
+							return;
+						};
+						clipboard
 							.set_text(body)
 							.expect("Could not copy response content to clipboard");
 					}
@@ -33,9 +32,10 @@ impl App<'_> {
 						Some(image) => {
 							let rgba_image = image.to_rgba8();
 
-							self.clipboard
-								.as_mut()
-								.unwrap()
+							let Some(clipboard) = self.clipboard.as_mut() else {
+								return;
+							};
+							clipboard
 								.set_image(ImageData {
 									width: rgba_image.width() as usize,
 									height: rgba_image.height() as usize,
@@ -47,7 +47,9 @@ impl App<'_> {
 				},
 			},
 			RequestResultTabs::Messages => {
-				let ws_request = selected_request.get_ws_request().unwrap();
+				let ws_request = selected_request
+					.get_ws_request()
+					.expect("request should be WebSocket");
 				let text = ws_request
 					.messages
 					.iter()
@@ -64,21 +66,24 @@ impl App<'_> {
 					.join("\n");
 
 				if !text.is_empty() {
-					self.clipboard
-						.as_mut()
-						.unwrap()
+					let Some(clipboard) = self.clipboard.as_mut() else {
+						return;
+					};
+					clipboard
 						.set_text(text)
 						.expect("Could not copy messages content to clipboard");
 				}
 			}
 			RequestResultTabs::Cookies => match &selected_request.response.cookies {
 				None => {}
-				Some(cookies) => self
-					.clipboard
-					.as_mut()
-					.unwrap()
-					.set_text(cookies)
-					.expect("Could not copy cookies to clipboard"),
+				Some(cookies) => {
+					let Some(clipboard) = self.clipboard.as_mut() else {
+						return;
+					};
+					clipboard
+						.set_text(cookies)
+						.expect("Could not copy cookies to clipboard");
+				}
 			},
 			RequestResultTabs::Headers => {
 				let headers_string: String = selected_request
@@ -89,9 +94,10 @@ impl App<'_> {
 					.collect();
 
 				if !headers_string.is_empty() {
-					self.clipboard
-						.as_mut()
-						.unwrap()
+					let Some(clipboard) = self.clipboard.as_mut() else {
+						return;
+					};
+					clipboard
 						.set_text(headers_string)
 						.expect("Could not copy headers to clipboard");
 				}
@@ -113,11 +119,12 @@ impl App<'_> {
 				};
 
 				if !text.is_empty() {
-					self.clipboard
-						.as_mut()
-						.unwrap()
+					let Some(clipboard) = self.clipboard.as_mut() else {
+						return;
+					};
+					clipboard
 						.set_text(text)
-						.expect("Could not copy console output to clipboard")
+						.expect("Could not copy console output to clipboard");
 				}
 			}
 		}

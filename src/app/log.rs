@@ -34,7 +34,8 @@ impl<S: Subscriber> Layer<S> for LogCounterLayer {
 		logs.push((now, level, target, message));
 		// Prevents keeping too much logs
 		if logs.len() > 1000 {
-			logs.pop().unwrap();
+			logs.pop()
+				.expect("logs should not be empty when over capacity");
 		}
 	}
 }
@@ -43,6 +44,8 @@ pub struct StringVisitor<'a>(&'a mut String);
 
 impl<'a> Visit for StringVisitor<'a> {
 	fn record_debug(&mut self, _: &Field, value: &dyn Debug) {
-		self.0.write_str(&format!("{value:?}")).unwrap();
+		self.0
+			.write_str(&format!("{value:?}"))
+			.expect("writing to log buffer should succeed");
 	}
 }

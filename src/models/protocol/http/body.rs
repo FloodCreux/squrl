@@ -106,7 +106,7 @@ pub fn find_file_format_in_content_type(headers: &Vec<(String, String)>) -> Opti
 		.find_any(|(header, _)| *header == "content-type")
 	{
 		// Regex that likely catches the file format
-		let regex = Regex::new(r"\w+/(?<file_format>\w+)").unwrap();
+		let regex = Regex::new(r"\w+/(?<file_format>\w+)").expect("valid content-type regex");
 
 		regex
 			.captures(content_type)

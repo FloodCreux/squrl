@@ -6,7 +6,7 @@ pub fn to_train_case(text: &String) -> String {
 	let mut chars = text.chars();
 	let mut new_chars = Vec::new();
 
-	let first_char = chars.next().unwrap();
+	let first_char = chars.next().expect("string should not be empty");
 	new_chars.push(first_char.to_ascii_uppercase());
 
 	while let Some(c) = chars.next() {

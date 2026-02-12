@@ -2,7 +2,9 @@ use crate::app::app::App;
 
 impl App<'_> {
 	pub fn tui_modify_request_settings(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{

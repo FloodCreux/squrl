@@ -108,7 +108,7 @@ impl App<'_> {
 					),
 				},
 				RequestParamsTabs::Body => {
-					let http_request = request.get_http_request().unwrap();
+					let http_request = request.get_http_request().expect("request should be HTTP");
 
 					match http_request.body {
 						NoBody => tab.to_string().to_uppercase(),
@@ -117,7 +117,9 @@ impl App<'_> {
 					}
 				}
 				RequestParamsTabs::Message => {
-					let ws_request = request.get_ws_request().unwrap();
+					let ws_request = request
+						.get_ws_request()
+						.expect("request should be WebSocket");
 
 					format!(
 						"{} ({})",
@@ -213,7 +215,7 @@ impl App<'_> {
 				);
 			}
 			RequestParamsTabs::Body => {
-				let http_request = request.get_http_request().unwrap();
+				let http_request = request.get_http_request().expect("request should be HTTP");
 
 				match &http_request.body {
 					NoBody => {

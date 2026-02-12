@@ -9,7 +9,9 @@ impl App<'_> {
 			return;
 		}
 
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 
 		self.with_selected_request_write(&selected, |req| {
 			req.update_url_and_params(input_text);

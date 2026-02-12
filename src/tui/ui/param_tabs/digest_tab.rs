@@ -39,7 +39,9 @@ impl App<'_> {
 		.split(digest_auth_scroll_view.area());
 
 		let digest_auth = {
-			let local_selected_request = self.get_selected_request_as_local();
+			let Some(local_selected_request) = self.get_selected_request_as_local() else {
+				return;
+			};
 			let selected_request = local_selected_request.read();
 
 			selected_request.auth.get_digest().clone()

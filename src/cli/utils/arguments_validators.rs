@@ -7,7 +7,7 @@ pub fn collection_slash_request_validator(arg: &str) -> Result<(String, String),
 	let regex = regex::Regex::new(&format!(
 		r#"^(?<collection>{ELEMENT_NAME_REGEX})/(?<request>{ELEMENT_NAME_REGEX})$"#
 	))
-	.unwrap();
+	.expect("valid collection/request regex");
 	match regex.captures(arg) {
 		None => Err(Error::new(InvalidValue)),
 		Some(capture) => Ok((

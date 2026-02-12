@@ -37,6 +37,6 @@ impl Folder {
 			})
 			.collect();
 
-		TreeItem::new(identifier, line, items).unwrap()
+		TreeItem::new(identifier, line, items).expect("tree item creation should succeed")
 	}
 }

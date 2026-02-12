@@ -125,15 +125,27 @@ impl App<'_> {
 		let request = local_request.read();
 
 		if send_command.status_code {
-			println!("{}", response.status_code.as_ref().unwrap());
+			println!(
+				"{}",
+				response
+					.status_code
+					.as_ref()
+					.expect("response should have a status code")
+			);
 		}
 
 		if send_command.duration {
-			println!("{}", response.duration.unwrap());
+			println!(
+				"{}",
+				response.duration.expect("response should have a duration")
+			);
 		}
 
 		if send_command.cookies {
-			println!("{}", response.cookies.unwrap());
+			println!(
+				"{}",
+				response.cookies.expect("response should have cookies")
+			);
 		}
 
 		if send_command.headers {
@@ -233,7 +245,9 @@ impl App<'_> {
 
 							let tx_and_connected = {
 								let request = local_local_request.read();
-								let ws_request = request.get_ws_request().unwrap();
+								let ws_request = request
+									.get_ws_request()
+									.expect("request should be WebSocket");
 								if ws_request.is_connected {
 									ws_request.websocket.as_ref().map(|ws| Arc::clone(&ws.tx))
 								} else {
@@ -248,10 +262,12 @@ impl App<'_> {
 									.await
 									.send(reqwest_websocket::Message::Text(text.clone()))
 									.await
-									.unwrap();
+									.expect("sending WebSocket message should succeed");
 
 								let mut request = local_local_request.write();
-								let ws_request = request.get_ws_request_mut().unwrap();
+								let ws_request = request
+									.get_ws_request_mut()
+									.expect("request should be WebSocket");
 								ws_request.messages.push(Message {
 									timestamp: Local::now(),
 									sender: Sender::You,

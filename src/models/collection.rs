@@ -88,7 +88,7 @@ impl Collection {
 			.collect();
 		items.extend(request_items);
 
-		TreeItem::new(identifier, line, items).unwrap()
+		TreeItem::new(identifier, line, items).expect("tree item creation should succeed")
 	}
 
 	/// Resolves a child index within this collection to either a folder or a root request.

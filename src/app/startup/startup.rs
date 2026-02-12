@@ -73,22 +73,34 @@ impl<'a> App<'a> {
 	}
 
 	fn parse_app_directory(&mut self) {
-		let paths = match ARGS.directory.as_ref().unwrap().read_dir() {
+		let paths = match ARGS
+			.directory
+			.as_ref()
+			.expect("--directory argument is required")
+			.read_dir()
+		{
 			Ok(paths) => paths,
 			Err(e) => panic_error(format!(
 				"Directory \"{}\" not found\n\t{e}",
-				ARGS.directory.as_ref().unwrap().display()
+				ARGS.directory
+					.as_ref()
+					.expect("--directory argument is required")
+					.display()
 			)),
 		};
 
 		for path in paths {
-			let path = path.unwrap().path();
+			let path = path.expect("directory entry should be readable").path();
 
 			if path.is_dir() {
 				continue;
 			}
 
-			let file_name = path.file_name().unwrap().to_str().unwrap();
+			let file_name = path
+				.file_name()
+				.expect("path should have a file name")
+				.to_str()
+				.expect("file name should be valid UTF-8");
 
 			trace!("Checking file \"{}\"", path.display());
 
@@ -248,7 +260,11 @@ impl<'a> App<'a> {
 	}
 
 	fn create_log_file(&mut self) -> File {
-		let path = ARGS.directory.as_ref().unwrap().join("squrl.log");
+		let path = ARGS
+			.directory
+			.as_ref()
+			.expect("--directory argument is required")
+			.join("squrl.log");
 
 		match OpenOptions::new()
 			.write(true)

@@ -32,7 +32,7 @@ pub fn event_available_keys_to_spans(
 		}
 	}
 
-	spans.last_mut().unwrap().pop();
+	spans.last_mut().expect("spans should not be empty").pop();
 
 	spans
 }
@@ -144,7 +144,9 @@ impl App<'_> {
 			}
 
 			DisplayingEnvEditor | EditingEnvVariable => {
-				let local_env = self.get_selected_env_as_local().unwrap();
+				let Some(local_env) = self.get_selected_env_as_local() else {
+					return Line::default();
+				};
 				let env = local_env.read();
 
 				Line::from(vec![
@@ -181,7 +183,9 @@ impl App<'_> {
 			| ChoosingRequestExportFormat
 			| DisplayingRequestExport
 			| SelectingResponseBody => {
-				let local_selected_request = self.get_selected_request_as_local();
+				let Some(local_selected_request) = self.get_selected_request_as_local() else {
+					return Line::default();
+				};
 				let selected_request = local_selected_request.read();
 
 				if self.state == SelectedRequest {

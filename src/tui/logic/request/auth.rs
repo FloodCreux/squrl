@@ -17,8 +17,8 @@ macro_rules! define_auth_modify_handlers {
 	);* $(;)?) => {
 		$(
 			pub fn $fn_name(&mut self) {
+				let Some(idx) = self.collections_tree.selected else { return };
 				let input_text = self.$input_field.to_string();
-				let idx = self.collections_tree.selected.unwrap();
 				self.$modifier(idx.collection_index(), idx.request_index(), input_text);
 				self.select_request_state();
 			}
@@ -42,7 +42,9 @@ impl App<'_> {
 	}
 
 	pub fn tui_next_request_auth(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
@@ -56,7 +58,9 @@ impl App<'_> {
 	}
 
 	pub fn tui_select_request_auth_input_text(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let Some(local_selected_request) = self.get_selected_request_as_local() else {
+			return;
+		};
 		let selected_request = local_selected_request.read();
 
 		match selected_request.auth {
@@ -96,7 +100,9 @@ impl App<'_> {
 		}
 
 		let request_auth = {
-			let local_selected_request = self.get_selected_request_as_local();
+			let Some(local_selected_request) = self.get_selected_request_as_local() else {
+				return;
+			};
 			let selected_request = local_selected_request.read();
 			selected_request.auth.clone()
 		};
@@ -127,7 +133,9 @@ impl App<'_> {
 		}
 
 		let request_auth = {
-			let local_selected_request = self.get_selected_request_as_local();
+			let Some(local_selected_request) = self.get_selected_request_as_local() else {
+				return;
+			};
 			let selected_request = local_selected_request.read();
 			selected_request.auth.clone()
 		};
@@ -153,7 +161,9 @@ impl App<'_> {
 	}
 
 	pub fn tui_request_auth_previous_jwt_algorithm(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
@@ -175,7 +185,9 @@ impl App<'_> {
 	}
 
 	pub fn tui_request_auth_next_jwt_algorithm(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
@@ -197,7 +209,9 @@ impl App<'_> {
 	}
 
 	pub fn tui_request_auth_previous_jwt_secret_type(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
@@ -216,7 +230,9 @@ impl App<'_> {
 	}
 
 	pub fn tui_request_auth_next_jwt_secret_type(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
@@ -235,7 +251,9 @@ impl App<'_> {
 	}
 
 	pub fn tui_request_auth_toggle_digest_stale(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
@@ -254,7 +272,9 @@ impl App<'_> {
 	}
 
 	pub fn tui_request_auth_previous_digest_algorithm(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
@@ -273,7 +293,9 @@ impl App<'_> {
 	}
 
 	pub fn tui_request_auth_next_digest_algorithm(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
@@ -292,7 +314,9 @@ impl App<'_> {
 	}
 
 	pub fn tui_request_auth_previous_digest_qop(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
@@ -311,7 +335,9 @@ impl App<'_> {
 	}
 
 	pub fn tui_request_auth_next_digest_qop(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
@@ -330,7 +356,9 @@ impl App<'_> {
 	}
 
 	pub fn tui_request_auth_toggle_digest_user_hash(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
@@ -349,7 +377,9 @@ impl App<'_> {
 	}
 
 	pub fn tui_request_auth_toggle_digest_charset(&mut self) {
-		let selected = self.collections_tree.selected.unwrap();
+		let Some(selected) = self.collections_tree.selected else {
+			return;
+		};
 		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{

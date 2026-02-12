@@ -64,7 +64,9 @@ impl App<'_> {
 
 		// REQUEST CONNECTION STATUS
 
-		let ws_request = request.get_ws_request().unwrap();
+		let ws_request = request
+			.get_ws_request()
+			.expect("request should be WebSocket");
 
 		let connection_status_block = Block::new()
 			.borders(Borders::NONE)

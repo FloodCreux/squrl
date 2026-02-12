@@ -68,7 +68,7 @@ impl App<'_> {
 			path: ARGS
 				.directory
 				.as_ref()
-				.unwrap()
+				.expect("directory argument should be set")
 				.join(format!("{}.{file_format}", new_collection_name)),
 			file_format,
 		};
@@ -205,7 +205,7 @@ impl App<'_> {
 		collection.path = ARGS
 			.directory
 			.as_ref()
-			.unwrap()
+			.expect("directory argument should be set")
 			.join(format!("{}.{}", collection.name, collection.file_format));
 		self.core
 			.collections

@@ -17,16 +17,32 @@ pub static SYNTAX_SET: LazyLock<Arc<SyntaxSet>> =
 	LazyLock::new(|| Arc::new(SyntaxSet::load_defaults_newlines()));
 pub static ENV_VARIABLE_SYNTAX_SET: LazyLock<Arc<SyntaxSet>> =
 	LazyLock::new(|| Arc::new(generate_env_variable_syntax_set()));
-pub static ENV_VARIABLE_SYNTAX_REF: LazyLock<&'static SyntaxReference> =
-	LazyLock::new(|| ENV_VARIABLE_SYNTAX_SET.syntaxes().first().unwrap());
-pub static JSON_SYNTAX_REF: LazyLock<&'static SyntaxReference> =
-	LazyLock::new(|| SYNTAX_SET.find_syntax_by_extension("json").unwrap());
-pub static XML_SYNTAX_REF: LazyLock<&'static SyntaxReference> =
-	LazyLock::new(|| SYNTAX_SET.find_syntax_by_extension("xml").unwrap());
-pub static HTML_SYNTAX_REF: LazyLock<&'static SyntaxReference> =
-	LazyLock::new(|| SYNTAX_SET.find_syntax_by_extension("html").unwrap());
-pub static JS_SYNTAX_REF: LazyLock<&'static SyntaxReference> =
-	LazyLock::new(|| SYNTAX_SET.find_syntax_by_extension("js").unwrap());
+pub static ENV_VARIABLE_SYNTAX_REF: LazyLock<&'static SyntaxReference> = LazyLock::new(|| {
+	ENV_VARIABLE_SYNTAX_SET
+		.syntaxes()
+		.first()
+		.expect("env variable syntax set should have at least one syntax")
+});
+pub static JSON_SYNTAX_REF: LazyLock<&'static SyntaxReference> = LazyLock::new(|| {
+	SYNTAX_SET
+		.find_syntax_by_extension("json")
+		.expect("json syntax should be in default syntax set")
+});
+pub static XML_SYNTAX_REF: LazyLock<&'static SyntaxReference> = LazyLock::new(|| {
+	SYNTAX_SET
+		.find_syntax_by_extension("xml")
+		.expect("xml syntax should be in default syntax set")
+});
+pub static HTML_SYNTAX_REF: LazyLock<&'static SyntaxReference> = LazyLock::new(|| {
+	SYNTAX_SET
+		.find_syntax_by_extension("html")
+		.expect("html syntax should be in default syntax set")
+});
+pub static JS_SYNTAX_REF: LazyLock<&'static SyntaxReference> = LazyLock::new(|| {
+	SYNTAX_SET
+		.find_syntax_by_extension("js")
+		.expect("js syntax should be in default syntax set")
+});
 pub static THEME_SET: LazyLock<Arc<ThemeSet>> =
 	LazyLock::new(|| Arc::new(ThemeSet::load_defaults()));
 pub static SYNTAX_THEME: LazyLock<&'static Theme> =
@@ -46,7 +62,9 @@ pub fn highlight(string: &str, extension: &str) -> Option<Vec<Line<'static>>> {
 	let mut lines: Vec<Line> = vec![];
 
 	for line in string.lines() {
-		let result = highlight.highlight_line(line, &SYNTAX_SET).unwrap();
+		let result = highlight
+			.highlight_line(line, &SYNTAX_SET)
+			.expect("syntax highlighting should not fail for valid syntax");
 
 		let mut highlighted_line: Vec<Span> = vec![];
 
@@ -82,7 +100,7 @@ contexts:
 		true,
 		None,
 	)
-	.unwrap();
+	.expect("env variable syntax definition should be valid YAML");
 
 	syntax_set_builder.add(syntax_def);
 

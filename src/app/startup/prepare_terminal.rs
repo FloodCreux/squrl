@@ -8,8 +8,10 @@ impl App<'_> {
 	pub fn prepare_terminal(&mut self) -> &mut Self {
 		trace!("Preparing terminal...");
 
-		enable_raw_mode().unwrap();
-		stdout().execute(EnterAlternateScreen).unwrap();
+		enable_raw_mode().expect("failed to enable raw mode for terminal");
+		stdout()
+			.execute(EnterAlternateScreen)
+			.expect("failed to enter alternate screen");
 
 		trace!("Terminal OK");
 		self
