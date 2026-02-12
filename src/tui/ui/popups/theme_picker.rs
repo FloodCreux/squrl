@@ -12,7 +12,7 @@ use crate::tui::utils::centered_rect::centered_rect;
 impl App<'_> {
 	pub fn render_theme_picker_popup(&mut self, frame: &mut Frame) {
 		let popup_block = Block::default()
-			.title("Choose Theme")
+			.title(" Choose Theme ")
 			.borders(Borders::ALL)
 			.fg(THEME.read().ui.main_foreground_color)
 			.bg(THEME.read().ui.main_background_color);
@@ -26,21 +26,23 @@ impl App<'_> {
 			.max()
 			.unwrap_or(10);
 
-		let popup_width = (max_theme_name_len + 6).clamp(20, 40) as u16;
+		// +4 for padding (2 spaces on each side), +2 for borders
+		let popup_width = (max_theme_name_len + 6).clamp(24, 50) as u16;
 		let visible_items = 10.min(self.theme_popup.themes.len()) as u16;
-		let popup_height = visible_items + 2; // +2 for borders
+		// +2 for top/bottom borders
+		let popup_height = visible_items + 2;
 
 		let area = centered_rect(popup_width, popup_height, frame.area());
 
 		frame.render_widget(Clear, area);
-		frame.render_widget(popup_block, area);
+		frame.render_widget(popup_block.clone(), area);
 
-		// Create inner area for the list
-		let inner_area = Block::default().inner(area);
+		// Get inner area (inside the borders)
+		let inner_area = popup_block.inner(area);
 
 		// Calculate which items to show (scrolling)
 		let total_items = self.theme_popup.themes.len();
-		let max_visible = (popup_height - 2) as usize;
+		let max_visible = visible_items as usize;
 
 		let start_idx = if self.theme_popup.selection >= max_visible {
 			self.theme_popup.selection - max_visible + 1
@@ -84,7 +86,7 @@ impl App<'_> {
 			let mut scrollbar_state =
 				ScrollbarState::new(total_items).position(self.theme_popup.selection);
 
-			frame.render_stateful_widget(scrollbar, area, &mut scrollbar_state);
+			frame.render_stateful_widget(scrollbar, inner_area, &mut scrollbar_state);
 		}
 	}
 }
