@@ -69,6 +69,14 @@ impl App<'_> {
 
 		let collection = &self.collections[collection_index];
 
+		if collection.path.as_os_str().is_empty() {
+			warn!(
+				"Ephemeral collection \"{}\", not saving to disk",
+				collection.name
+			);
+			return;
+		}
+
 		info!("Saving collection \"{}\"", collection.name);
 
 		let temp_file_name = format!(
