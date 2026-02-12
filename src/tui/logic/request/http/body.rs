@@ -22,15 +22,15 @@ impl App<'_> {
 	}
 
 	pub fn tui_modify_request_form_data(&mut self) {
-		let selected_request_index = &self.collections_tree.selected.unwrap();
+		let selected = self.collections_tree.selected.unwrap();
 
 		let selection = self.body_form_table.selection.unwrap();
 		let input_text = self.body_form_table.selection_text_input.to_string();
 
 		if self
 			.modify_request_form_data(
-				selected_request_index.0,
-				selected_request_index.1,
+				selected.collection_index(),
+				selected.request_index(),
 				input_text,
 				selection.1,
 				selection.0,
@@ -44,12 +44,12 @@ impl App<'_> {
 	}
 
 	pub fn tui_create_new_form_data(&mut self) {
-		let selected_request_index = &self.collections_tree.selected.unwrap();
+		let selected = self.collections_tree.selected.unwrap();
 
 		if self
 			.create_new_form_data(
-				selected_request_index.0,
-				selected_request_index.1,
+				selected.collection_index(),
+				selected.request_index(),
 				String::from("key"),
 				String::from("value"),
 			)
@@ -68,12 +68,12 @@ impl App<'_> {
 		}
 
 		let selection = self.body_form_table.selection.unwrap();
-		let selected_request_index = &self.collections_tree.selected.unwrap();
+		let selected = self.collections_tree.selected.unwrap();
 
 		if self
 			.delete_form_data(
-				selected_request_index.0,
-				selected_request_index.1,
+				selected.collection_index(),
+				selected.request_index(),
 				selection.0,
 			)
 			.is_err()
@@ -91,12 +91,12 @@ impl App<'_> {
 		}
 
 		let selection = self.body_form_table.selection.unwrap();
-		let selected_request_index = &self.collections_tree.selected.unwrap();
+		let selected = self.collections_tree.selected.unwrap();
 
 		if self
 			.toggle_form_data(
-				selected_request_index.0,
-				selected_request_index.1,
+				selected.collection_index(),
+				selected.request_index(),
 				None,
 				selection.0,
 			)
@@ -114,12 +114,12 @@ impl App<'_> {
 		}
 
 		let selection = self.body_form_table.selection.unwrap();
-		let selected_request_index = &self.collections_tree.selected.unwrap();
+		let selected = self.collections_tree.selected.unwrap();
 
 		if self
 			.duplicate_form_data(
-				selected_request_index.0,
-				selected_request_index.1,
+				selected.collection_index(),
+				selected.request_index(),
 				selection.0,
 			)
 			.is_err()
@@ -131,8 +131,8 @@ impl App<'_> {
 	}
 
 	pub fn tui_modify_request_body(&mut self) {
-		let selected_request_index = &self.collections_tree.selected.unwrap();
-		let local_selected_request = self.get_request_as_local_from_indexes(selected_request_index);
+		let selected = self.collections_tree.selected.unwrap();
+		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
 			let mut selected_request = local_selected_request.write();
@@ -159,13 +159,13 @@ impl App<'_> {
 			selected_http_request.body = new_body;
 		}
 
-		self.save_collection_to_file(selected_request_index.0);
+		self.save_collection_to_file(selected.collection_index());
 		self.select_request_state();
 	}
 
 	pub fn tui_next_request_content_type(&mut self) {
-		let selected_request_index = &self.collections_tree.selected.unwrap();
-		let local_selected_request = self.get_request_as_local_from_indexes(selected_request_index);
+		let selected = self.collections_tree.selected.unwrap();
+		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
 			let mut selected_request = local_selected_request.write();
@@ -198,7 +198,7 @@ impl App<'_> {
 			}
 		}
 
-		self.save_collection_to_file(selected_request_index.0);
+		self.save_collection_to_file(selected.collection_index());
 		self.tui_update_body_table_selection();
 		self.tui_load_request_body_param_tab();
 	}

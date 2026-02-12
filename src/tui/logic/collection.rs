@@ -4,6 +4,7 @@ use crate::models::auth::basic::BasicAuth;
 use crate::models::auth::bearer_token::BearerToken;
 use crate::models::auth::digest::Digest;
 use crate::models::auth::jwt::JwtToken;
+use crate::models::collection::ChildRef;
 use crate::models::protocol::http::body::ContentType;
 use crate::models::protocol::protocol::Protocol;
 use crate::models::protocol::ws::message_type::MessageType;
@@ -169,9 +170,42 @@ impl App<'_> {
 			.push_str(post_request_script);
 	}
 
+	/// Returns true if the current tree selection points to a request (not a collection or folder).
+	fn is_selection_a_request(&self) -> bool {
+		let selected = self.collections_tree.state.selected();
+		match selected.len() {
+			2 => {
+				// Check if this is a root request or a folder
+				let collection_index = selected[0];
+				let child_index = selected[1];
+				let folder_count = self.collections[collection_index].folders.len();
+				child_index >= folder_count
+			}
+			3 => true,
+			_ => false,
+		}
+	}
+
+	/// Returns true if the current tree selection points to a folder.
+	#[allow(dead_code)]
+	fn is_selection_a_folder(&self) -> bool {
+		let selected = self.collections_tree.state.selected();
+		if selected.len() == 2 {
+			let collection_index = selected[0];
+			let child_index = selected[1];
+			let folder_count = self.collections[collection_index].folders.len();
+			child_index < folder_count
+		} else {
+			false
+		}
+	}
+
 	pub fn select_request(&mut self) {
-		if self.collections_tree.state.selected().len() == 2 {
-			self.collections_tree.set_selected();
+		if self.is_selection_a_request() {
+			let collection_index = self.collections_tree.state.selected()[0];
+			let folder_count = self.collections[collection_index].folders.len();
+			self.collections_tree
+				.set_selected_with_context(folder_count);
 			self.tui_update_request_param_tab();
 			self.tui_update_request_result_tab();
 			self.tui_update_query_params_selection();
@@ -199,11 +233,27 @@ impl App<'_> {
 	}
 
 	pub fn select_request_or_expand_collection(&mut self) {
-		match self.collections_tree.state.selected().len() {
+		let selected = self.collections_tree.state.selected();
+		match selected.len() {
 			1 => {
+				// Collection level - toggle expand/collapse
 				self.collections_tree.state.toggle_selected();
 			}
 			2 => {
+				let collection_index = selected[0];
+				let child_index = selected[1];
+				let folder_count = self.collections[collection_index].folders.len();
+
+				if child_index < folder_count {
+					// This is a folder - toggle expand/collapse
+					self.collections_tree.state.toggle_selected();
+				} else {
+					// This is a root request - select it
+					self.select_request();
+				}
+			}
+			3 => {
+				// Request inside a folder - select it
 				self.select_request();
 			}
 			_ => {}
@@ -214,6 +264,7 @@ impl App<'_> {
 		match self.creation_popup.selection {
 			0 => self.create_new_collection_state(),
 			1 => self.create_new_request_state(),
+			2 => self.create_new_folder_state(),
 			_ => {}
 		}
 	}
@@ -222,6 +273,21 @@ impl App<'_> {
 		let new_collection_name = self.new_collection_input.to_string();
 
 		match self.new_collection(new_collection_name) {
+			Ok(_) => {}
+			Err(_) => return,
+		}
+
+		self.normal_state();
+	}
+
+	pub fn tui_new_folder(&mut self) {
+		let new_folder_name = self.new_collection_input.to_string();
+
+		// Determine which collection to add the folder to
+		let selected = self.collections_tree.state.selected();
+		let collection_index = if !selected.is_empty() { selected[0] } else { 0 };
+
+		match self.new_folder(collection_index, new_folder_name) {
 			Ok(_) => {}
 			Err(_) => return,
 		}
@@ -257,11 +323,20 @@ impl App<'_> {
 	}
 
 	pub fn delete_element(&mut self) {
-		match self.collections_tree.state.selected().len() {
+		let selected = self.collections_tree.state.selected();
+		match selected.len() {
 			// Selection on a collection
 			1 => self.delete_collection_state(),
-			// Selection on a request
-			2 => self.delete_request_state(),
+			2 => {
+				let collection_index = selected[0];
+				let child_index = selected[1];
+				match self.collections[collection_index].resolve_child(child_index) {
+					ChildRef::Folder(_) => self.delete_folder_state(),
+					ChildRef::RootRequest(_) => self.delete_request_state(),
+				}
+			}
+			// Selection on a request inside a folder
+			3 => self.delete_request_state(),
 			_ => {}
 		}
 	}
@@ -278,27 +353,71 @@ impl App<'_> {
 	}
 
 	pub fn tui_delete_request(&mut self) {
-		let selected_request_index = self.collections_tree.state.selected().to_vec();
-		let collection_index = selected_request_index[0];
-		let request_index = selected_request_index[1];
+		let selected = self.collections_tree.state.selected().to_vec();
 
 		self.collections_tree.state.select(Vec::new());
 		self.collections_tree.selected = None;
 
-		match self.delete_request(collection_index, request_index) {
-			Ok(_) => {}
-			Err(_) => return,
+		match selected.len() {
+			2 => {
+				// Root-level request
+				let collection_index = selected[0];
+				let child_index = selected[1];
+				let folder_count = self.collections[collection_index].folders.len();
+				let request_index = child_index - folder_count;
+
+				match self.delete_request(collection_index, request_index) {
+					Ok(_) => {}
+					Err(_) => return,
+				}
+			}
+			3 => {
+				// Request inside a folder
+				let collection_index = selected[0];
+				let folder_index = selected[1];
+				let request_index = selected[2];
+
+				match self.delete_folder_request(collection_index, folder_index, request_index) {
+					Ok(_) => {}
+					Err(_) => return,
+				}
+			}
+			_ => return,
+		}
+
+		self.normal_state();
+	}
+
+	pub fn tui_delete_folder(&mut self) {
+		let selected = self.collections_tree.state.selected().to_vec();
+
+		self.collections_tree.state.select(Vec::new());
+		self.collections_tree.selected = None;
+
+		if selected.len() == 2 {
+			let collection_index = selected[0];
+			let folder_index = selected[1];
+			self.delete_folder(collection_index, folder_index);
 		}
 
 		self.normal_state();
 	}
 
 	pub fn rename_element(&mut self) {
-		match self.collections_tree.state.selected().len() {
+		let selected = self.collections_tree.state.selected();
+		match selected.len() {
 			// Selection on a collection
 			1 => self.rename_collection_state(),
-			// Selection on a request
-			2 => self.rename_request_state(),
+			2 => {
+				let collection_index = selected[0];
+				let child_index = selected[1];
+				match self.collections[collection_index].resolve_child(child_index) {
+					ChildRef::Folder(_) => self.rename_folder_state(),
+					ChildRef::RootRequest(_) => self.rename_request_state(),
+				}
+			}
+			// Selection on a request inside a folder
+			3 => self.rename_request_state(),
 			_ => {}
 		}
 	}
@@ -317,43 +436,102 @@ impl App<'_> {
 
 	pub fn tui_rename_request(&mut self) {
 		let new_request_name = self.rename_request_input.to_string();
-		let selected_request_index = self.collections_tree.state.selected();
+		let selected = self.collections_tree.state.selected();
 
-		match self.rename_request(
-			selected_request_index[0],
-			selected_request_index[1],
-			new_request_name,
-		) {
-			Ok(_) => {}
-			Err(_) => return,
+		match selected.len() {
+			2 => {
+				let collection_index = selected[0];
+				let child_index = selected[1];
+				let folder_count = self.collections[collection_index].folders.len();
+				let request_index = child_index - folder_count;
+
+				match self.rename_request(collection_index, request_index, new_request_name) {
+					Ok(_) => {}
+					Err(_) => return,
+				}
+			}
+			3 => {
+				let collection_index = selected[0];
+				let folder_index = selected[1];
+				let request_index = selected[2];
+
+				match self.rename_folder_request(
+					collection_index,
+					folder_index,
+					request_index,
+					new_request_name,
+				) {
+					Ok(_) => {}
+					Err(_) => return,
+				}
+			}
+			_ => return,
+		}
+
+		self.normal_state();
+	}
+
+	pub fn tui_rename_folder(&mut self) {
+		let new_folder_name = self.rename_collection_input.to_string();
+		let selected = self.collections_tree.state.selected();
+
+		if selected.len() == 2 {
+			let collection_index = selected[0];
+			let folder_index = selected[1];
+
+			match self.rename_folder(collection_index, folder_index, new_folder_name) {
+				Ok(_) => {}
+				Err(_) => return,
+			}
 		}
 
 		self.normal_state();
 	}
 
 	pub fn duplicate_element(&mut self) {
-		match self.collections_tree.state.selected().len() {
+		let selected = self.collections_tree.state.selected();
+		match selected.len() {
 			// Selection on a collection
 			1 => {
-				let selected_request_index = self.collections_tree.state.selected().to_vec();
-				let collection_index = selected_request_index[0];
-
+				let collection_index = selected[0];
 				let _ = self.duplicate_collection(collection_index);
 			}
-			// Selection on a request
 			2 => {
-				let selected_request_index = self.collections_tree.state.selected().to_vec();
-
+				let collection_index = selected[0];
+				let child_index = selected[1];
+				match self.collections[collection_index].resolve_child(child_index) {
+					ChildRef::Folder(folder_index) => {
+						let _ = self.duplicate_folder(collection_index, folder_index);
+					}
+					ChildRef::RootRequest(request_index) => {
+						let _ = self.duplicate_request(collection_index, request_index);
+					}
+				}
+			}
+			3 => {
+				let collection_index = selected[0];
+				let folder_index = selected[1];
+				let request_index = selected[2];
 				let _ =
-					self.duplicate_request(selected_request_index[0], selected_request_index[1]);
+					self.duplicate_folder_request(collection_index, folder_index, request_index);
 			}
 			_ => {}
 		}
 	}
+
 	pub fn tui_move_element_up(&mut self) {
-		match self.collections_tree.state.selected().len() {
+		let selected = self.collections_tree.state.selected();
+		match selected.len() {
 			1 => self.tui_move_collection_up(),
-			2 => self.tui_move_request_up(),
+			2 => {
+				let collection_index = selected[0];
+				let child_index = selected[1];
+				match self.collections[collection_index].resolve_child(child_index) {
+					ChildRef::Folder(_) => self.tui_move_folder_up(),
+					ChildRef::RootRequest(_) => self.tui_move_request_up(),
+				}
+			}
+			3 => self.tui_move_folder_request_up(),
 			_ => {}
 		}
 	}
@@ -381,33 +559,96 @@ impl App<'_> {
 
 	pub fn tui_move_request_up(&mut self) {
 		let mut selection = self.collections_tree.state.selected().to_vec();
+		let collection_index = selection[0];
+		let folder_count = self.collections[collection_index].folders.len();
 
-		// Cannot decrement selection further
-		if selection[1] == 0 {
+		// Cannot move above the first root request (which is at tree index folder_count)
+		if selection[1] <= folder_count {
 			return;
 		}
 
+		let request_index = selection[1] - folder_count;
+
 		// Retrieve the request
-		let request = self.collections[selection[0]].requests.remove(selection[1]);
+		let request = self.collections[collection_index]
+			.requests
+			.remove(request_index);
 
 		// Decrement selection
 		selection[1] -= 1;
 
 		// Insert the request at its new index
-		self.collections[selection[0]]
+		self.collections[collection_index]
 			.requests
-			.insert(selection[1], request);
+			.insert(request_index - 1, request);
 
 		// Update the selection in order to move with the element
 		self.collections_tree.state.select(selection.clone());
 
-		self.save_collection_to_file(selection[0]);
+		self.save_collection_to_file(collection_index);
+	}
+
+	pub fn tui_move_folder_up(&mut self) {
+		let mut selection = self.collections_tree.state.selected().to_vec();
+		let collection_index = selection[0];
+		let folder_index = selection[1];
+
+		// Cannot move above the first folder
+		if folder_index == 0 {
+			return;
+		}
+
+		let folder = self.collections[collection_index]
+			.folders
+			.remove(folder_index);
+
+		selection[1] -= 1;
+
+		self.collections[collection_index]
+			.folders
+			.insert(folder_index - 1, folder);
+
+		self.collections_tree.state.select(selection.clone());
+		self.save_collection_to_file(collection_index);
+	}
+
+	pub fn tui_move_folder_request_up(&mut self) {
+		let mut selection = self.collections_tree.state.selected().to_vec();
+		let collection_index = selection[0];
+		let folder_index = selection[1];
+		let request_index = selection[2];
+
+		if request_index == 0 {
+			return;
+		}
+
+		let request = self.collections[collection_index].folders[folder_index]
+			.requests
+			.remove(request_index);
+
+		selection[2] -= 1;
+
+		self.collections[collection_index].folders[folder_index]
+			.requests
+			.insert(request_index - 1, request);
+
+		self.collections_tree.state.select(selection.clone());
+		self.save_collection_to_file(collection_index);
 	}
 
 	pub fn tui_move_element_down(&mut self) {
-		match self.collections_tree.state.selected().len() {
+		let selected = self.collections_tree.state.selected();
+		match selected.len() {
 			1 => self.tui_move_collection_down(),
-			2 => self.tui_move_request_down(),
+			2 => {
+				let collection_index = selected[0];
+				let child_index = selected[1];
+				match self.collections[collection_index].resolve_child(child_index) {
+					ChildRef::Folder(_) => self.tui_move_folder_down(),
+					ChildRef::RootRequest(_) => self.tui_move_request_down(),
+				}
+			}
+			3 => self.tui_move_folder_request_down(),
 			_ => {}
 		}
 	}
@@ -435,26 +676,82 @@ impl App<'_> {
 
 	pub fn tui_move_request_down(&mut self) {
 		let mut selection = self.collections_tree.state.selected().to_vec();
+		let collection_index = selection[0];
+		let folder_count = self.collections[collection_index].folders.len();
+		let request_index = selection[1] - folder_count;
 
 		// Cannot increment selection further
-		if selection[1] == self.collections[selection[0]].requests.len() - 1 {
+		if request_index == self.collections[collection_index].requests.len() - 1 {
 			return;
 		}
 
 		// Retrieve the request
-		let request = self.collections[selection[0]].requests.remove(selection[1]);
+		let request = self.collections[collection_index]
+			.requests
+			.remove(request_index);
 
 		// Increment selection
 		selection[1] += 1;
 
 		// Insert the request at its new index
-		self.collections[selection[0]]
+		self.collections[collection_index]
 			.requests
-			.insert(selection[1], request);
+			.insert(request_index + 1, request);
 
 		// Update the selection in order to move with the element
 		self.collections_tree.state.select(selection.clone());
 
-		self.save_collection_to_file(selection[0]);
+		self.save_collection_to_file(collection_index);
+	}
+
+	pub fn tui_move_folder_down(&mut self) {
+		let mut selection = self.collections_tree.state.selected().to_vec();
+		let collection_index = selection[0];
+		let folder_index = selection[1];
+
+		if folder_index == self.collections[collection_index].folders.len() - 1 {
+			return;
+		}
+
+		let folder = self.collections[collection_index]
+			.folders
+			.remove(folder_index);
+
+		selection[1] += 1;
+
+		self.collections[collection_index]
+			.folders
+			.insert(folder_index + 1, folder);
+
+		self.collections_tree.state.select(selection.clone());
+		self.save_collection_to_file(collection_index);
+	}
+
+	pub fn tui_move_folder_request_down(&mut self) {
+		let mut selection = self.collections_tree.state.selected().to_vec();
+		let collection_index = selection[0];
+		let folder_index = selection[1];
+		let request_index = selection[2];
+
+		if request_index
+			== self.collections[collection_index].folders[folder_index]
+				.requests
+				.len() - 1
+		{
+			return;
+		}
+
+		let request = self.collections[collection_index].folders[folder_index]
+			.requests
+			.remove(request_index);
+
+		selection[2] += 1;
+
+		self.collections[collection_index].folders[folder_index]
+			.requests
+			.insert(request_index + 1, request);
+
+		self.collections_tree.state.select(selection.clone());
+		self.save_collection_to_file(collection_index);
 	}
 }

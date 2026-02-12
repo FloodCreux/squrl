@@ -2,6 +2,7 @@ pub(crate) mod auth;
 pub(crate) mod collection;
 pub mod environment;
 pub(crate) mod export;
+pub mod folder;
 pub(crate) mod protocol;
 pub mod request;
 pub mod response;

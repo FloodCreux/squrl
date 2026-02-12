@@ -1,19 +1,20 @@
 use crate::app::app::App;
+use tracing::info;
 
 impl App<'_> {
 	pub fn tui_modify_request_url(&mut self) {
 		let input_text = self.url_text_input.to_string();
 
-		let selected_request_index = &self.collections_tree.selected.unwrap();
-
-		match self.modify_request_url(
-			selected_request_index.0,
-			selected_request_index.1,
-			input_text,
-		) {
-			Ok(_) => {}
-			Err(_) => return,
+		if input_text.trim().is_empty() {
+			return;
 		}
+
+		let selected = self.collections_tree.selected.unwrap();
+
+		self.with_selected_request_write(&selected, |req| {
+			req.update_url_and_params(input_text);
+			info!("URL set to \"{}\"", &req.url);
+		});
 
 		// In case new params were inputted or deleted
 		self.tui_update_query_params_selection();

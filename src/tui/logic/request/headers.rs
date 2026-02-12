@@ -13,14 +13,14 @@ impl App<'_> {
 	}
 
 	pub fn tui_modify_request_header(&mut self) {
-		let selected_request_index = &self.collections_tree.selected.unwrap();
+		let selected = self.collections_tree.selected.unwrap();
 
 		let selection = self.headers_table.selection.unwrap();
 		let input_text = self.headers_table.selection_text_input.to_string();
 
 		match self.modify_request_header(
-			selected_request_index.0,
-			selected_request_index.1,
+			selected.collection_index(),
+			selected.request_index(),
 			input_text,
 			selection.1,
 			selection.0,
@@ -33,11 +33,11 @@ impl App<'_> {
 	}
 
 	pub fn tui_create_new_header(&mut self) {
-		let selected_request_index = &self.collections_tree.selected.unwrap();
+		let selected = self.collections_tree.selected.unwrap();
 
 		match self.create_new_header(
-			selected_request_index.0,
-			selected_request_index.1,
+			selected.collection_index(),
+			selected.request_index(),
 			String::from("header"),
 			String::from("value"),
 		) {
@@ -55,11 +55,11 @@ impl App<'_> {
 		}
 
 		let selection = self.headers_table.selection.unwrap();
-		let selected_request_index = &self.collections_tree.selected.unwrap();
+		let selected = self.collections_tree.selected.unwrap();
 
 		match self.delete_header(
-			selected_request_index.0,
-			selected_request_index.1,
+			selected.collection_index(),
+			selected.request_index(),
 			selection.0,
 		) {
 			Ok(_) => {}
@@ -76,11 +76,11 @@ impl App<'_> {
 		}
 
 		let row = self.headers_table.selection.unwrap().0;
-		let selected_request_index = &self.collections_tree.selected.unwrap();
+		let selected = self.collections_tree.selected.unwrap();
 
 		match self.toggle_header(
-			selected_request_index.0,
-			selected_request_index.1,
+			selected.collection_index(),
+			selected.request_index(),
 			None,
 			row,
 		) {
@@ -97,9 +97,9 @@ impl App<'_> {
 		}
 
 		let row = self.headers_table.selection.unwrap().0;
-		let selected_request_index = &self.collections_tree.selected.unwrap();
+		let selected = self.collections_tree.selected.unwrap();
 
-		match self.duplicate_header(selected_request_index.0, selected_request_index.1, row) {
+		match self.duplicate_header(selected.collection_index(), selected.request_index(), row) {
 			Ok(_) => {}
 			Err(_) => return,
 		}

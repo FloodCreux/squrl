@@ -48,10 +48,8 @@ impl App<'_> {
 		let is_there_any_env = self.get_selected_env_as_local().is_some();
 
 		let protocol = match &self.collections_tree.selected {
-			Some(selected_request_index) => {
-				let local_selected_request = self.collections[selected_request_index.0].requests
-					[selected_request_index.1]
-					.clone();
+			Some(selected) => {
+				let local_selected_request = self.get_request_from_selection(selected);
 				let selected_request = local_selected_request.read();
 				Some(selected_request.protocol.clone())
 			}
@@ -72,6 +70,7 @@ impl App<'_> {
 			| ChoosingElementToCreate
 			| CreatingNewCollection
 			| CreatingNewRequest
+			| CreatingNewFolder
 			| DisplayingCookies
 			| DisplayingLogs => Line::from(self.state.to_string())
 				.fg(THEME.read().ui.font_color)
@@ -91,15 +90,51 @@ impl App<'_> {
 				])
 			}
 
+			DeletingFolder | RenamingFolder => {
+				let selected = self.collections_tree.state.selected();
+				let collection_index = selected[0];
+				let folder_index = selected[1];
+				let folder_name = &self.collections[collection_index].folders[folder_index].name;
+
+				Line::from(vec![
+					Span::raw("Folder > ").fg(THEME.read().ui.secondary_foreground_color),
+					Span::raw(format!("{} > ", folder_name))
+						.fg(THEME.read().ui.secondary_foreground_color),
+					Span::raw(self.state.to_string())
+						.fg(THEME.read().ui.font_color)
+						.bg(THEME.read().ui.main_background_color),
+				])
+			}
+
 			DeletingRequest | RenamingRequest => {
-				let selected_request_index = &self.collections_tree.state.selected();
-				let selected_request = &self.collections[selected_request_index[0]].requests
-					[selected_request_index[1]]
-					.read();
+				let selected = self.collections_tree.state.selected();
+				let request_name = match selected.len() {
+					2 => {
+						let collection_index = selected[0];
+						let child_index = selected[1];
+						let folder_count = self.collections[collection_index].folders.len();
+						let request_index = child_index - folder_count;
+						self.collections[collection_index].requests[request_index]
+							.read()
+							.name
+							.clone()
+					}
+					3 => {
+						let collection_index = selected[0];
+						let folder_index = selected[1];
+						let request_index = selected[2];
+						self.collections[collection_index].folders[folder_index].requests
+							[request_index]
+							.read()
+							.name
+							.clone()
+					}
+					_ => String::from("Unknown"),
+				};
 
 				Line::from(vec![
 					Span::raw("Request > ").fg(THEME.read().ui.secondary_foreground_color),
-					Span::raw(format!("{} > ", selected_request.name))
+					Span::raw(format!("{} > ", request_name))
 						.fg(THEME.read().ui.secondary_foreground_color),
 					Span::raw(self.state.to_string())
 						.fg(THEME.read().ui.font_color)
@@ -179,8 +214,10 @@ impl App<'_> {
 			EditingEnvVariable
 				| CreatingNewCollection
 				| CreatingNewRequest
+				| CreatingNewFolder
 				| RenamingCollection
 				| RenamingRequest
+				| RenamingFolder
 				| EditingRequestUrl
 				| EditingRequestParam
 				| EditingRequestAuthBasicUsername

@@ -18,8 +18,8 @@ macro_rules! define_auth_modify_handlers {
 		$(
 			pub fn $fn_name(&mut self) {
 				let input_text = self.$input_field.to_string();
-				let idx = &self.collections_tree.selected.unwrap();
-				self.$modifier(idx.0, idx.1, input_text);
+				let idx = self.collections_tree.selected.unwrap();
+				self.$modifier(idx.collection_index(), idx.request_index(), input_text);
 				self.select_request_state();
 			}
 		)*
@@ -42,8 +42,8 @@ impl App<'_> {
 	}
 
 	pub fn tui_next_request_auth(&mut self) {
-		let selected_request_index = &self.collections_tree.selected.unwrap();
-		let local_selected_request = self.get_request_as_local_from_indexes(selected_request_index);
+		let selected = self.collections_tree.selected.unwrap();
+		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
 			let mut selected_request = local_selected_request.write();
@@ -51,7 +51,7 @@ impl App<'_> {
 			selected_request.auth = next_auth(&selected_request.auth);
 		}
 
-		self.save_collection_to_file(selected_request_index.0);
+		self.save_collection_to_file(selected.collection_index());
 		self.tui_load_request_auth_param_tab();
 	}
 
@@ -193,8 +193,8 @@ impl App<'_> {
 	}
 
 	pub fn tui_request_auth_previous_jwt_secret_type(&mut self) {
-		let selected_request_index = &self.collections_tree.selected.unwrap();
-		let local_selected_request = self.get_request_as_local_from_indexes(selected_request_index);
+		let selected = self.collections_tree.selected.unwrap();
+		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
 			let mut selected_request = local_selected_request.write();
@@ -207,13 +207,13 @@ impl App<'_> {
 			jwt_token.secret_type = new_secret_type;
 		}
 
-		self.save_collection_to_file(selected_request_index.0);
+		self.save_collection_to_file(selected.collection_index());
 		self.select_request_state();
 	}
 
 	pub fn tui_request_auth_next_jwt_secret_type(&mut self) {
-		let selected_request_index = &self.collections_tree.selected.unwrap();
-		let local_selected_request = self.get_request_as_local_from_indexes(selected_request_index);
+		let selected = self.collections_tree.selected.unwrap();
+		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
 			let mut selected_request = local_selected_request.write();
@@ -226,7 +226,7 @@ impl App<'_> {
 			jwt_token.secret_type = new_secret_type;
 		}
 
-		self.save_collection_to_file(selected_request_index.0);
+		self.save_collection_to_file(selected.collection_index());
 		self.select_request_state();
 	}
 

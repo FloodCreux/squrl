@@ -62,6 +62,7 @@ impl App<'_> {
 		let mut collections: Vec<Collection> = vec![Collection {
 			name: collection_name.clone(),
 			last_position: Some(self.collections.len() - 1),
+			folders: vec![],
 			requests: vec![],
 			path: ARGS
 				.directory
@@ -249,6 +250,7 @@ impl App<'_> {
 		let mut collection = Collection {
 			name: collection_name.clone(),
 			last_position: Some(self.collections.len() - 1),
+			folders: vec![],
 			requests: Vec::new(),
 			path: ARGS
 				.directory
@@ -338,6 +340,7 @@ impl App<'_> {
 				let collection = Collection {
 					name: collection_name.clone(),
 					last_position: Some(self.collections.len() - 1),
+					folders: vec![],
 					requests: vec![],
 					path: ARGS
 						.directory
@@ -395,6 +398,7 @@ impl App<'_> {
 				let collection = Collection {
 					name: collection_name.clone(),
 					last_position: Some(self.collections.len() - 1),
+					folders: vec![],
 					requests: vec![],
 					path: ARGS.directory.as_ref().unwrap().join(format!(
 						"{}.{}",

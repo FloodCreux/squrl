@@ -10,8 +10,8 @@ use tracing::info;
 impl App<'_> {
 	#[allow(clippy::await_holding_lock)]
 	pub async fn tui_send_request_message(&mut self) {
-		let selected_request_index = &self.collections_tree.selected.unwrap();
-		let local_selected_request = self.get_request_as_local_from_indexes(selected_request_index);
+		let selected = self.collections_tree.selected.unwrap();
+		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
 			let mut selected_request = local_selected_request.write();
@@ -76,8 +76,8 @@ impl App<'_> {
 	}
 
 	pub fn tui_next_request_message_type(&mut self) {
-		let selected_request_index = &self.collections_tree.selected.unwrap();
-		let local_selected_request = self.get_request_as_local_from_indexes(selected_request_index);
+		let selected = self.collections_tree.selected.unwrap();
+		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
 			let mut selected_request = local_selected_request.write();
@@ -90,7 +90,7 @@ impl App<'_> {
 			selected_ws_request.message_type = next_message_type;
 		}
 
-		self.save_collection_to_file(selected_request_index.0);
+		self.save_collection_to_file(selected.collection_index());
 	}
 
 	pub fn get_messages_lines_count(&self) -> usize {

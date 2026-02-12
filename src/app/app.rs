@@ -187,7 +187,11 @@ impl App<'_> {
 			request_result_tab: RequestResultTabs::Body,
 
 			creation_popup: ChoicePopup {
-				choices: vec![String::from("Collection"), String::from("Request")],
+				choices: vec![
+					String::from("Collection"),
+					String::from("Request"),
+					String::from("Folder"),
+				],
 				selection: 0,
 			},
 			new_collection_input: TextInput::new(None),

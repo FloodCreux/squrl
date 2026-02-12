@@ -12,7 +12,16 @@ impl App<'_> {
 		key: &str,
 		accessor: impl FnOnce(&Request) -> &Vec<KeyValue>,
 	) -> anyhow::Result<usize> {
-		let local = self.get_request_as_local_from_indexes(&(collection_index, request_index));
+		// Check if this is a folder request by examining the current selection
+		let local = match &self.collections_tree.selected {
+			Some(selected)
+				if selected.collection_index() == collection_index
+					&& selected.request_index() == request_index =>
+			{
+				self.get_request_from_selection(selected)
+			}
+			_ => self.get_request_as_local_from_indexes(&(collection_index, request_index)),
+		};
 		let req = local.read();
 		find_key(accessor(&req), key)
 	}

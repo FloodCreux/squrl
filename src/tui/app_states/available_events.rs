@@ -424,6 +424,70 @@ impl AppState {
 				),
 			]
 			.concat(),
+			CreatingNewFolder => [
+				vec![
+					CreateNewFolder(EventKeyBinding::new(
+						vec![key_bindings.generic.text_input.save_and_quit_single_line],
+						"Confirm",
+						Some("Confirm"),
+					)),
+					CancelCreateNewFolder(EventKeyBinding::new(
+						vec![key_bindings.generic.text_input.quit_without_saving],
+						"Cancel",
+						Some("Cancel"),
+					)),
+					KeyEventCreateNewFolder(EventKeyBinding::new(vec![], "Any input", None)),
+				],
+				generate_text_input_documentation(
+					key_bindings.generic.text_input.mode,
+					true,
+					false,
+				),
+			]
+			.concat(),
+			DeletingFolder => vec![
+				GoBackToLastState(EventKeyBinding::new(
+					vec![key_bindings.generic.navigation.go_back],
+					"Cancel",
+					Some("Cancel"),
+				)),
+				DeletingFolderMoveCursorLeft(EventKeyBinding::new(
+					vec![key_bindings.generic.navigation.move_cursor_left],
+					"Move selection left",
+					Some("Left"),
+				)),
+				DeletingFolderMoveCursorRight(EventKeyBinding::new(
+					vec![key_bindings.generic.navigation.move_cursor_right],
+					"Move selection right",
+					Some("Right"),
+				)),
+				DeleteFolder(EventKeyBinding::new(
+					vec![key_bindings.generic.navigation.select],
+					"Select choice",
+					Some("Select"),
+				)),
+			],
+			RenamingFolder => [
+				vec![
+					RenameFolder(EventKeyBinding::new(
+						vec![key_bindings.generic.text_input.save_and_quit_single_line],
+						"Confirm",
+						Some("Confirm"),
+					)),
+					CancelRenameFolder(EventKeyBinding::new(
+						vec![key_bindings.generic.text_input.quit_without_saving],
+						"Cancel",
+						Some("Cancel"),
+					)),
+					KeyEventRenameFolder(EventKeyBinding::new(vec![], "Any input", None)),
+				],
+				generate_text_input_documentation(
+					key_bindings.generic.text_input.mode,
+					true,
+					false,
+				),
+			]
+			.concat(),
 			SelectedRequest => {
 				// Depending on the current request view, some keys may need to be deactivated
 				let (params_events_allowed, result_events_allowed) = match request_view {

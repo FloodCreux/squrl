@@ -294,6 +294,50 @@ impl App<'_> {
 					self.rename_request_input.key_event(key, None)
 				}
 
+				/* Folders */
+				AppEvent::CreateNewFolder(_) => {
+					match self.new_collection_input.is_in_default_mode() {
+						true => self.tui_new_folder(),
+						false => self.new_collection_input.key_event(key, None),
+					}
+				}
+				AppEvent::CancelCreateNewFolder(_) => {
+					match self.new_collection_input.is_in_default_mode() {
+						true => self.normal_state(),
+						false => self.new_collection_input.key_event(key, None),
+					}
+				}
+				AppEvent::KeyEventCreateNewFolder(_) => {
+					self.new_collection_input.key_event(key, None)
+				}
+
+				AppEvent::DeletingFolderMoveCursorLeft(_) => {
+					self.delete_collection_popup.change_state()
+				}
+				AppEvent::DeletingFolderMoveCursorRight(_) => {
+					self.delete_collection_popup.change_state()
+				}
+				AppEvent::DeleteFolder(_) => match self.delete_collection_popup.state {
+					true => self.tui_delete_folder(),
+					false => self.normal_state(),
+				},
+
+				AppEvent::RenameFolder(_) => {
+					match self.rename_collection_input.is_in_default_mode() {
+						true => self.tui_rename_folder(),
+						false => self.rename_collection_input.key_event(key, None),
+					}
+				}
+				AppEvent::CancelRenameFolder(_) => {
+					match self.rename_collection_input.is_in_default_mode() {
+						true => self.normal_state(),
+						false => self.rename_collection_input.key_event(key, None),
+					}
+				}
+				AppEvent::KeyEventRenameFolder(_) => {
+					self.rename_collection_input.key_event(key, None)
+				}
+
 				/* Selected Request */
 				AppEvent::GoBackToRequestMenu(_) => self.select_request_state(),
 

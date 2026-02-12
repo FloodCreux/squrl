@@ -92,6 +92,7 @@ pub fn recursive_has_requests(
 			let collection = Collection {
 				name: collection_name.clone(),
 				last_position: Some(collections.len() - 1),
+				folders: vec![],
 				requests,
 				path: ARGS
 					.directory

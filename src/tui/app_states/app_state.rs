@@ -43,6 +43,16 @@ pub enum AppState {
 	#[strum(to_string = "Renaming request")]
 	RenamingRequest,
 
+	/* Folders */
+	#[strum(to_string = "Creating new folder")]
+	CreatingNewFolder,
+
+	#[strum(to_string = "Deleting folder")]
+	DeletingFolder,
+
+	#[strum(to_string = "Renaming folder")]
+	RenamingFolder,
+
 	/* Request */
 	#[strum(to_string = "Request menu")]
 	SelectedRequest,

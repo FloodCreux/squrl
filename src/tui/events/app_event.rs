@@ -94,6 +94,20 @@ get_key_bindings! {
 		CancelRenameRequest(EventKeyBinding),
 		KeyEventRenameRequest(EventKeyBinding),
 
+		/* Folders */
+
+		CreateNewFolder(EventKeyBinding),
+		CancelCreateNewFolder(EventKeyBinding),
+		KeyEventCreateNewFolder(EventKeyBinding),
+
+		DeletingFolderMoveCursorLeft(EventKeyBinding),
+		DeletingFolderMoveCursorRight(EventKeyBinding),
+		DeleteFolder(EventKeyBinding),
+
+		RenameFolder(EventKeyBinding),
+		CancelRenameFolder(EventKeyBinding),
+		KeyEventRenameFolder(EventKeyBinding),
+
 		/* Request */
 
 		GoBackToRequestMenu(EventKeyBinding),

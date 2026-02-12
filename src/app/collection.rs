@@ -3,9 +3,11 @@ use std::sync::Arc;
 
 use crate::app::app::App;
 use crate::app::collection::CollectionError::{CollectionNameAlreadyExists, CollectionNameIsEmpty};
+use crate::app::collection::FolderError::{FolderNameAlreadyExists, FolderNameIsEmpty};
 use crate::app::collection::RequestError::RequestNameIsEmpty;
 use crate::cli::args::ARGS;
 use crate::models::collection::Collection;
+use crate::models::folder::Folder;
 use crate::models::request::Request;
 use parking_lot::RwLock;
 use thiserror::Error;
@@ -23,6 +25,14 @@ pub enum CollectionError {
 pub enum RequestError {
 	#[error("The request name is empty")]
 	RequestNameIsEmpty,
+}
+
+#[derive(Error, Debug)]
+pub enum FolderError {
+	#[error("The folder name is empty")]
+	FolderNameIsEmpty,
+	#[error("A folder with this name already exists in this collection")]
+	FolderNameAlreadyExists,
 }
 
 impl App<'_> {
@@ -53,6 +63,7 @@ impl App<'_> {
 		let new_collection = Collection {
 			name: new_collection_name.clone(),
 			last_position,
+			folders: vec![],
 			requests: vec![],
 			path: ARGS
 				.directory
@@ -200,6 +211,164 @@ impl App<'_> {
 			collection.last_position = Some(index);
 			self.save_collection_to_file(index);
 		}
+	}
+
+	// ── Folder operations ───────────────────────────────────────────────
+
+	pub fn new_folder(
+		&mut self,
+		collection_index: usize,
+		new_folder_name: String,
+	) -> anyhow::Result<()> {
+		let new_folder_name = sanitize_name(new_folder_name);
+
+		if new_folder_name.is_empty() {
+			return Err(anyhow!(FolderNameIsEmpty));
+		}
+
+		// Check for duplicate folder names within the collection
+		for folder in &self.collections[collection_index].folders {
+			if new_folder_name == folder.name {
+				return Err(anyhow!(FolderNameAlreadyExists));
+			}
+		}
+
+		info!(
+			"Folder \"{}\" created in collection \"{}\"",
+			new_folder_name, &self.collections[collection_index].name
+		);
+
+		let new_folder = Folder {
+			name: new_folder_name,
+			requests: vec![],
+		};
+
+		self.collections[collection_index].folders.push(new_folder);
+		self.save_collection_to_file(collection_index);
+
+		Ok(())
+	}
+
+	/// Delete a folder and move its requests to the collection root.
+	pub fn delete_folder(&mut self, collection_index: usize, folder_index: usize) {
+		info!("Folder deleted (requests moved to collection root)");
+
+		let folder = self.collections[collection_index]
+			.folders
+			.remove(folder_index);
+
+		// Move all requests from the folder to the collection's root-level requests
+		self.collections[collection_index]
+			.requests
+			.extend(folder.requests);
+
+		self.save_collection_to_file(collection_index);
+	}
+
+	/// Delete a request inside a folder.
+	pub fn delete_folder_request(
+		&mut self,
+		collection_index: usize,
+		folder_index: usize,
+		request_index: usize,
+	) -> anyhow::Result<()> {
+		info!("Request deleted from folder");
+
+		self.collections[collection_index].folders[folder_index]
+			.requests
+			.remove(request_index);
+		self.save_collection_to_file(collection_index);
+
+		Ok(())
+	}
+
+	pub fn rename_folder(
+		&mut self,
+		collection_index: usize,
+		folder_index: usize,
+		new_folder_name: String,
+	) -> anyhow::Result<()> {
+		let new_folder_name = sanitize_name(new_folder_name);
+
+		if new_folder_name.trim().is_empty() {
+			return Err(anyhow!(FolderNameIsEmpty));
+		}
+
+		// Check for duplicate folder names
+		for folder in &self.collections[collection_index].folders {
+			if new_folder_name == folder.name {
+				return Err(anyhow!(FolderNameAlreadyExists));
+			}
+		}
+
+		info!("Folder renamed to \"{new_folder_name}\"");
+
+		self.collections[collection_index].folders[folder_index].name = new_folder_name;
+		self.save_collection_to_file(collection_index);
+
+		Ok(())
+	}
+
+	/// Rename a request inside a folder.
+	pub fn rename_folder_request(
+		&mut self,
+		collection_index: usize,
+		folder_index: usize,
+		request_index: usize,
+		new_request_name: String,
+	) -> anyhow::Result<()> {
+		if new_request_name.trim().is_empty() {
+			return Err(anyhow!(RequestNameIsEmpty));
+		}
+
+		info!("Request in folder renamed to \"{new_request_name}\"");
+
+		self.collections[collection_index].folders[folder_index].requests[request_index]
+			.write()
+			.name = new_request_name;
+		self.save_collection_to_file(collection_index);
+
+		Ok(())
+	}
+
+	pub fn duplicate_folder(
+		&mut self,
+		collection_index: usize,
+		folder_index: usize,
+	) -> anyhow::Result<()> {
+		let folder = self.collections[collection_index].folders[folder_index].clone();
+
+		info!("Folder \"{}\" duplicated", folder.name);
+
+		let mut cloned = folder;
+		cloned.name = format!("{} copy", cloned.name);
+		self.collections[collection_index]
+			.folders
+			.insert(folder_index + 1, cloned);
+		self.save_collection_to_file(collection_index);
+		Ok(())
+	}
+
+	pub fn duplicate_folder_request(
+		&mut self,
+		collection_index: usize,
+		folder_index: usize,
+		request_index: usize,
+	) -> anyhow::Result<()> {
+		let request = self.collections[collection_index].folders[folder_index].requests
+			[request_index]
+			.read()
+			.clone();
+
+		info!("Request \"{}\" in folder duplicated", request.name);
+
+		let mut cloned = request;
+		cloned.name = format!("{} copy", cloned.name);
+		self.collections[collection_index].folders[folder_index]
+			.requests
+			.insert(request_index + 1, Arc::new(RwLock::new(cloned)));
+		self.save_collection_to_file(collection_index);
+		Ok(())
 	}
 }
 

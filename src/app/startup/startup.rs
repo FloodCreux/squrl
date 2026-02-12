@@ -191,6 +191,7 @@ impl<'a> App<'a> {
 						let collection = Collection {
 							name: collection_name,
 							last_position: None,
+							folders: vec![],
 							requests,
 							path: PathBuf::new(), // Ephemeral — no file path
 							file_format: CollectionFileFormat::default(),

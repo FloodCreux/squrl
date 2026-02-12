@@ -191,18 +191,71 @@ impl App<'_> {
 	}
 
 	pub fn rename_request_state(&mut self) {
-		let selected_request_index = self.collections_tree.state.selected();
+		let selected = self.collections_tree.state.selected();
 
-		{
-			let selected_request = self.collections[selected_request_index[0]].requests
-				[selected_request_index[1]]
-				.read();
-			self.rename_request_input.clear();
-			self.rename_request_input.push_str(&selected_request.name);
-			self.rename_request_input.state.execute(MoveToEndOfLine());
-		}
+		let request_name = match selected.len() {
+			2 => {
+				let collection_index = selected[0];
+				let child_index = selected[1];
+				let folder_count = self.collections[collection_index].folders.len();
+				let request_index = child_index - folder_count;
+				self.collections[collection_index].requests[request_index]
+					.read()
+					.name
+					.clone()
+			}
+			3 => {
+				let collection_index = selected[0];
+				let folder_index = selected[1];
+				let request_index = selected[2];
+				self.collections[collection_index].folders[folder_index].requests[request_index]
+					.read()
+					.name
+					.clone()
+			}
+			_ => return,
+		};
+
+		self.rename_request_input.clear();
+		self.rename_request_input.push_str(&request_name);
+		self.rename_request_input.state.execute(MoveToEndOfLine());
 
 		self.set_app_state(AppState::RenamingRequest);
+	}
+
+	pub fn create_new_folder_state(&mut self) {
+		let collections_length = self.collections.len();
+
+		// Cannot create a folder if there is no collection
+		if collections_length == 0 {
+			return;
+		}
+
+		self.new_collection_input.clear();
+		self.set_app_state(AppState::CreatingNewFolder);
+	}
+
+	pub fn delete_folder_state(&mut self) {
+		self.delete_collection_popup.state = false;
+		self.set_app_state(AppState::DeletingFolder);
+	}
+
+	pub fn rename_folder_state(&mut self) {
+		let selected = self.collections_tree.state.selected();
+
+		if selected.len() == 2 {
+			let collection_index = selected[0];
+			let folder_index = selected[1];
+
+			let folder_name = &self.collections[collection_index].folders[folder_index].name;
+			self.rename_collection_input.clear();
+			self.rename_collection_input.push_str(folder_name);
+			self.rename_collection_input
+				.state
+				.execute(MoveToEndOfLine());
+
+			self.set_app_state(AppState::RenamingFolder);
+		}
 	}
 
 	pub fn select_request_state(&mut self) {
