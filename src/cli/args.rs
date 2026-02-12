@@ -15,8 +15,8 @@ use clap::builder::Styles;
 use clap::{Parser, Subcommand};
 use clap_verbosity_flag::Verbosity;
 use directories::{ProjectDirs, UserDirs};
-use lazy_static::lazy_static;
 use regex::Regex;
+use std::sync::LazyLock;
 
 #[derive(Parser, Debug)]
 #[command(
@@ -128,42 +128,50 @@ pub enum Command {
 	Man(ManCommand),
 }
 
-lazy_static! {
-	pub static ref ARGS: GlobalArgs = {
-		let args = Args::parse();
+pub static ARGS: LazyLock<GlobalArgs> = LazyLock::new(|| {
+	let args = Args::parse();
 
-		let config_directory = get_app_config_dir();
-		let user_config_directory = get_user_config_dir();
+	let config_directory = get_app_config_dir();
+	let user_config_directory = get_user_config_dir();
 
-		let (directory, should_parse_directory) = match &args.command {
-			// CLI
-			Some(command) => match command.clone() {
-				// Commands that take an output dir
-				Command::Completions(CompletionsCommand { output_directory, .. }) | Command::Man(ManCommand { output_directory, .. }) => (output_directory, false),
-				// Commands that use no dir at all
-				Command::Try(_) | Command::Theme(_) => (None, false),
-				// Commands that use the app dir
-				_ => (Some(choose_app_directory(args.directory, &config_directory)), true)
-			},
-			// TUI
-			None => (Some(choose_app_directory(args.directory, &config_directory)), true)
-		};
-
-		GlobalArgs {
-			directory,
-			config_directory,
-			user_config_directory,
-			command: args.command,
-			collection_filter: args.filter,
-			// should_run_tui: args.tui,
-			should_save: !args.dry_run,
-			should_parse_directory,
-			theme: args.theme,
-			verbosity: args.verbose,
-			ansi_log: !args.no_ansi_log
-		}
+	let (directory, should_parse_directory) = match &args.command {
+		// CLI
+		Some(command) => match command.clone() {
+			// Commands that take an output dir
+			Command::Completions(CompletionsCommand {
+				output_directory, ..
+			})
+			| Command::Man(ManCommand {
+				output_directory, ..
+			}) => (output_directory, false),
+			// Commands that use no dir at all
+			Command::Try(_) | Command::Theme(_) => (None, false),
+			// Commands that use the app dir
+			_ => (
+				Some(choose_app_directory(args.directory, &config_directory)),
+				true,
+			),
+		},
+		// TUI
+		None => (
+			Some(choose_app_directory(args.directory, &config_directory)),
+			true,
+		),
 	};
-}
+
+	GlobalArgs {
+		directory,
+		config_directory,
+		user_config_directory,
+		command: args.command,
+		collection_filter: args.filter,
+		should_save: !args.dry_run,
+		should_parse_directory,
+		theme: args.theme,
+		verbosity: args.verbose,
+		ansi_log: !args.no_ansi_log,
+	}
+});
 
 fn get_app_config_dir() -> Option<PathBuf> {
 	let project_directory = ProjectDirs::from("com", "flood-creux", "squrl");
@@ -224,7 +232,6 @@ pub struct GlobalArgs {
 	pub user_config_directory: Option<PathBuf>,
 	pub command: Option<Command>,
 	pub collection_filter: Option<Regex>,
-	// pub should_run_tui: bool,
 	pub should_save: bool,
 	pub should_parse_directory: bool,
 	pub theme: Option<String>,

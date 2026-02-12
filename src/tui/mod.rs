@@ -1,3 +1,5 @@
+//! Terminal UI: state machine, event handling, rendering, and interactive widgets.
+
 pub(crate) mod app_states;
 pub(crate) mod event_key_bindings;
 pub(crate) mod events;

@@ -1,6 +1,5 @@
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
-use lazy_static::lazy_static;
 use ratatui::prelude::Color;
 use ratatui::style::Stylize;
 use ratatui::text::{Line, Span};
@@ -14,23 +13,24 @@ pub struct SyntaxHighlighting {
 	pub highlighted_console_output: Vec<Line<'static>>,
 }
 
-lazy_static! {
-	pub static ref SYNTAX_SET: Arc<SyntaxSet> = Arc::new(SyntaxSet::load_defaults_newlines());
-	pub static ref ENV_VARIABLE_SYNTAX_SET: Arc<SyntaxSet> =
-		Arc::new(generate_env_variable_syntax_set());
-	pub static ref ENV_VARIABLE_SYNTAX_REF: &'static SyntaxReference =
-		ENV_VARIABLE_SYNTAX_SET.syntaxes().first().unwrap();
-	pub static ref JSON_SYNTAX_REF: &'static SyntaxReference =
-		SYNTAX_SET.find_syntax_by_extension("json").unwrap();
-	pub static ref XML_SYNTAX_REF: &'static SyntaxReference =
-		SYNTAX_SET.find_syntax_by_extension("xml").unwrap();
-	pub static ref HTML_SYNTAX_REF: &'static SyntaxReference =
-		SYNTAX_SET.find_syntax_by_extension("html").unwrap();
-	pub static ref JS_SYNTAX_REF: &'static SyntaxReference =
-		SYNTAX_SET.find_syntax_by_extension("js").unwrap();
-	pub static ref THEME_SET: Arc<ThemeSet> = Arc::new(ThemeSet::load_defaults());
-	pub static ref SYNTAX_THEME: &'static Theme = &THEME_SET.themes["base16-ocean.dark"];
-}
+pub static SYNTAX_SET: LazyLock<Arc<SyntaxSet>> =
+	LazyLock::new(|| Arc::new(SyntaxSet::load_defaults_newlines()));
+pub static ENV_VARIABLE_SYNTAX_SET: LazyLock<Arc<SyntaxSet>> =
+	LazyLock::new(|| Arc::new(generate_env_variable_syntax_set()));
+pub static ENV_VARIABLE_SYNTAX_REF: LazyLock<&'static SyntaxReference> =
+	LazyLock::new(|| ENV_VARIABLE_SYNTAX_SET.syntaxes().first().unwrap());
+pub static JSON_SYNTAX_REF: LazyLock<&'static SyntaxReference> =
+	LazyLock::new(|| SYNTAX_SET.find_syntax_by_extension("json").unwrap());
+pub static XML_SYNTAX_REF: LazyLock<&'static SyntaxReference> =
+	LazyLock::new(|| SYNTAX_SET.find_syntax_by_extension("xml").unwrap());
+pub static HTML_SYNTAX_REF: LazyLock<&'static SyntaxReference> =
+	LazyLock::new(|| SYNTAX_SET.find_syntax_by_extension("html").unwrap());
+pub static JS_SYNTAX_REF: LazyLock<&'static SyntaxReference> =
+	LazyLock::new(|| SYNTAX_SET.find_syntax_by_extension("js").unwrap());
+pub static THEME_SET: LazyLock<Arc<ThemeSet>> =
+	LazyLock::new(|| Arc::new(ThemeSet::load_defaults()));
+pub static SYNTAX_THEME: LazyLock<&'static Theme> =
+	LazyLock::new(|| &THEME_SET.themes["base16-ocean.dark"]);
 
 pub fn highlight(string: &str, extension: &str) -> Option<Vec<Line<'static>>> {
 	let syntax = match extension {

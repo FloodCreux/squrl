@@ -13,6 +13,7 @@ use thiserror::Error;
 use tracing::trace;
 
 use crate::app::app::App;
+use crate::app::constants::FILE_VALUE_PREFIX;
 use crate::app::files::environment::save_environment_to_file;
 use crate::app::request::scripts::{execute_post_request_script, execute_pre_request_script};
 use crate::app::request::send::RequestResponseError::PostRequestScript;
@@ -259,8 +260,8 @@ impl App<'_> {
 						let key = self.replace_env_keys_by_value(&form_data.data.0);
 						let value = self.replace_env_keys_by_value(&form_data.data.1);
 
-						// If the value starts with !!, then it is supposed to be a file
-						if let Some(file_path) = value.strip_prefix("!!") {
+						// If the value starts with the file prefix, then it is supposed to be a file
+						if let Some(file_path) = value.strip_prefix(FILE_VALUE_PREFIX) {
 							let path = PathBuf::from(file_path);
 
 							match get_file_content_with_name(path) {

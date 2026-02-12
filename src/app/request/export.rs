@@ -1,4 +1,5 @@
 use crate::app::app::App;
+use crate::app::constants::FILE_VALUE_PREFIX;
 use crate::app::request::export::ExportError::{
 	CouldNotOpenFile, CouldNotParseUrl, ExportFormatNotSupported,
 };
@@ -135,7 +136,7 @@ impl App<'_> {
 				format!("\n\n\"{}\"", String::from_utf8_lossy(&file_content))
 			}
 			Multipart(multipart) => {
-				let boundary = "WebKitFormBoundaryTODO"; // TODO user proper boundary
+				let boundary = format!("WebKitFormBoundary{}", uuid::Uuid::new_v4().simple());
 				let mut multipart_output = format!(
 					"\nContent-Type: {}; boundary={}\n",
 					&http_request.body.to_content_type(),
@@ -153,10 +154,8 @@ impl App<'_> {
 					multipart_output +=
 						&format!("\n--{boundary}\nContent-Disposition: form-data; name=\"{key}\"");
 
-					// If the value starts with !!, then it is supposed to be a file
-					if value.starts_with("!!") {
-						let file_path = &value[2..];
-
+					// If the value starts with the file prefix, then it is supposed to be a file
+					if let Some(file_path) = value.strip_prefix(FILE_VALUE_PREFIX) {
 						let (file_content, file_name) =
 							match get_file_content_with_name(PathBuf::from(file_path)) {
 								Ok(result) => result,
@@ -264,9 +263,9 @@ impl App<'_> {
 					let key = self.replace_env_keys_by_value(&key_value.data.0);
 					let mut value = self.replace_env_keys_by_value(&key_value.data.1);
 
-					// If the value starts with !!, then it is supposed to be a file
-					if value.starts_with("!!") {
-						value = format!("@\"{}\"", &value[2..]);
+					// If the value starts with the file prefix, then it is supposed to be a file
+					if let Some(file_path) = value.strip_prefix(FILE_VALUE_PREFIX) {
+						value = format!("@\"{}\"", file_path);
 					} else {
 						value = format!("\"{}\"", &value);
 					}
@@ -402,7 +401,7 @@ impl App<'_> {
 					let key = self.replace_env_keys_by_value(&key_value.data.0);
 					let value = self.replace_env_keys_by_value(&key_value.data.1);
 
-					if let Some(file_path) = value.strip_prefix("!!") {
+					if let Some(file_path) = value.strip_prefix(FILE_VALUE_PREFIX) {
 						multipart_output += &format!(
 							"\n        [\n            'name' => '{}',\n            'contents' => fopen('{}', 'r'),\n            'filename' => basename('{}')\n        ],",
 							escape(key, escape_char),
@@ -542,7 +541,7 @@ impl App<'_> {
 					let key = self.replace_env_keys_by_value(&key_value.data.0);
 					let value = self.replace_env_keys_by_value(&key_value.data.1);
 
-					if let Some(file_path) = value.strip_prefix("!!") {
+					if let Some(file_path) = value.strip_prefix(FILE_VALUE_PREFIX) {
 						output += &format!(
 							"formData.append('{}', fs.createReadStream('{}'));\n",
 							key, file_path
@@ -843,7 +842,7 @@ impl App<'_> {
 						let key = self.replace_env_keys_by_value(&key_value.data.0);
 						let value = self.replace_env_keys_by_value(&key_value.data.1);
 
-						if let Some(file_path) = value.strip_prefix("!!") {
+						if let Some(file_path) = value.strip_prefix(FILE_VALUE_PREFIX) {
 							output += &format!(
 								"\n        .part(\"{}\", Part::file(\"{}\")?)",
 								escape(key, escape_char),

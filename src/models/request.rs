@@ -1,11 +1,11 @@
 use anyhow::anyhow;
-use lazy_static::lazy_static;
 use ratatui::prelude::{Line, Modifier, Span};
 use ratatui::style::{Color, Stylize};
 use rayon::prelude::*;
 use regex::Regex;
 use serde::Serialize;
 use serde_versioning::Deserialize;
+use std::sync::LazyLock;
 use tokio_util::sync::CancellationToken;
 use tracing::trace;
 use tui_tree_widget::TreeItem;
@@ -84,8 +84,8 @@ impl App<'_> {
 	}
 }
 
-lazy_static! {
-	pub static ref DEFAULT_HEADERS: Vec<KeyValue> = vec![
+pub static DEFAULT_HEADERS: LazyLock<Vec<KeyValue>> = LazyLock::new(|| {
+	vec![
 		KeyValue {
 			enabled: true,
 			data: (String::from("cache-control"), String::from("no-cache")),
@@ -94,7 +94,7 @@ lazy_static! {
 			enabled: true,
 			data: (
 				String::from("user-agent"),
-				format!("SQURL/v{}", env!("CARGO_PKG_VERSION"))
+				format!("SQURL/v{}", env!("CARGO_PKG_VERSION")),
 			),
 		},
 		KeyValue {
@@ -105,15 +105,15 @@ lazy_static! {
 			enabled: true,
 			data: (
 				String::from("accept-encoding"),
-				String::from("gzip, deflate, br")
+				String::from("gzip, deflate, br"),
 			),
 		},
 		KeyValue {
 			enabled: true,
 			data: (String::from("connection"), String::from("keep-alive")),
 		},
-	];
-}
+	]
+});
 
 impl Request {
 	pub fn get_http_request(&self) -> anyhow::Result<&HttpRequest> {
@@ -188,6 +188,11 @@ impl Request {
 	}
 
 	pub fn update_url_and_params(&mut self, url: String) {
+		static PATH_PARAMS_RE: LazyLock<Regex> =
+			LazyLock::new(|| Regex::new(r"(\{+[\w-]+}+)").unwrap());
+		static QUERY_PARAMS_RE: LazyLock<Regex> =
+			LazyLock::new(|| Regex::new(r"(&?([^=]+)=([^&]+))").unwrap());
+
 		let url_parts = url.trim().split_once("?");
 
 		let final_url: String;
@@ -203,8 +208,7 @@ impl Request {
 
 		let mut found_params = vec![];
 
-		let path_params_pattern = Regex::new(r"(\{+[\w-]+}+)").unwrap();
-		for (_, [path_param]) in path_params_pattern
+		for (_, [path_param]) in PATH_PARAMS_RE
 			.captures_iter(&final_url)
 			.map(|c| c.extract())
 		{
@@ -215,8 +219,7 @@ impl Request {
 			found_params.push((path_param.to_string(), None));
 		}
 
-		let query_params_pattern = Regex::new(r"(&?([^=]+)=([^&]+))").unwrap();
-		for (_, [_, param_name, value]) in query_params_pattern
+		for (_, [_, param_name, value]) in QUERY_PARAMS_RE
 			.captures_iter(query_params)
 			.map(|c| c.extract())
 		{

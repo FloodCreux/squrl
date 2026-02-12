@@ -1,7 +1,7 @@
 use chrono::Utc;
-use lazy_static::lazy_static;
 use parking_lot::Mutex;
 use std::fmt::{Debug, Write};
+use std::sync::LazyLock;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tracing::field::{Field, Visit};
 use tracing::{Level, Subscriber};
@@ -11,9 +11,10 @@ use tracing_subscriber::layer::Context;
 // Avoids been lock inside the logger widget when moving around
 pub static SHOULD_RECORD_LOGS: AtomicBool = AtomicBool::new(true);
 
-lazy_static! {
-	pub static ref LOGS: Mutex<Vec<(String, Level, String, String)>> = Mutex::new(Vec::new());
-}
+/// Timestamp, level, target, and message for each log entry.
+pub type LogEntry = (String, Level, String, String);
+
+pub static LOGS: LazyLock<Mutex<Vec<LogEntry>>> = LazyLock::new(|| Mutex::new(Vec::new()));
 
 pub struct LogCounterLayer;
 

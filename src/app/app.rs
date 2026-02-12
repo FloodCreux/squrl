@@ -2,6 +2,7 @@ use std::io::Stdout;
 use std::sync::Arc;
 use std::time::Duration;
 
+use crate::app::constants::TICK_RATE;
 use parking_lot::{Mutex, RwLock};
 use ratatui::Terminal;
 use ratatui::backend::{Backend, CrosstermBackend};
@@ -145,7 +146,7 @@ pub struct App<'a> {
 impl App<'_> {
 	pub fn new<'a>() -> anyhow::Result<App<'a>> {
 		Ok(App {
-			tick_rate: Duration::from_millis(250),
+			tick_rate: TICK_RATE,
 			should_quit: false,
 			should_display_help: false,
 
@@ -313,7 +314,7 @@ impl App<'_> {
 		let original_hook = std::panic::take_hook();
 
 		std::panic::set_hook(Box::new(move |panic| {
-			disable_raw_mode().unwrap();
+			let _ = disable_raw_mode();
 			original_hook(panic);
 		}));
 

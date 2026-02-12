@@ -1,3 +1,5 @@
+//! Data models for requests, responses, collections, environments, and protocols.
+
 pub(crate) mod auth;
 pub(crate) mod collection;
 pub mod environment;

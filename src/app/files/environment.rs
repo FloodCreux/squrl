@@ -1,24 +1,23 @@
-use std::fs::{File, OpenOptions};
-use std::io::{BufRead, BufReader, Write};
+use std::env;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::str::from_utf8;
 use std::sync::Arc;
-use std::{env, fs};
 
 use indexmap::IndexMap;
-use lazy_static::lazy_static;
 use parking_lot::RwLock;
-use snailquote::unescape;
+use std::sync::LazyLock;
 use tracing::{info, trace, warn};
 
 use crate::app::app::App;
+use crate::app::files::utils::write_via_temp_file;
 use crate::cli::args::ARGS;
 use crate::errors::panic_error;
 use crate::models::environment::Environment;
 
-lazy_static! {
-	pub static ref OS_ENV_VARS: IndexMap<String, String> = env::vars().collect();
-}
+pub static OS_ENV_VARS: LazyLock<IndexMap<String, String>> =
+	LazyLock::new(|| env::vars().collect());
 
 impl App<'_> {
 	/// Add the environment file to the app environments
@@ -83,13 +82,53 @@ fn parse_line(entry: &[u8]) -> Option<(String, String)> {
 
 		vline.iter().position(|&x| x == b'=').and_then(|pos| {
 			from_utf8(&vline[..pos]).ok().and_then(|x| {
-				from_utf8(&vline[pos + 1..]).ok().and_then(|right| {
-					// The right hand side value can be a quoted string
-					unescape(right).ok().map(|y| (x.to_owned(), y))
-				})
+				from_utf8(&vline[pos + 1..])
+					.ok()
+					.map(|right| (x.to_owned(), unquote_env_value(right)))
 			})
 		})
 	})
+}
+
+/// Strip surrounding quotes from an env-file value and process escape sequences.
+///
+/// - Single-quoted values are returned verbatim (no escape processing).
+/// - Double-quoted values support `\\`, `\"`, `\n`, `\r`, `\t`.
+/// - Unquoted values are returned as-is.
+fn unquote_env_value(s: &str) -> String {
+	if s.len() >= 2 {
+		if s.starts_with('\'') && s.ends_with('\'') {
+			// Single-quoted: no escape processing
+			return s[1..s.len() - 1].to_string();
+		}
+		if s.starts_with('"') && s.ends_with('"') {
+			// Double-quoted: process escape sequences
+			let inner = &s[1..s.len() - 1];
+			let mut result = String::with_capacity(inner.len());
+			let mut chars = inner.chars();
+			while let Some(ch) = chars.next() {
+				if ch == '\\' {
+					match chars.next() {
+						Some('n') => result.push('\n'),
+						Some('r') => result.push('\r'),
+						Some('t') => result.push('\t'),
+						Some('\\') => result.push('\\'),
+						Some('"') => result.push('"'),
+						Some(other) => {
+							result.push('\\');
+							result.push(other);
+						}
+						None => result.push('\\'),
+					}
+				} else {
+					result.push(ch);
+				}
+			}
+			return result;
+		}
+	}
+	// Unquoted: return as-is
+	s.to_string()
 }
 
 /// Save app environment in a file through a temporary file
@@ -101,20 +140,6 @@ pub fn save_environment_to_file(environment: &Environment) {
 
 	info!("Saving environment \"{}\"", environment.name);
 
-	let temp_file_name = format!(
-		"{}_",
-		environment.path.file_name().unwrap().to_str().unwrap()
-	);
-
-	let temp_file_path = environment.path.with_file_name(temp_file_name);
-
-	let mut temp_file = OpenOptions::new()
-		.write(true)
-		.create(true)
-		.truncate(true)
-		.open(&temp_file_path)
-		.expect("Could not open temp file");
-
 	let mut data: String = environment
 		.values
 		.iter()
@@ -124,13 +149,8 @@ pub fn save_environment_to_file(environment: &Environment) {
 	// Remove trailing \n
 	data.pop();
 
-	temp_file
-		.write_all(data.as_bytes())
-		.expect("Could not write to temp file");
-	temp_file.flush().unwrap();
-
-	fs::rename(temp_file_path, &environment.path)
-		.expect("Could not move temp file to environment file");
+	write_via_temp_file(&environment.path, data.as_bytes())
+		.expect("Could not save environment file");
 
 	trace!("Environment saved")
 }

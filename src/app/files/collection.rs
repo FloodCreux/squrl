@@ -1,11 +1,12 @@
 use std::fs;
 use std::fs::OpenOptions;
-use std::io::{Read, Write};
+use std::io::Read;
 use std::path::PathBuf;
 
 use tracing::{info, trace, warn};
 
 use crate::app::app::App;
+use crate::app::files::utils::write_via_temp_file;
 use crate::cli::args::ARGS;
 use crate::errors::panic_error;
 use crate::models::collection::CollectionFileFormat::{Json, Yaml};
@@ -42,7 +43,7 @@ impl App<'_> {
 					path_buf.display()
 				)),
 			},
-			Yaml => match serde_yaml::from_str(&file_content) {
+			Yaml => match serde_yml::from_str(&file_content) {
 				Ok(collection) => collection,
 				Err(e) => panic_error(format!(
 					"Could not parse YAML collection \"{}\"\n\t{}",
@@ -95,35 +96,16 @@ impl App<'_> {
 
 		info!("Saving collection \"{}\"", collection.name);
 
-		let temp_file_name = format!(
-			"{}_",
-			collection.path.file_name().unwrap().to_str().unwrap()
-		);
-
-		let temp_file_path = collection.path.with_file_name(temp_file_name);
-
-		let mut temp_file = OpenOptions::new()
-			.write(true)
-			.create(true)
-			.truncate(true)
-			.open(&temp_file_path)
-			.expect("Could not open temp file");
-
 		let collection_stringed = match collection.file_format {
 			Json => serde_json::to_string_pretty(collection)
 				.expect("Could not serialize collection to JSON"),
 			Yaml => {
-				serde_yaml::to_string(collection).expect("Could not serialize collection to YAML")
+				serde_yml::to_string(collection).expect("Could not serialize collection to YAML")
 			}
 		};
 
-		temp_file
-			.write_all(collection_stringed.as_bytes())
-			.expect("Could not write to temp file");
-		temp_file.flush().unwrap();
-
-		fs::rename(temp_file_path, &collection.path)
-			.expect("Could not move temp file to collection file");
+		write_via_temp_file(&collection.path, collection_stringed.as_bytes())
+			.expect("Could not save collection file");
 
 		trace!("Collection saved");
 	}

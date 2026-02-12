@@ -146,7 +146,7 @@ impl App<'_> {
 			}
 		};
 
-		let postman_environment = match serde_yaml::from_str::<PostmanEnv>(&file_content) {
+		let postman_environment = match serde_yml::from_str::<PostmanEnv>(&file_content) {
 			Ok(postman_environment) => postman_environment,
 			Err(e) => {
 				return Err(anyhow!(
@@ -219,7 +219,7 @@ impl App<'_> {
 			}
 		} else {
 			// Assume YAML if not JSON
-			match serde_yaml::from_str(&spec_content) {
+			match serde_yml::from_str(&spec_content) {
 				Ok(spec) => spec,
 				Err(e) => {
 					return Err(anyhow!(ImportOpenApiError::CouldNotParseSpec(

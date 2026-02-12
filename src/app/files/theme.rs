@@ -1,4 +1,3 @@
-use lazy_static::lazy_static;
 use nestify::nest;
 use parking_lot::RwLock;
 use ratatui::style::Color;
@@ -7,12 +6,12 @@ use std::env;
 use std::fs::OpenOptions;
 use std::io::Read;
 use std::path::PathBuf;
+use std::sync::LazyLock;
 use tracing::{trace, warn};
 
 use crate::app::app::App;
 use crate::app::files::utils::expand_tilde;
 use crate::cli::args::ARGS;
-use crate::errors::panic_error;
 
 nest! {
 	#[derive(Clone, Serialize, Deserialize)]
@@ -164,9 +163,7 @@ impl Default for Theme {
 	}
 }
 
-lazy_static! {
-	pub static ref THEME: RwLock<Theme> = RwLock::new(Theme::default());
-}
+pub static THEME: LazyLock<RwLock<Theme>> = LazyLock::new(|| RwLock::new(Theme::default()));
 
 /// Set the global theme
 pub fn set_theme(theme: Theme) {
@@ -280,49 +277,5 @@ impl App<'_> {
 				false
 			}
 		}
-	}
-
-	/// Legacy method - kept for backwards compatibility
-	#[allow(dead_code)]
-	pub fn parse_theme_file(&mut self) {
-		let path = match env::var("SQURL_THEME") {
-			// If the SQURL_THEME environment variable exists
-			Ok(env_theme) => expand_tilde(PathBuf::from(env_theme)),
-			Err(_) => {
-				let default_path = ARGS
-					.user_config_directory
-					.as_ref()
-					.map(|dir| dir.join("theme.toml"));
-
-				match default_path {
-					Some(p) if p.exists() => p,
-					_ => {
-						warn!("No theme file found, using default");
-						return;
-					}
-				}
-			}
-		};
-
-		trace!("Parsing theme file \"{}\"", path.display());
-
-		let mut theme_file = match OpenOptions::new().read(true).open(path) {
-			Ok(theme_file) => theme_file,
-			Err(e) => panic_error(format!("Could not open theme file\n\t{e}")),
-		};
-
-		let mut file_content = String::new();
-		theme_file
-			.read_to_string(&mut file_content)
-			.expect("\tCould not read key bindings file");
-
-		let theme: Theme = match toml::from_str(&file_content) {
-			Ok(theme) => theme,
-			Err(e) => panic_error(format!("Could not parse theme file\n\t{e}")),
-		};
-
-		*THEME.write() = theme;
-
-		trace!("Theme file parsed!");
 	}
 }

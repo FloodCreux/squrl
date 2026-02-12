@@ -1,10 +1,10 @@
 use crokey::KeyCombination;
-use lazy_static::lazy_static;
 use parking_lot::RwLock;
 use ratatui::crossterm::event::{KeyCode, KeyModifiers};
 use ratatui::prelude::Span;
 use ratatui::style::{Color, Stylize};
 use ratatui::text::Line;
+use std::sync::LazyLock;
 
 use crate::app::app::App;
 use crate::app::files::theme::THEME;
@@ -37,11 +37,10 @@ pub fn event_available_keys_to_spans(
 	spans
 }
 
-lazy_static! {
-	pub static ref AVAILABLE_EVENTS: RwLock<Vec<AppEvent>> = RwLock::new(vec![]);
-	pub static ref EMPTY_KEY: KeyCombination =
-		KeyCombination::new(KeyCode::Null, KeyModifiers::NONE);
-}
+pub static AVAILABLE_EVENTS: LazyLock<RwLock<Vec<AppEvent>>> =
+	LazyLock::new(|| RwLock::new(vec![]));
+pub static EMPTY_KEY: LazyLock<KeyCombination> =
+	LazyLock::new(|| KeyCombination::new(KeyCode::Null, KeyModifiers::NONE));
 
 impl App<'_> {
 	pub fn update_current_available_events(&mut self) {

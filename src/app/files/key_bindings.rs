@@ -4,11 +4,11 @@ use std::io::Read;
 use std::path::PathBuf;
 
 use crokey::{KeyCombination, key};
-use lazy_static::lazy_static;
 use nestify::nest;
 use parking_lot::RwLock;
 use ratatui::text::Span;
 use serde::Deserialize;
+use std::sync::LazyLock;
 use tracing::{trace, warn};
 
 use crate::app::app::App;
@@ -129,9 +129,8 @@ nest! {
 	}
 }
 
-lazy_static! {
-	pub static ref KEY_BINDINGS: RwLock<KeyBindings> = RwLock::new(KeyBindings::default());
-}
+pub static KEY_BINDINGS: LazyLock<RwLock<KeyBindings>> =
+	LazyLock::new(|| RwLock::new(KeyBindings::default()));
 
 #[derive(Copy, Clone, PartialEq, Deserialize)]
 pub struct CustomTextArea {

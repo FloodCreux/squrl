@@ -171,7 +171,10 @@ impl App<'_> {
 						let size_in_kb = body.len() as f64 / 1024.0;
 						format!("{} KB", size_in_kb)
 					}
-					ResponseContent::Image(_img) => "TODO".to_string(),
+					ResponseContent::Image(img) => {
+						let size_in_kb = img.data.len() as f64 / 1024.0;
+						format!("{:.2} KB", size_in_kb)
+					}
 				},
 			};
 

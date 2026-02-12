@@ -16,9 +16,17 @@ impl App<'_> {
 	/// Handle events
 	pub async fn handle_events(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) {
 		// Refreshes the app every tick_rate
-		if event::poll(self.tick_rate).unwrap() {
+		let has_event = match event::poll(self.tick_rate) {
+			Ok(has_event) => has_event,
+			Err(_) => return,
+		};
+		if has_event {
 			// Block while a key is pressed
-			if let Event::Key(key_event) = event::read().unwrap() {
+			let event = match event::read() {
+				Ok(event) => event,
+				Err(_) => return,
+			};
+			if let Event::Key(key_event) = event {
 				// We do not need
 				if key_event.kind != KeyEventKind::Press {
 					return;
@@ -55,9 +63,6 @@ impl App<'_> {
 		key: KeyCombination,
 		terminal: &mut Terminal<CrosstermBackend<Stdout>>,
 	) -> bool {
-		// Debug tool
-		//dbg!("{}", key.to_string());
-
 		{
 			let key_bindings = KEY_BINDINGS.read();
 

@@ -1,5 +1,30 @@
 use directories::UserDirs;
-use std::path::PathBuf;
+use std::fs::{self, OpenOptions};
+use std::io::Write;
+use std::path::{Path, PathBuf};
+
+/// Write `data` to `target_path` atomically by first writing to a temporary file
+/// in the same directory, then renaming it over the target.
+pub fn write_via_temp_file(target_path: &Path, data: &[u8]) -> std::io::Result<()> {
+	let file_name = target_path
+		.file_name()
+		.and_then(|n| n.to_str())
+		.unwrap_or("file");
+	let temp_file_name = format!("{file_name}_");
+	let temp_file_path = target_path.with_file_name(temp_file_name);
+
+	let mut temp_file = OpenOptions::new()
+		.write(true)
+		.create(true)
+		.truncate(true)
+		.open(&temp_file_path)?;
+
+	temp_file.write_all(data)?;
+	temp_file.flush()?;
+
+	fs::rename(temp_file_path, target_path)?;
+	Ok(())
+}
 
 pub fn expand_tilde(path_buf: PathBuf) -> PathBuf {
 	if !path_buf.starts_with("~/") {

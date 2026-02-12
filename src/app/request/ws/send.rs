@@ -1,4 +1,5 @@
 use crate::app::app::App;
+use crate::app::constants::{WS_CONNECTION_TIMEOUT, WS_POLL_INTERVAL};
 use crate::app::request::send::RequestResponseError;
 use crate::models::environment::Environment;
 use crate::models::protocol::ws::message_type::MessageType;
@@ -34,7 +35,7 @@ pub async fn send_ws_request(
 	let ws_request = request.get_ws_request_mut().unwrap();
 	ws_request.is_connected = false;
 
-	let timeout = tokio::time::sleep(Duration::from_secs(30));
+	let timeout = tokio::time::sleep(WS_CONNECTION_TIMEOUT);
 
 	let request_start = Instant::now();
 	let elapsed_time: Duration;
@@ -227,7 +228,7 @@ pub async fn send_ws_request(
 				}
 			}
 
-			sleep(Duration::from_millis(100)).await;
+			sleep(WS_POLL_INTERVAL).await;
 		}
 	});
 
