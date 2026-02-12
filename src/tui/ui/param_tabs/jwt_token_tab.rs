@@ -16,10 +16,10 @@ impl App<'_> {
 		let jwt_token_auth_layout = Layout::new(
 			Vertical,
 			[
-				Constraint::Length(3),
-				Constraint::Length(3),
-				Constraint::Length(3),
-				Constraint::Min(3),
+				Constraint::Length(4),
+				Constraint::Length(4),
+				Constraint::Length(2),
+				Constraint::Min(2),
 			],
 		)
 		.vertical_margin(1)

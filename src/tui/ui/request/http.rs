@@ -16,7 +16,7 @@ impl App<'_> {
 		let request_name = request.name.clone();
 		let layout = Layout::new(
 			Vertical,
-			[Constraint::Percentage(25), Constraint::Percentage(75)],
+			[Constraint::Percentage(30), Constraint::Percentage(70)],
 		)
 		.split(rect);
 
