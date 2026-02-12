@@ -254,8 +254,6 @@ impl Default for RequestSelected {
 
 			next_view: key!(v),
 
-			// Used to be ctrl + enter, but it doesn't register right on many platforms
-			// https://github.com/crossterm-rs/crossterm/issues/685
 			send_request: key!(space),
 			alt_send_request: key!(ctrl - enter),
 

@@ -25,17 +25,17 @@ use crate::tui::utils::syntax_highlighting::{
 #[derive(Default, Clone, Copy, PartialEq, Display, FromRepr, EnumIter)]
 pub enum RequestParamsTabs {
 	#[default]
-	#[strum(to_string = "Params")]
+	#[strum(to_string = "PARAMS")]
 	QueryParams,
-	#[strum(to_string = "Auth")]
+	#[strum(to_string = "AUTH")]
 	Auth,
-	#[strum(to_string = "Headers")]
+	#[strum(to_string = "HEADERS")]
 	Headers,
-	#[strum(to_string = "Body")]
+	#[strum(to_string = "BODY")]
 	Body,
-	#[strum(to_string = "Message")]
+	#[strum(to_string = "MESSAGE")]
 	Message,
-	#[strum(to_string = "Scripts")]
+	#[strum(to_string = "SCRIPTS")]
 	Scripts,
 }
 

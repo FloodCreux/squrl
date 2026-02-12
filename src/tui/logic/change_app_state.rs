@@ -10,6 +10,7 @@ use edtui::actions::MoveToEndOfLine;
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 use strum::VariantArray;
+use tracing::debug;
 
 macro_rules! define_simple_state_setters {
 	($($fn_name:ident => $state:ident);* $(;)?) => {
@@ -306,13 +307,28 @@ impl App<'_> {
 	}
 
 	pub fn select_response_body_state(&mut self) {
+		debug!("select_response_body_state called");
+		debug!("Current result tab: {:?}", self.request_result_tab);
+
+		// Only works when on the Body tab
+		if self.request_result_tab != crate::tui::ui::result_tabs::RequestResultTabs::Body {
+			debug!("Not on Body tab, returning");
+			return;
+		}
+
 		let local_selected_request = self.get_selected_request_as_local();
 		let selected_request = local_selected_request.read();
+
+		debug!(
+			"Has response content: {}",
+			selected_request.response.content.is_some()
+		);
 
 		// Only allow selection if there's a response body
 		if let Some(content) = &selected_request.response.content {
 			use crate::models::response::ResponseContent;
 			if let ResponseContent::Body(body) = content {
+				debug!("Response body length: {}", body.len());
 				// Sync the response body to the text area
 				self.response_body_text_area.clear();
 				self.response_body_text_area.push_str(body);
@@ -320,8 +336,13 @@ impl App<'_> {
 				self.response_body_text_area.reset_mode();
 				self.response_body_text_area.update_handler();
 
+				debug!("Setting state to SelectingResponseBody");
 				self.set_app_state(AppState::SelectingResponseBody);
+			} else {
+				debug!("Content is not Body (probably Image)");
 			}
+		} else {
+			debug!("No response content");
 		}
 	}
 

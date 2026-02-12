@@ -24,7 +24,7 @@ use crate::tui::utils::centered_rect::centered_rect;
 use crate::tui::utils::stateful::text_input::MultiLineTextInput;
 use crate::tui::utils::syntax_highlighting::SYNTAX_SET;
 
-#[derive(Default, Clone, Copy, PartialOrd, PartialEq, Display, FromRepr, EnumIter)]
+#[derive(Default, Clone, Copy, Debug, PartialOrd, PartialEq, Display, FromRepr, EnumIter)]
 pub enum RequestResultTabs {
 	#[default]
 	#[strum(to_string = "RESULT BODY")]
