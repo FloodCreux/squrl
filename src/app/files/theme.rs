@@ -102,47 +102,62 @@ nest! {
 
 impl Default for Theme {
 	fn default() -> Self {
+		// Gruber Darker theme colors
+		// Based on https://github.com/rexim/gruber-darker-theme
+		let gruber_fg = Color::Rgb(228, 228, 239); // #e4e4ef
+		let gruber_niagara = Color::Rgb(150, 166, 200); // #96a6c8
+		let gruber_quartz = Color::Rgb(149, 169, 159); // #95a99f
+		let gruber_bg1 = Color::Rgb(40, 40, 40); // #282828
+		let gruber_bg = Color::Rgb(24, 24, 24); // #181818
+		let gruber_bg2 = Color::Rgb(69, 61, 65); // #453d41
+		let gruber_yellow = Color::Rgb(255, 221, 51); // #ffdd33
+		let gruber_wisteria = Color::Rgb(158, 149, 199); // #9e95c7
+		let gruber_green = Color::Rgb(115, 201, 54); // #73c936
+		let gruber_red = Color::Rgb(244, 56, 65); // #f43841
+		let gruber_red1 = Color::Rgb(255, 79, 88); // #ff4f58
+		let gruber_brown = Color::Rgb(204, 140, 60); // #cc8c3c
+
 		Theme {
 			ui: ThemeUI {
-				font_color: Color::Blue,
+				font_color: gruber_fg,
 				app_background: None,
 
-				main_foreground_color: Color::Blue,
-				secondary_foreground_color: Color::DarkGray,
+				main_foreground_color: gruber_niagara,
+				secondary_foreground_color: gruber_quartz,
 
-				main_background_color: Color::DarkGray,
-				secondary_background_color: Color::Rgb(50, 50, 50),
+				main_background_color: gruber_bg1,
+				secondary_background_color: gruber_bg,
 
-				separator_color: Color::Gray,
+				separator_color: gruber_bg2,
 			},
 			others: ThemeOthers {
-				selection_highlight_color: Color::Yellow,
-				environment_variable_highlight_color: Color::Cyan,
+				selection_highlight_color: gruber_yellow,
+				environment_variable_highlight_color: gruber_wisteria,
 			},
 			http: ThemeHttp {
 				methods: ThemeMethods {
-					get: Color::Green,
-					post: Color::Yellow,
-					put: Color::LightBlue,
-					patch: Color::LightCyan,
-					delete: Color::LightRed,
-					options: Color::Magenta,
-					head: Color::Green,
-					trace: Color::Yellow,
-					connect: Color::LightBlue,
+					get: gruber_green,
+					post: gruber_yellow,
+					put: gruber_niagara,
+					patch: gruber_quartz,
+					delete: gruber_red1,
+					options: gruber_wisteria,
+					head: gruber_green,
+					trace: gruber_brown,
+					connect: gruber_niagara,
 				},
 			},
 			websocket: ThemeWebsocket {
 				connection_status: ThemeConnectionStatuses {
-					connected: Color::Green,
-					disconnected: Color::Red,
+					connected: gruber_green,
+					disconnected: gruber_red,
 				},
 
 				messages: ThemeMessages {
-					server_foreground_color: Color::Blue,
-					server_background_color: Color::DarkGray,
-					you_background_color: Color::Blue,
-					details_color: Color::DarkGray,
+					server_foreground_color: gruber_niagara,
+					server_background_color: gruber_bg1,
+					you_background_color: gruber_niagara,
+					details_color: gruber_quartz,
 				},
 			},
 		}

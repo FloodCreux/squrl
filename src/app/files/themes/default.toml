@@ -1,34 +1,35 @@
-# Default squrl theme - Blue/Gray dark theme
+# Default squrl theme - Gruber Darker
+# Based on https://github.com/rexim/gruber-darker-theme
 
 [UI]
-font_color = "Blue"
-main_foreground_color = "Blue"
-secondary_foreground_color = "DarkGray"
-main_background_color = "DarkGray"
-secondary_background_color = { Rgb = [50, 50, 50] }
-separator_color = "Gray"
+font_color = { Rgb = [228, 228, 239] }  # gruber-darker-fg #e4e4ef
+main_foreground_color = { Rgb = [150, 166, 200] }  # gruber-darker-niagara #96a6c8
+secondary_foreground_color = { Rgb = [149, 169, 159] }  # gruber-darker-quartz #95a99f
+main_background_color = { Rgb = [40, 40, 40] }  # gruber-darker-bg+1 #282828
+secondary_background_color = { Rgb = [24, 24, 24] }  # gruber-darker-bg #181818
+separator_color = { Rgb = [69, 61, 65] }  # gruber-darker-bg+2 #453d41
 
 [Others]
-selection_highlight_color = "Yellow"
-environment_variable_highlight_color = "Cyan"
+selection_highlight_color = { Rgb = [255, 221, 51] }  # gruber-darker-yellow #ffdd33
+environment_variable_highlight_color = { Rgb = [158, 149, 199] }  # gruber-darker-wisteria #9e95c7
 
 [HTTP.Methods]
-GET = "Green"
-POST = "Yellow"
-PUT = "LightBlue"
-PATCH = "LightCyan"
-DELETE = "LightRed"
-HEAD = "Green"
-OPTIONS = "Magenta"
-TRACE = "Yellow"
-CONNECT = "LightBlue"
+GET = { Rgb = [115, 201, 54] }  # gruber-darker-green #73c936
+POST = { Rgb = [255, 221, 51] }  # gruber-darker-yellow #ffdd33
+PUT = { Rgb = [150, 166, 200] }  # gruber-darker-niagara #96a6c8
+PATCH = { Rgb = [149, 169, 159] }  # gruber-darker-quartz #95a99f
+DELETE = { Rgb = [255, 79, 88] }  # gruber-darker-red+1 #ff4f58
+HEAD = { Rgb = [115, 201, 54] }  # gruber-darker-green #73c936
+OPTIONS = { Rgb = [158, 149, 199] }  # gruber-darker-wisteria #9e95c7
+TRACE = { Rgb = [204, 140, 60] }  # gruber-darker-brown #cc8c3c
+CONNECT = { Rgb = [150, 166, 200] }  # gruber-darker-niagara #96a6c8
 
 [Websocket.connection_status]
-connected = "Green"
-disconnected = "Red"
+connected = { Rgb = [115, 201, 54] }  # gruber-darker-green #73c936
+disconnected = { Rgb = [244, 56, 65] }  # gruber-darker-red #f43841
 
 [Websocket.messages]
-server_foreground_color = "Blue"
-server_background_color = "DarkGray"
-you_background_color = "Blue"
-details_color = "DarkGray"
+server_foreground_color = { Rgb = [150, 166, 200] }  # gruber-darker-niagara #96a6c8
+server_background_color = { Rgb = [40, 40, 40] }  # gruber-darker-bg+1 #282828
+you_background_color = { Rgb = [150, 166, 200] }  # gruber-darker-niagara #96a6c8
+details_color = { Rgb = [149, 169, 159] }  # gruber-darker-quartz #95a99f
