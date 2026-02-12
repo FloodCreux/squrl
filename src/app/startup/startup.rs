@@ -5,13 +5,16 @@ use crate::cli::args::{ARGS, Command};
 use crate::cli::import::http_file;
 use crate::errors::panic_error;
 use crate::models::collection::{Collection, CollectionFileFormat};
+use crate::models::folder::Folder;
 use clap_verbosity_flag::log::LevelFilter;
+use std::collections::BTreeMap;
 use std::fs::{File, OpenOptions};
 use std::path::PathBuf;
-use tracing::trace;
+use tracing::{trace, warn};
 use tracing_log::AsTrace;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+use walkdir::WalkDir;
 
 #[allow(clippy::large_enum_variant)]
 pub enum AppMode {
@@ -146,6 +149,8 @@ impl<'a> App<'a> {
 		});
 
 		// Auto-load .http files from a "requests" subdirectory if we're in a git repo
+		// Recursively searches subdirectories and groups files into folders
+		// named after the top-level child directory of requests/
 		// Added after the save loop and sort to avoid saving ephemeral collections to disk
 		if let Ok(cwd) = std::env::current_dir() {
 			let requests_dir = cwd.join("requests");
@@ -156,49 +161,87 @@ impl<'a> App<'a> {
 					.unwrap_or("http-requests")
 					.to_string();
 
-				let http_file_paths: Vec<PathBuf> = match requests_dir.read_dir() {
-					Ok(entries) => entries
-						.filter_map(|e| e.ok())
-						.map(|e| e.path())
-						.filter(|p| p.is_file() && p.extension().is_some_and(|ext| ext == "http"))
-						.collect(),
-					Err(_) => vec![],
-				};
+				// Recursively collect all .http file paths and sort for alphabetical ordering
+				let mut http_file_paths: Vec<PathBuf> = WalkDir::new(&requests_dir)
+					.into_iter()
+					.filter_map(|e| e.ok())
+					.filter(|e| {
+						e.file_type().is_file()
+							&& e.path().extension().is_some_and(|ext| ext == "http")
+					})
+					.map(|e| e.path().to_path_buf())
+					.collect();
 
-				if !http_file_paths.is_empty() {
+				http_file_paths.sort();
+
+				// Group files: root-level files go to collection.requests,
+				// files in subdirectories go to folders named after the top-level child
+				let mut root_requests = vec![];
+				let mut folder_map: BTreeMap<String, Vec<_>> = BTreeMap::new();
+
+				for http_path in &http_file_paths {
+					let relative = match http_path.strip_prefix(&requests_dir) {
+						Ok(p) => p,
+						Err(_) => continue,
+					};
+
+					let components: Vec<_> = relative.components().collect();
+
+					let parsed_requests = match http_file::parse_http_file(http_path) {
+						Ok(reqs) => reqs,
+						Err(e) => {
+							warn!(
+								"Could not parse .http file \"{}\": {}",
+								http_path.display(),
+								e
+							);
+							continue;
+						}
+					};
+
+					if components.len() == 1 {
+						// File directly in requests/ → root-level requests
+						root_requests.extend(parsed_requests);
+					} else {
+						// File in a subdirectory → folder named after the first path component
+						let folder_name = components[0]
+							.as_os_str()
+							.to_str()
+							.unwrap_or("unknown")
+							.to_string();
+
+						folder_map
+							.entry(folder_name)
+							.or_default()
+							.extend(parsed_requests);
+					}
+				}
+
+				// Build folders from BTreeMap (alphabetically ordered by key)
+				let folders: Vec<Folder> = folder_map
+					.into_iter()
+					.map(|(name, requests)| Folder { name, requests })
+					.collect();
+
+				if !root_requests.is_empty() || !folders.is_empty() {
 					trace!(
-						"Found {} .http file(s) in requests/ directory, creating ephemeral collection \"{}\"",
-						http_file_paths.len(),
+						"Found {} root request(s) and {} folder(s) in requests/ directory, \
+						 creating ephemeral collection \"{}\"",
+						root_requests.len(),
+						folders.len(),
 						collection_name
 					);
 
-					let mut requests = vec![];
+					let collection = Collection {
+						name: collection_name,
+						last_position: None,
+						folders,
+						requests: root_requests,
+						path: PathBuf::new(), // Ephemeral — no file path
+						file_format: CollectionFileFormat::default(),
+					};
 
-					for http_path in &http_file_paths {
-						match http_file::parse_http_file(http_path) {
-							Ok(parsed_requests) => requests.extend(parsed_requests),
-							Err(e) => {
-								trace!(
-									"Could not parse .http file \"{}\": {}",
-									http_path.display(),
-									e
-								);
-							}
-						}
-					}
-
-					if !requests.is_empty() {
-						let collection = Collection {
-							name: collection_name,
-							last_position: None,
-							folders: vec![],
-							requests,
-							path: PathBuf::new(), // Ephemeral — no file path
-							file_format: CollectionFileFormat::default(),
-						};
-
-						self.collections.push(collection);
-					}
+					self.collections.push(collection);
 				}
 			}
 		}

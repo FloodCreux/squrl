@@ -216,7 +216,20 @@ Collection files support an optional `folders` field for grouping requests:
 
 Folders appear in the collection tree between the collection and its root-level requests. Deleting a folder moves its requests to the collection root. Existing collection files without folders continue to work unchanged.
 
-squrl also auto-loads `.http` files from a `requests/` subdirectory when inside a git repository.
+squrl also auto-loads `.http` files from a `requests/` subdirectory when inside a git repository. Subdirectories are searched recursively, and files found inside a child directory of `requests/` are grouped into a folder named after that top-level child directory.
+
+```
+requests/
+  example.http              # root-level request (no folder)
+  auth/
+    login.http              # grouped into "auth" folder
+    tokens/
+      refresh.http          # also grouped into "auth" folder
+  users/
+    crud.http               # grouped into "users" folder
+```
+
+Folders are ordered alphabetically, and requests within each folder are ordered alphabetically by file path.
 
 ## Themes
 
