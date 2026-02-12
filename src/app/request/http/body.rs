@@ -173,12 +173,7 @@ impl App<'_> {
 			let form = selected_http_request.body.get_form_mut()?;
 
 			let new_state = match state {
-				None => {
-					let state = !form[row].enabled;
-					// Better user feedback
-					println!("{state}");
-					state
-				}
+				None => !form[row].enabled,
 				Some(state) => state,
 			};
 
