@@ -79,7 +79,9 @@ impl<'a> App<'a> {
 					Protocol::HttpRequest(_) => {
 						self.render_http_request(frame, inner_layout[2], selected_request)
 					}
-					Protocol::WsRequest(_) => todo!(),
+					Protocol::WsRequest(_) => {
+						self.render_ws_request(frame, inner_layout[2], selected_request)
+					}
 				}
 			}
 		}

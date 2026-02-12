@@ -366,7 +366,7 @@ impl App<'_> {
 					let inner_area = Rect {
 						x: request_result_layout[2].x,
 						y: request_result_layout[2].y,
-						width: request_result_layout[2].width - 2,
+						width: request_result_layout[2].width.saturating_sub(2),
 						height: request_result_layout[2].height,
 					};
 
