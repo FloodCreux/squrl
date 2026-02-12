@@ -1,21 +1,40 @@
 # squrl
 
-A terminal HTTP client built with Rust, powered by [ratatui](https://github.com/ratatui/ratatui), [reqwest](https://github.com/seanmonstar/reqwest), and [Tokio](https://tokio.rs/).
+A terminal-based HTTP and WebSocket client built with Rust. Think Postman or Insomnia, but in your terminal -- no GUI required.
+
+![squrl homepage](assets/home.png)
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [TUI (interactive)](#tui)
+  - [CLI](#cli)
+- [Configuration](#configuration)
+- [Themes](#themes)
+- [Key Bindings](#key-bindings)
+- [Development](#development)
+- [Acknowledgements](#acknowledgements)
+- [License](#license)
 
 ## Features
 
 - **Dual interface** -- interactive TUI and full-featured CLI
-- **Async HTTP** -- all 9 standard methods with configurable timeouts and cancellation
+- **HTTP client** -- all 9 standard methods (GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD, TRACE, CONNECT) with configurable timeouts, redirects, and proxy support
+- **WebSocket support** -- connect, send/receive messages, and track connection state
 - **Collections** -- organize requests in JSON or YAML files with tree-based navigation
 - **Environments** -- key-value variables with `{{variable}}` substitution across URLs, headers, bodies, auth, and scripts
 - **Authentication** -- Basic, Bearer Token, JWT (HS/RS/ES/PS/EdDSA), and Digest (MD5, SHA-256, SHA-512)
-- **Request bodies** -- raw text, JSON, XML, HTML, JavaScript, file upload, form, and multipart
-- **Pre/post scripts** -- JavaScript execution via embedded runtime
+- **Request bodies** -- raw text, JSON, XML, HTML, JavaScript, file upload, URL-encoded form, and multipart
+- **Pre/post request scripts** -- JavaScript execution via embedded Boa runtime
 - **Response handling** -- pretty-printed JSON, syntax highlighting, image preview, cookies, and headers
-- **Import** -- Postman collections/environments, cURL commands, OpenAPI specs, and `.http` files
+- **Import** -- Postman collections & environments, cURL commands, OpenAPI specs, and `.http` files
 - **Export** -- HTTP, cURL, PHP Guzzle, Node.js Axios, and Rust reqwest
-- **Clipboard** -- copy response bodies (optional feature)
-- **Shell completions & man pages** -- generated via clap
+- **Themes** -- 9 built-in themes (Gruber Darker, Dracula, Catppuccin variants, Gruvbox, and more) plus custom TOML themes
+- **Key bindings** -- fully customizable with Vim, Emacs, and default modes
+- **Clipboard** -- copy response bodies and exports (optional feature)
+- **Shell completions & man pages** -- Bash, Zsh, and Fish via clap
 
 ## Installation
 
@@ -39,13 +58,27 @@ cd squrl
 just install
 ```
 
+This builds a release binary and installs the binary, shell completions, and man page to `~/.local`.
+
 ## Usage
 
 ### TUI
 
-Run `squrl` with no subcommand to launch the interactive terminal UI.
+Launch the interactive terminal UI:
+
+```sh
+squrl
+```
+
+The TUI provides a collection tree sidebar, request editor panels, response viewer, environment editor, cookie viewer, log panel, and theme picker -- all navigable via keyboard.
 
 ### CLI
+
+#### One-off requests
+
+```sh
+squrl try <url> [options]
+```
 
 #### Collections
 
@@ -102,16 +135,18 @@ squrl import openapi <path> [--max-depth <n>]
 squrl import http-file <path> [<collection-name>] [--recursive] [--max-depth <n>]
 ```
 
-#### One-off requests
+#### Themes (CLI)
 
 ```sh
-squrl try <url> [options]
+squrl theme list             # List available themes
+squrl theme preview <name>   # Preview a theme
+squrl theme export <name>    # Export a theme as TOML
 ```
 
 #### Utilities
 
 ```sh
-squrl completions <shell> [<dir>]   # Generate shell completions
+squrl completions <shell> [<dir>]   # Generate shell completions (bash, zsh, fish)
 squrl man [<output-dir>]            # Generate man pages
 ```
 
@@ -127,9 +162,10 @@ squrl --verbose/-v        # Increase verbosity level
 
 ## Configuration
 
-squrl reads its config from `squrl.toml` in the working directory:
+squrl reads its config from `squrl.toml` in the working directory. A global fallback config can be placed at `~/.config/squrl/global.toml`.
 
 ```toml
+theme = "dracula"
 disable_syntax_highlighting = false
 save_requests_response = false
 disable_images_preview = false
@@ -142,58 +178,86 @@ http_proxy = "http://..."
 https_proxy = "https://..."
 ```
 
-### Working directory structure
+### Environment variables
+
+| Variable | Description |
+|---|---|
+| `SQURL_MAIN_DIR` | Working directory |
+| `SQURL_THEME` | Path to a custom theme TOML file |
+| `SQURL_KEY_BINDINGS` | Path to a custom keybindings TOML file |
+
+### Working directory layout
 
 ```
 squrl_main_dir/
-  collection1.json      # or .yaml
-  collection2.json
-  environment1          # KEY=VALUE format
-  environment2
-  squrl.toml            # Configuration
+  collection1.json      # or .yaml -- request collections
+  collection2.yaml
+  .env.production       # KEY=VALUE environment files
+  .env.staging
+  squrl.toml            # Local configuration
+  squrl.log             # Auto-generated log file (TUI mode)
 ```
+
+squrl also auto-loads `.http` files from a `requests/` subdirectory when inside a git repository.
+
+## Themes
+
+squrl ships with 9 built-in themes:
+
+- **Default** (Gruber Darker)
+- **Dracula**
+- **Catppuccin** (Mocha, Macchiato, Frappe, Latte)
+- **Gruvbox**
+- **OpenCode**
+- **VS Code Dark**
+
+Custom themes are TOML files placed in `~/.config/squrl/themes/`. Theme priority: CLI flag > `SQURL_THEME` env var > `~/.config/squrl/theme.toml` > config file setting > default.
+
+## Key Bindings
+
+squrl supports three text editor modes out of the box: **Vim**, **Emacs**, and **Default**. You can also define fully custom key bindings via a TOML file at `~/.config/squrl/keybindings.toml` or via the `SQURL_KEY_BINDINGS` environment variable.
 
 ## Development
 
-Requires [Rust](https://www.rust-lang.org/tools/install) (nightly) and [just](https://github.com/casey/just).
+Requires [Rust](https://www.rust-lang.org/tools/install) (nightly) and [just](https://github.com/casey/just). A [Nix flake](flake.nix) is also provided for reproducible development environments.
 
 ```sh
-just build          # Build the project
-just build-release  # Build in release mode
+just build          # Debug build
+just build-release  # Release build
 just test           # Run all tests
 just test-verbose   # Run tests with output
 just lint           # Run clippy lints
 just fmt            # Format code
 just fmt-check      # Check formatting
+just security       # Run cargo-deny and cargo-audit
+just coverage       # Generate code coverage report
 just clean          # Clean build artifacts
 just install        # Install binary, completions, and man page
 just uninstall      # Remove all installed files
 ```
 
-Run `just` to see all available commands.
+Run `just` with no arguments to see all available recipes.
 
 ### Pre-commit hooks
 
-This project uses [pre-commit](https://pre-commit.com/) to run checks before each commit. The hooks include formatting checks, linting, and validation.
-
-To set up pre-commit:
+This project uses [pre-commit](https://pre-commit.com/) for automated checks before each commit.
 
 ```sh
 # Install pre-commit (choose one)
 pip install pre-commit
-# or
 brew install pre-commit
 # or via nix develop (included in devShell)
 
 # Install the git hooks
 pre-commit install
-```
 
-To run hooks manually on all files:
-
-```sh
+# Run hooks manually on all files
 pre-commit run --all-files
 ```
+
+## Acknowledgements
+
+squrl draws heavy inspiration from [ATAC](https://github.com/Julien-cpsn/ATAC) by [Julien-cpsn](https://github.com/Julien-cpsn) -- a fantastic terminal API client that pioneered many of the ideas and patterns found in this project. Much of squrl's architecture, feature set, and TUI design was informed by ATAC's excellent work. If you like squrl, you should check out ATAC as well.
 
 ## License
 
