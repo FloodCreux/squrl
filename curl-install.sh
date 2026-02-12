@@ -2,14 +2,14 @@
 set -eu
 
 # Remote installer for squrl pre-built binaries.
-# Usage: curl -fsSL https://codeberg.org/flood-mike/squrl/raw/branch/main/curl-install.sh | sh
+# Usage: curl -fsSL https://raw.githubusercontent.com/FloodCreux/squrl/main/curl-install.sh | sh
 #
 # Environment variables:
 #   VERSION      - version to install (default: latest)
 #   INSTALL_DIR  - installation directory (default: $HOME/.local/bin)
 
-REPO_API="https://codeberg.org/api/v1/repos/flood-mike/squrl"
-REPO_RELEASES="https://codeberg.org/flood-mike/squrl/releases/download"
+REPO_API="https://api.github.com/repos/FloodCreux/squrl"
+REPO_RELEASES="https://github.com/FloodCreux/squrl/releases/download"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
 
 err() {
