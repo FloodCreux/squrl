@@ -14,7 +14,7 @@ just build-release  # Release build
 ### Pre-built binary
 
 ```sh
-curl -fsSL https://codeberg.org/flood-mike/squrl/raw/branch/main/curl-install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/FloodCreux/squrl/main/curl-install.sh | sh
 ```
 
 ### From source
@@ -67,6 +67,32 @@ just fmt            # Format code
 just fmt-check      # Check formatting without modifying files
 ```
 
-## CI
+## CI/CD
 
-The `.github` directory contains CI workflows. Ensure `just lint`, `just fmt-check`, and `just test` pass before pushing.
+GitHub Actions workflows live in `.github/workflows/`:
+
+### CI (`ci.yml`)
+
+Runs on every push to `main` and on pull requests:
+
+- **Format** — `cargo fmt -- --check`
+- **Clippy** — `cargo clippy -- -D warnings`
+- **Test** — `cargo test` on both Ubuntu and macOS
+- **Cargo Deny** — license, advisory, and source checks
+
+Ensure `just lint`, `just fmt-check`, and `just test` pass before pushing.
+
+### Release (`release.yml`)
+
+Runs when a version tag is pushed (e.g. `git tag v0.1.0 && git push --tags`):
+
+1. Runs the full CI pipeline first
+2. Cross-compiles release binaries for all four targets:
+   - `x86_64-unknown-linux-gnu`
+   - `aarch64-unknown-linux-gnu`
+   - `x86_64-apple-darwin`
+   - `aarch64-apple-darwin`
+3. Packages each binary into a tarball (`squrl-v{VERSION}-{TARGET}.tar.gz`)
+4. Creates a GitHub Release with auto-generated release notes and all tarballs attached
+
+These tarballs are consumed by the `curl-install.sh` remote installer.
