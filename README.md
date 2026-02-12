@@ -3,7 +3,7 @@
 A terminal-based HTTP and WebSocket client built with Rust. Think Postman or Insomnia, but in your terminal -- no GUI required.
 
 ![squrl homepage](assets/home.png)
-[squrl request](assets/request.png)
+![squrl request](assets/request.png)
 
 ## Table of Contents
 
