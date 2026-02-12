@@ -40,7 +40,14 @@ A terminal-based HTTP and WebSocket client built with Rust. Think Postman or Ins
 
 ## Installation
 
-### Pre-built binary (recommended)
+### Homebrew
+
+```sh
+brew tap FloodCreux/squrl
+brew install squrl
+```
+
+### Pre-built binary
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/FloodCreux/squrl/main/curl-install.sh | sh
