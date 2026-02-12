@@ -200,6 +200,31 @@ impl App<'_> {
 
 		self.new_request_popup.selected_collection = popup_selected_collection_index;
 		self.new_request_popup.max_collection_selection = collections_length;
+
+		// Pre-populate folder selection based on current tree position
+		let collection = &self.collections[popup_selected_collection_index];
+		self.new_request_popup.folder_count = collection.folders.len();
+
+		// If the user is currently inside a folder, pre-select that folder
+		if let Some(selected) = &self.collections_tree.selected {
+			if let Some(folder_index) = selected.folder_index() {
+				self.new_request_popup.selected_folder = Some(folder_index);
+			} else {
+				self.new_request_popup.selected_folder = None;
+			}
+		} else if selected_collection.len() == 2 {
+			// User might be on a folder node (not a request) - check if it's a folder
+			let child_index = selected_collection[1];
+			let folder_count = collection.folders.len();
+			if child_index < folder_count {
+				self.new_request_popup.selected_folder = Some(child_index);
+			} else {
+				self.new_request_popup.selected_folder = None;
+			}
+		} else {
+			self.new_request_popup.selected_folder = None;
+		}
+
 		self.set_app_state(AppState::CreatingNewRequest);
 	}
 

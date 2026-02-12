@@ -153,7 +153,8 @@ impl App<'_> {
 	}
 
 	pub fn tui_request_auth_previous_jwt_algorithm(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let selected = self.collections_tree.selected.unwrap();
+		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
 			let mut selected_request = local_selected_request.write();
@@ -169,11 +170,13 @@ impl App<'_> {
 			jwt_token.secret_type = new_secret_type;
 		}
 
+		self.save_collection_to_file(selected.collection_index());
 		self.select_request_state();
 	}
 
 	pub fn tui_request_auth_next_jwt_algorithm(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let selected = self.collections_tree.selected.unwrap();
+		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
 			let mut selected_request = local_selected_request.write();
@@ -189,6 +192,7 @@ impl App<'_> {
 			jwt_token.secret_type = new_secret_type;
 		}
 
+		self.save_collection_to_file(selected.collection_index());
 		self.select_request_state();
 	}
 
@@ -231,7 +235,8 @@ impl App<'_> {
 	}
 
 	pub fn tui_request_auth_toggle_digest_stale(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let selected = self.collections_tree.selected.unwrap();
+		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
 			let mut selected_request = local_selected_request.write();
@@ -244,11 +249,13 @@ impl App<'_> {
 			digest.stale = new_stale;
 		}
 
+		self.save_collection_to_file(selected.collection_index());
 		self.select_request_state();
 	}
 
 	pub fn tui_request_auth_previous_digest_algorithm(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let selected = self.collections_tree.selected.unwrap();
+		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
 			let mut selected_request = local_selected_request.write();
@@ -261,11 +268,13 @@ impl App<'_> {
 			digest.algorithm = previous_algorithm;
 		}
 
+		self.save_collection_to_file(selected.collection_index());
 		self.select_request_state();
 	}
 
 	pub fn tui_request_auth_next_digest_algorithm(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let selected = self.collections_tree.selected.unwrap();
+		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
 			let mut selected_request = local_selected_request.write();
@@ -278,11 +287,13 @@ impl App<'_> {
 			digest.algorithm = new_algorithm;
 		}
 
+		self.save_collection_to_file(selected.collection_index());
 		self.select_request_state();
 	}
 
 	pub fn tui_request_auth_previous_digest_qop(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let selected = self.collections_tree.selected.unwrap();
+		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
 			let mut selected_request = local_selected_request.write();
@@ -295,11 +306,13 @@ impl App<'_> {
 			digest.qop = previous_qop;
 		}
 
+		self.save_collection_to_file(selected.collection_index());
 		self.select_request_state();
 	}
 
 	pub fn tui_request_auth_next_digest_qop(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let selected = self.collections_tree.selected.unwrap();
+		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
 			let mut selected_request = local_selected_request.write();
@@ -312,11 +325,13 @@ impl App<'_> {
 			digest.qop = new_qop;
 		}
 
+		self.save_collection_to_file(selected.collection_index());
 		self.select_request_state();
 	}
 
 	pub fn tui_request_auth_toggle_digest_user_hash(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let selected = self.collections_tree.selected.unwrap();
+		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
 			let mut selected_request = local_selected_request.write();
@@ -329,11 +344,13 @@ impl App<'_> {
 			digest.user_hash = new_user_hash;
 		}
 
+		self.save_collection_to_file(selected.collection_index());
 		self.select_request_state();
 	}
 
 	pub fn tui_request_auth_toggle_digest_charset(&mut self) {
-		let local_selected_request = self.get_selected_request_as_local();
+		let selected = self.collections_tree.selected.unwrap();
+		let local_selected_request = self.get_request_from_selection(&selected);
 
 		{
 			let mut selected_request = local_selected_request.write();
@@ -346,6 +363,7 @@ impl App<'_> {
 			digest.charset = previous_charset;
 		}
 
+		self.save_collection_to_file(selected.collection_index());
 		self.select_request_state();
 	}
 }

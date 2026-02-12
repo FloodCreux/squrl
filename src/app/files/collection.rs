@@ -67,15 +67,31 @@ impl App<'_> {
 			return;
 		}
 
-		let collection = &self.collections[collection_index];
+		// Auto-assign a file path for ephemeral collections on first save
+		if self.collections[collection_index]
+			.path
+			.as_os_str()
+			.is_empty()
+		{
+			let collection = &self.collections[collection_index];
+			let file_format = self.config.get_preferred_collection_file_format();
+			let path = ARGS
+				.directory
+				.as_ref()
+				.unwrap()
+				.join(format!("{}.{file_format}", collection.name));
 
-		if collection.path.as_os_str().is_empty() {
-			warn!(
-				"Ephemeral collection \"{}\", not saving to disk",
-				collection.name
+			info!(
+				"Ephemeral collection \"{}\" will now be saved to \"{}\"",
+				collection.name,
+				path.display()
 			);
-			return;
+
+			self.collections[collection_index].path = path;
+			self.collections[collection_index].file_format = file_format;
 		}
+
+		let collection = &self.collections[collection_index];
 
 		info!("Saving collection \"{}\"", collection.name);
 

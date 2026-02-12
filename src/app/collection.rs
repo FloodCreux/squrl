@@ -106,6 +106,32 @@ impl App<'_> {
 		Ok(())
 	}
 
+	pub fn new_request_in_folder(
+		&mut self,
+		collection_index: usize,
+		folder_index: usize,
+		mut new_request: Request,
+	) -> Result<(), RequestError> {
+		new_request.name = sanitize_name(new_request.name);
+
+		if new_request.name.is_empty() {
+			return Err(RequestNameIsEmpty);
+		}
+
+		let collection = &mut self.collections[collection_index];
+		let folder = &mut collection.folders[folder_index];
+
+		info!(
+			"Request \"{}\" created in folder \"{}\" of collection \"{}\"",
+			new_request.name, folder.name, collection.name
+		);
+
+		folder.requests.push(Arc::new(RwLock::new(new_request)));
+		self.save_collection_to_file(collection_index);
+
+		Ok(())
+	}
+
 	pub fn delete_collection(&mut self, collection_index: usize) {
 		info!("Collection deleted");
 

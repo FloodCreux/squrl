@@ -9,6 +9,7 @@ use crate::models::protocol::http::body::ContentType::NoBody;
 use crate::models::protocol::http::http::HttpRequest;
 use crate::models::protocol::http::method::Method;
 use crate::models::protocol::protocol::Protocol;
+use crate::models::protocol::ws::ws::WsRequest;
 use crate::models::request::{KeyValue, Request};
 use anyhow::anyhow;
 use parking_lot::RwLock;
@@ -126,9 +127,15 @@ pub fn parse_http_content(content: &str) -> anyhow::Result<Vec<Arc<RwLock<Reques
 		let method_str = parts[0];
 		let url_str = parts[1];
 
-		let method = match Method::from_str(method_str) {
-			Ok(method) => method,
-			Err(e) => return Err(anyhow!(CouldNotParseMethod(e.to_string()))),
+		let is_websocket = method_str == "WEBSOCKET";
+
+		let method = if is_websocket {
+			None
+		} else {
+			match Method::from_str(method_str) {
+				Ok(method) => Some(method),
+				Err(e) => return Err(anyhow!(CouldNotParseMethod(e.to_string()))),
+			}
 		};
 
 		i += 1;
@@ -221,19 +228,27 @@ pub fn parse_http_content(content: &str) -> anyhow::Result<Vec<Arc<RwLock<Reques
 			})
 			.collect();
 
-		// Build body
-		let body = if body_string.is_empty() {
-			NoBody
+		// Build protocol-specific request
+		let protocol = if is_websocket {
+			Protocol::WsRequest(WsRequest::default())
 		} else {
-			let content_type_value = raw_headers
-				.iter()
-				.find(|(name, _)| name.to_lowercase() == "content-type")
-				.map(|(_, v)| v.as_str());
+			let method = method.unwrap();
 
-			match content_type_value {
-				Some(ct) => ContentType::from_content_type(ct, body_string),
-				None => ContentType::Raw(body_string),
-			}
+			let body = if body_string.is_empty() {
+				NoBody
+			} else {
+				let content_type_value = raw_headers
+					.iter()
+					.find(|(name, _)| name.to_lowercase() == "content-type")
+					.map(|(_, v)| v.as_str());
+
+				match content_type_value {
+					Some(ct) => ContentType::from_content_type(ct, body_string),
+					None => ContentType::Raw(body_string),
+				}
+			};
+
+			Protocol::HttpRequest(HttpRequest { method, body })
 		};
 
 		let request = Request {
@@ -242,7 +257,7 @@ pub fn parse_http_content(content: &str) -> anyhow::Result<Vec<Arc<RwLock<Reques
 			params,
 			headers,
 			auth,
-			protocol: Protocol::HttpRequest(HttpRequest { method, body }),
+			protocol,
 			..Default::default()
 		};
 
@@ -502,6 +517,92 @@ Content-Type: application/json
 
 		match &req2.protocol {
 			Protocol::HttpRequest(http) => assert!(matches!(http.method, Method::PUT)),
+			_ => panic!("Expected HttpRequest"),
+		}
+	}
+
+	#[test]
+	fn parse_websocket_request() {
+		let content = r#"### Echo WebSocket
+WEBSOCKET wss://echo.websocket.org
+"#;
+
+		let requests = parse_http_content(content).unwrap();
+		assert_eq!(requests.len(), 1);
+
+		let req = requests[0].read();
+		assert_eq!(req.name, "Echo WebSocket");
+		assert_eq!(req.url, "wss://echo.websocket.org/");
+
+		match &req.protocol {
+			Protocol::WsRequest(_) => {}
+			_ => panic!("Expected WsRequest"),
+		}
+	}
+
+	#[test]
+	fn parse_websocket_with_headers() {
+		let content = r#"### Authenticated WS
+WEBSOCKET wss://api.example.com/ws
+Authorization: Bearer my-token
+X-Custom: header-value
+"#;
+
+		let requests = parse_http_content(content).unwrap();
+		assert_eq!(requests.len(), 1);
+
+		let req = requests[0].read();
+		assert_eq!(req.name, "Authenticated WS");
+
+		match &req.auth {
+			Auth::BearerToken(bearer) => assert_eq!(bearer.token, "my-token"),
+			other => panic!("Expected BearerToken, got {:?}", other),
+		}
+
+		// Authorization header should be extracted into auth, not kept in headers
+		assert_eq!(req.headers.len(), 1);
+		assert_eq!(req.headers[0].data.0, "X-Custom");
+		assert_eq!(req.headers[0].data.1, "header-value");
+
+		match &req.protocol {
+			Protocol::WsRequest(_) => {}
+			_ => panic!("Expected WsRequest"),
+		}
+	}
+
+	#[test]
+	fn parse_mixed_http_and_websocket() {
+		let content = r#"### Get Users
+GET https://api.example.com/users
+
+### Live Feed
+WEBSOCKET wss://api.example.com/feed
+
+### Create User
+POST https://api.example.com/users
+Content-Type: application/json
+
+{"name": "Jane"}
+"#;
+
+		let requests = parse_http_content(content).unwrap();
+		assert_eq!(requests.len(), 3);
+
+		assert_eq!(requests[0].read().name, "Get Users");
+		match &requests[0].read().protocol {
+			Protocol::HttpRequest(http) => assert!(matches!(http.method, Method::GET)),
+			_ => panic!("Expected HttpRequest"),
+		}
+
+		assert_eq!(requests[1].read().name, "Live Feed");
+		match &requests[1].read().protocol {
+			Protocol::WsRequest(_) => {}
+			_ => panic!("Expected WsRequest"),
+		}
+
+		assert_eq!(requests[2].read().name, "Create User");
+		match &requests[2].read().protocol {
+			Protocol::HttpRequest(http) => assert!(matches!(http.method, Method::POST)),
 			_ => panic!("Expected HttpRequest"),
 		}
 	}

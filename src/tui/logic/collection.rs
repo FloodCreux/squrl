@@ -304,6 +304,7 @@ impl App<'_> {
 			.to_owned();
 
 		let selected_collection_index = self.new_request_popup.selected_collection;
+		let selected_folder = self.new_request_popup.selected_folder;
 		let protocol = self.new_request_popup.protocol.clone();
 
 		let new_request = Request {
@@ -314,7 +315,14 @@ impl App<'_> {
 			..Default::default()
 		};
 
-		match self.new_request(selected_collection_index, new_request) {
+		let result = match selected_folder {
+			Some(folder_index) => {
+				self.new_request_in_folder(selected_collection_index, folder_index, new_request)
+			}
+			None => self.new_request(selected_collection_index, new_request),
+		};
+
+		match result {
 			Ok(_) => {}
 			Err(_) => return,
 		}

@@ -26,3 +26,6 @@ Content-Type: application/json
 
 ### Delete User
 DELETE https://jsonplaceholder.typicode.com/users/1
+
+### Echo WebSocket
+WEBSOCKET wss://echo.websocket.org
