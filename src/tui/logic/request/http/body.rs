@@ -200,6 +200,7 @@ impl App<'_> {
 
 		self.save_collection_to_file(selected.collection_index());
 		self.tui_update_body_table_selection();
+		self.tui_update_headers_selection();
 		self.tui_load_request_body_param_tab();
 	}
 }
