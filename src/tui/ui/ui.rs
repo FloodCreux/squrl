@@ -92,19 +92,19 @@ impl<'a> App<'a> {
 		let available_keys = Line::from(
 			event_available_keys_to_spans(
 				events,
-				THEME.read().ui.secondary_foreground_color,
-				THEME.read().ui.secondary_background_color,
+				THEME.read().ui.main_foreground_color,
+				THEME.read().ui.main_background_color,
 				true,
 			)
 			.concat(),
 		);
 
 		let footer_left = Block::new()
-			.title(state_line)
+			.title(available_keys)
 			.title_alignment(Alignment::Left);
 
 		let footer_right = Block::new()
-			.title(available_keys)
+			.title(state_line)
 			.title_alignment(Alignment::Right);
 
 		frame.render_widget(footer_left, main_layout[2]);
