@@ -53,9 +53,29 @@ impl<'a> Widget for SingleLineTextInput<'a> {
 	{
 		let new_area = match &self.0.block_title {
 			None => area,
-			Some(_block_title) => {
+			Some(block_title) => {
+				let label_len = block_title.len() as u16 + 2;
+				let horizontal_layout =
+					Layout::horizontal([Constraint::Length(label_len), Constraint::Fill(1)])
+						.split(area);
+
+				let label_color = match self.0.highlight_block {
+					true => THEME.read().others.selection_highlight_color,
+					false => THEME.read().ui.main_foreground_color,
+				};
+
+				let label = Span::raw(block_title.as_str()).style(Style::new().fg(label_color));
+				label.render(
+					Rect {
+						height: 1,
+						..horizontal_layout[0]
+					},
+					buf,
+				);
+
+				let input_area = horizontal_layout[1];
+
 				let mut block = Block::new()
-					// .title(block_title.as_str())
 					.borders(Borders::BOTTOM)
 					.border_set(border::Set {
 						horizontal_bottom: "╌",
@@ -70,9 +90,9 @@ impl<'a> Widget for SingleLineTextInput<'a> {
 					false => block.fg(THEME.read().ui.main_foreground_color),
 				};
 
-				let block_area = block.inner(area);
+				let block_area = block.inner(input_area);
 
-				block.render(area, buf);
+				block.render(input_area, buf);
 
 				block_area
 			}
