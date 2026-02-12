@@ -2,10 +2,10 @@ use crate::app::files::config::SKIP_SAVE_REQUESTS_RESPONSE;
 use crate::models::protocol::ws::message_type::MessageType;
 use chrono::{DateTime, Local};
 use futures_util::stream::{SplitSink, SplitStream};
-use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use strum::Display;
+use tokio::sync::Mutex;
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct WsRequest {

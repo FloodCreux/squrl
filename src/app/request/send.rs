@@ -43,6 +43,16 @@ pub enum PrepareRequestError {
 	JwtError(#[from] JwtError),
 }
 
+/// Result of the synchronous `prepare_request` phase.
+/// When the request body is a file, the builder cannot be finalized synchronously
+/// because opening the file requires an async call. In that case, `pending_file`
+/// contains the path that the caller must open asynchronously and attach to the
+/// builder via `.body()`.
+pub struct PreparedRequest {
+	pub builder: reqwest_middleware::RequestBuilder,
+	pub pending_file: Option<PathBuf>,
+}
+
 #[derive(Error, Debug)]
 pub enum RequestResponseError {
 	#[error("(CONSOLE) POST-SCRIPT ERROR")]
@@ -54,10 +64,16 @@ pub enum RequestResponseError {
 }
 
 impl App<'_> {
-	pub async fn prepare_request(
+	/// Prepare an HTTP/WS request synchronously.
+	///
+	/// When the request body is a `File`, the returned [`PreparedRequest`] will
+	/// contain `pending_file = Some(path)`. The caller is responsible for
+	/// opening the file asynchronously and attaching it to the builder via
+	/// `builder.body(file)` before sending.
+	pub fn prepare_request(
 		&self,
 		request: &mut Request,
-	) -> Result<reqwest_middleware::RequestBuilder, PrepareRequestError> {
+	) -> Result<PreparedRequest, PrepareRequestError> {
 		trace!("Preparing request");
 
 		let env = self.get_selected_env_as_local();
@@ -250,6 +266,8 @@ impl App<'_> {
 
 		/* BODY */
 
+		let mut pending_file: Option<PathBuf> = None;
+
 		if let Protocol::HttpRequest(http_request) = &modified_request.protocol {
 			match &http_request.body {
 				NoBody => {}
@@ -287,14 +305,7 @@ impl App<'_> {
 				}
 				File(file_path) => {
 					let file_path_with_env_values = self.replace_env_keys_by_value(file_path);
-					let path = PathBuf::from(file_path_with_env_values);
-
-					match tokio::fs::File::open(path).await {
-						Ok(file) => {
-							request_builder = request_builder.body(file);
-						}
-						Err(_) => return Err(PrepareRequestError::CouldNotOpenFile),
-					}
+					pending_file = Some(PathBuf::from(file_path_with_env_values));
 				}
 				Raw(body) | Json(body) | Xml(body) | Html(body) | Javascript(body) => {
 					let body_with_env_values = self.replace_env_keys_by_value(body);
@@ -318,7 +329,24 @@ impl App<'_> {
 
 		trace!("Request prepared");
 
-		Ok(request_builder)
+		Ok(PreparedRequest {
+			builder: request_builder,
+			pending_file,
+		})
+	}
+
+	/// Finalize a [`PreparedRequest`] by opening any pending file body
+	/// asynchronously and attaching it to the request builder.
+	pub async fn finalize_prepared_request(
+		prepared: PreparedRequest,
+	) -> Result<reqwest_middleware::RequestBuilder, PrepareRequestError> {
+		match prepared.pending_file {
+			None => Ok(prepared.builder),
+			Some(path) => match tokio::fs::File::open(path).await {
+				Ok(file) => Ok(prepared.builder.body(file)),
+				Err(_) => Err(PrepareRequestError::CouldNotOpenFile),
+			},
+		}
 	}
 
 	pub fn handle_pre_request_script(

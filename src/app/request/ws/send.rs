@@ -10,7 +10,6 @@ use chrono::Local;
 use futures_util::{StreamExt, TryStreamExt};
 use parking_lot::{Mutex, RwLock};
 use rayon::prelude::*;
-use reqwest::header::CONTENT_TYPE;
 use reqwest_websocket::Upgrade;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -18,7 +17,20 @@ use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, trace};
 
-#[allow(clippy::await_holding_lock)]
+/// Intermediate result from the `tokio::select!` in WebSocket send, used to
+/// transfer the WebSocket split back to the caller without holding a lock.
+enum WsSendOutcome {
+	/// The request was cancelled, timed out, or encountered an error.
+	Response(RequestResponse, Duration),
+	/// The HTTP upgrade succeeded; carries the response metadata and the
+	/// WebSocket halves that need to be stored in the request.
+	Upgraded {
+		response: RequestResponse,
+		elapsed_time: Duration,
+		websocket: Websocket,
+	},
+}
+
 pub async fn send_ws_request(
 	prepared_request: reqwest_middleware::RequestBuilder,
 	local_request: Arc<RwLock<Request>>,
@@ -27,61 +39,58 @@ pub async fn send_ws_request(
 ) -> Result<RequestResponse, RequestResponseError> {
 	info!("Sending request");
 
-	let mut request = local_request.write();
-	request.is_pending = true;
-
-	let cancellation_token = request.cancellation_token.clone();
-
-	let ws_request = request.get_ws_request_mut().unwrap();
-	ws_request.is_connected = false;
+	// Extract values from the lock, then drop it before any await.
+	let cancellation_token = {
+		let mut request = local_request.write();
+		request.is_pending = true;
+		let cancellation_token = request.cancellation_token.clone();
+		let ws_request = request.get_ws_request_mut().unwrap();
+		ws_request.is_connected = false;
+		cancellation_token
+	};
+	// Write guard is dropped here — safe to await
 
 	let timeout = tokio::time::sleep(WS_CONNECTION_TIMEOUT);
 
 	let request_start = Instant::now();
-	let elapsed_time: Duration;
-	let mut response = tokio::select! {
+	let outcome = tokio::select! {
 		_ = cancellation_token.cancelled() => {
-			elapsed_time = request_start.elapsed();
-
-			RequestResponse {
-				duration: None,
-				status_code: Some(String::from("CANCELED")),
-				content: None,
-				cookies: None,
-				headers: vec![],
-			}
+			WsSendOutcome::Response(
+				RequestResponse {
+					duration: None,
+					status_code: Some(String::from("CANCELED")),
+					content: None,
+					cookies: None,
+					headers: vec![],
+				},
+				request_start.elapsed(),
+			)
 		},
 		_ = timeout => {
-			elapsed_time = request_start.elapsed();
-
-			RequestResponse {
-				duration: None,
-				status_code: Some(String::from("TIMEOUT")),
-				content: None,
-				cookies: None,
-				headers: vec![],
-			}
+			WsSendOutcome::Response(
+				RequestResponse {
+					duration: None,
+					status_code: Some(String::from("TIMEOUT")),
+					content: None,
+					cookies: None,
+					headers: vec![],
+				},
+				request_start.elapsed(),
+			)
 		},
 		response = prepared_request.upgrade().send() => match response {
 			Ok(response) => {
 				info!("Response received");
 
-				elapsed_time = request_start.elapsed();
+				let elapsed_time = request_start.elapsed();
 
 				let status_code = response.status().to_string();
-
-				let mut is_image = false;
 
 				let headers: Vec<(String, String)> = response.headers()
 					.clone()
 					.iter()
 					.map(|(header_name, header_value)| {
 						let value = header_value.to_str().unwrap_or("").to_string();
-
-						if header_name == CONTENT_TYPE && value.starts_with("image/") {
-							is_image = true;
-						}
-
 						(header_name.to_string(), value)
 					})
 					.collect();
@@ -94,42 +103,56 @@ pub async fn send_ws_request(
 					.collect::<Vec<String>>()
 					.join("\n");
 
-				let websocket = match response.into_websocket().await {
-					Ok(websocket) => websocket,
+				let ws = match response.into_websocket().await {
+					Ok(ws) => ws,
 					Err(error) => return Err(RequestResponseError::WebsocketError(error))
 				};
-				let (tx, rx) = websocket.split();
-				ws_request.websocket = Some(Websocket {
-					rx: Arc::new(Mutex::new(rx)),
-					tx: Arc::new(Mutex::new(tx))
-				});
+				let (tx, rx) = ws.split();
 
-				RequestResponse {
-					duration: None,
-					status_code: Some(status_code),
-					content: None,
-					cookies: Some(cookies),
-					headers,
+				WsSendOutcome::Upgraded {
+					response: RequestResponse {
+						duration: None,
+						status_code: Some(status_code),
+						content: None,
+						cookies: Some(cookies),
+						headers,
+					},
+					elapsed_time,
+				websocket: Websocket {
+					rx: Arc::new(tokio::sync::Mutex::new(rx)),
+					tx: Arc::new(tokio::sync::Mutex::new(tx)),
+				},
 				}
 			},
 			Err(error) => {
 				error!("Sending error: {}", error);
 
-				elapsed_time = request_start.elapsed();
-
 				let error = error.to_string();
 				let response_status_code = Some(error.clone());
 				let result_body = ResponseContent::Body(error);
 
-				RequestResponse {
-					duration: None,
-					status_code: response_status_code,
-					content: Some(result_body),
-					cookies: None,
-					headers: vec![],
-				}
+				WsSendOutcome::Response(
+					RequestResponse {
+						duration: None,
+						status_code: response_status_code,
+						content: Some(result_body),
+						cookies: None,
+						headers: vec![],
+					},
+					request_start.elapsed(),
+				)
 			}
 		}
+	};
+
+	// Now re-acquire the lock to store the WebSocket and run the post-request script.
+	let (mut response, elapsed_time, websocket_halves) = match outcome {
+		WsSendOutcome::Response(response, elapsed) => (response, elapsed, None),
+		WsSendOutcome::Upgraded {
+			response,
+			elapsed_time,
+			websocket,
+		} => (response, elapsed_time, Some(websocket)),
 	};
 
 	response.duration = Some(format!("{:?}", elapsed_time));
@@ -138,9 +161,10 @@ pub async fn send_ws_request(
 
 	/* POST-REQUEST SCRIPT */
 
+	// Re-acquire read guard for post-request script, then drop it.
+	let request = local_request.read();
 	let (modified_response, post_request_output) =
 		App::handle_post_request_script(&request, response, env)?;
-
 	drop(request);
 
 	{
@@ -155,17 +179,19 @@ pub async fn send_ws_request(
 
 		if modified_response.status_code != Some(String::from("101 Switching Protocols")) {
 			return Ok(modified_response);
-		} else {
-			ws_request.is_connected = true;
 		}
+
+		// Store the WebSocket halves and mark as connected.
+		ws_request.websocket = websocket_halves;
+		ws_request.is_connected = true;
 	}
 
 	let local_request = local_request.clone();
-	let mut request = local_request.write();
-	let ws_request = request.get_ws_request_mut().unwrap();
-	let local_websocket = ws_request.websocket.clone().unwrap();
-
-	drop(request);
+	let local_websocket = {
+		let request = local_request.read();
+		let ws_request = request.get_ws_request().unwrap();
+		ws_request.websocket.clone().unwrap()
+	};
 
 	tokio::spawn(async move {
 		'websocket_loop: loop {
@@ -176,7 +202,7 @@ pub async fn send_ws_request(
 				break 'websocket_loop;
 			}
 
-			let mut websocket_rx = local_websocket.rx.lock();
+			let mut websocket_rx = local_websocket.rx.lock().await;
 			let message = websocket_rx.try_next().await;
 			drop(websocket_rx);
 			match message {

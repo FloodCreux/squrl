@@ -4,16 +4,18 @@ use crate::models::protocol::ws::ws::{Message, Sender};
 use chrono::Local;
 use futures_util::SinkExt;
 use reqwest_websocket::{Bytes, CloseCode};
+use std::sync::Arc;
 use textwrap::wrap;
 use tracing::info;
 
 impl App<'_> {
-	#[allow(clippy::await_holding_lock)]
 	pub async fn tui_send_request_message(&mut self) {
 		let selected = self.collections_tree.selected.unwrap();
 		let local_selected_request = self.get_request_from_selection(&selected);
 
-		{
+		// Build the message and clone the tx Arc while holding the write guard,
+		// then drop the guard before awaiting the async send.
+		let send_info = {
 			let mut selected_request = local_selected_request.write();
 			let selected_ws_request = selected_request.get_ws_request_mut().unwrap();
 
@@ -54,21 +56,36 @@ impl App<'_> {
 						},
 					};
 
-					websocket.tx.lock().send(message).await.ok();
-
-					selected_ws_request.messages.push(Message {
-						timestamp: Local::now(),
-						content: selected_ws_request.message_type.clone(),
-						sender: Sender::You,
-					});
-
-					info!("Message sent");
-
-					*self.received_response.lock() = true;
+					let tx = Arc::clone(&websocket.tx);
+					let message_type = selected_ws_request.message_type.clone();
+					Some((tx, message, message_type))
+				} else {
+					None
 				}
 			} else {
 				info!("Websocket is not connected");
+				None
 			}
+		};
+		// Write guard is dropped here — safe to await
+
+		if let Some((tx, message, message_type)) = send_info {
+			tx.lock().await.send(message).await.ok();
+
+			// Re-acquire write guard to record the sent message.
+			{
+				let mut selected_request = local_selected_request.write();
+				let selected_ws_request = selected_request.get_ws_request_mut().unwrap();
+				selected_ws_request.messages.push(Message {
+					timestamp: Local::now(),
+					content: message_type,
+					sender: Sender::You,
+				});
+			}
+
+			info!("Message sent");
+
+			*self.received_response.lock() = true;
 		}
 
 		self.tui_load_request_message_param_tab();

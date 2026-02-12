@@ -14,7 +14,6 @@ use reqwest::header::CONTENT_TYPE;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, trace};
 
-#[allow(clippy::await_holding_lock)]
 pub async fn send_http_request(
 	prepared_request: reqwest_middleware::RequestBuilder,
 	local_request: Arc<RwLock<Request>>,
@@ -22,14 +21,18 @@ pub async fn send_http_request(
 ) -> Result<RequestResponse, RequestResponseError> {
 	info!("Sending request");
 
-	local_request.write().is_pending = true;
+	// Extract the values we need from the lock, then drop it before any await.
+	let (cancellation_token, timeout_ms, pretty_print) = {
+		let mut request = local_request.write();
+		request.is_pending = true;
+		let cancellation_token = request.cancellation_token.clone();
+		let timeout_ms = request.settings.timeout.as_u32() as u64;
+		let pretty_print = request.settings.pretty_print_response_content.as_bool();
+		(cancellation_token, timeout_ms, pretty_print)
+	};
+	// Write guard is dropped here — safe to await
 
-	let request = local_request.read();
-
-	let cancellation_token = request.cancellation_token.clone();
-	let timeout = tokio::time::sleep(Duration::from_millis(
-		request.settings.timeout.as_u32() as u64
-	));
+	let timeout = tokio::time::sleep(Duration::from_millis(timeout_ms));
 
 	let request_start = Instant::now();
 	let elapsed_time: Duration;
@@ -104,7 +107,7 @@ pub async fn send_http_request(
 								// If a file format has been found in the content-type header
 								if let Some(file_format) = find_file_format_in_content_type(&headers) {
 									// If the request response content can be pretty printed
-									if request.settings.pretty_print_response_content.as_bool() {
+									if pretty_print {
 										// Match the file format
 										if file_format.as_str() == "json" {
 														  result_body = jsonxf::pretty_print(&result_body).unwrap_or(result_body);
@@ -160,9 +163,10 @@ pub async fn send_http_request(
 
 	/* POST-REQUEST SCRIPT */
 
+	// Re-acquire a read guard only for the post-request script.
+	let request = local_request.read();
 	let (modified_response, post_request_output) =
 		App::handle_post_request_script(&request, response, env)?;
-
 	drop(request);
 
 	{

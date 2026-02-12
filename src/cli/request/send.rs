@@ -68,39 +68,43 @@ impl App<'_> {
 		Ok(())
 	}
 
-	#[allow(clippy::await_holding_lock)]
 	pub async fn local_send_request(
 		&mut self,
 		send_command: &SendCommand,
 		local_request: Arc<RwLock<Request>>,
 	) -> anyhow::Result<()> {
-		let mut request = local_request.write();
+		// Synchronous phase: prepare the request while holding the write guard.
+		let (prepared, protocol) = {
+			let mut request = local_request.write();
 
-		if let Some(env_name) = &send_command.env {
-			let env_index = self.find_environment(env_name)?;
-			self.selected_environment = env_index;
-		};
+			if let Some(env_name) = &send_command.env {
+				let env_index = self.find_environment(env_name)?;
+				self.selected_environment = env_index;
+			};
 
-		if send_command.request_name {
-			println!("{}", request.name);
-		}
-
-		let prepared_request = match self.prepare_request(&mut request).await {
-			Ok(prepared_request) => prepared_request,
-			Err(error) => {
-				if send_command.console
-					&& let Some(pre_request_output) = &request.console_output.pre_request_output
-				{
-					println!("{}", pre_request_output);
-				}
-
-				return Err(anyhow!(error));
+			if send_command.request_name {
+				println!("{}", request.name);
 			}
+
+			let prepared = match self.prepare_request(&mut request) {
+				Ok(prepared) => prepared,
+				Err(error) => {
+					if send_command.console
+						&& let Some(pre_request_output) = &request.console_output.pre_request_output
+					{
+						println!("{}", pre_request_output);
+					}
+
+					return Err(anyhow!(error));
+				}
+			};
+
+			let protocol = request.protocol.clone();
+			(prepared, protocol)
 		};
+		// Guard is dropped here — safe to await for file body finalization
 
-		let protocol = request.protocol.clone();
-
-		drop(request);
+		let prepared_request = App::finalize_prepared_request(prepared).await?;
 
 		let local_env = self.get_selected_env_as_local();
 		let response = match protocol {
@@ -227,21 +231,27 @@ impl App<'_> {
 							let text = buffer.clone();
 							buffer.clear();
 
-							let mut request = local_local_request.write();
-							let ws_request = request.get_ws_request_mut().unwrap();
+							let tx_and_connected = {
+								let request = local_local_request.read();
+								let ws_request = request.get_ws_request().unwrap();
+								if ws_request.is_connected {
+									ws_request.websocket.as_ref().map(|ws| Arc::clone(&ws.tx))
+								} else {
+									None
+								}
+							};
 
-							if ws_request.is_connected
-								&& let Some(websocket) = &ws_request.websocket
-							{
+							if let Some(tx) = tx_and_connected {
 								info!("Sending message");
 
-								websocket
-									.tx
-									.lock()
+								tx.lock()
+									.await
 									.send(reqwest_websocket::Message::Text(text.clone()))
 									.await
 									.unwrap();
 
+								let mut request = local_local_request.write();
+								let ws_request = request.get_ws_request_mut().unwrap();
 								ws_request.messages.push(Message {
 									timestamp: Local::now(),
 									sender: Sender::You,

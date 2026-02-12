@@ -57,7 +57,6 @@ impl App<'_> {
 		}
 	}
 
-	#[allow(clippy::await_holding_lock)]
 	async fn handle_key(
 		&mut self,
 		key: KeyCombination,
@@ -94,21 +93,28 @@ impl App<'_> {
 		}
 
 		let mut miss_input = false;
-		let mut matching_event: Option<&AppEvent> = None;
 
-		let available_app_events = AVAILABLE_EVENTS.read();
+		// Find the matching event, clone it, and drop the read guard before the
+		// match block. This avoids holding the AVAILABLE_EVENTS lock across
+		// .await calls (e.g. tui_send_request, tui_send_request_message).
+		let matching_event: Option<AppEvent> = {
+			let available_app_events = AVAILABLE_EVENTS.read();
 
-		for possible_event in available_app_events.iter() {
-			let event_key_bindings = possible_event.get_event_key_bindings();
+			let mut found = None;
+			for possible_event in available_app_events.iter() {
+				let event_key_bindings = possible_event.get_event_key_bindings();
 
-			// Either the key is contained in the trigger condition list OR if the list is empty and no modifiers has been pressed, means 'any char'
-			if event_key_bindings.keys.contains(&key) || event_key_bindings.keys.is_empty() {
-				matching_event = Some(possible_event);
-				break;
+				// Either the key is contained in the trigger condition list OR if the list is empty and no modifiers has been pressed, means 'any char'
+				if event_key_bindings.keys.contains(&key) || event_key_bindings.keys.is_empty() {
+					found = Some(possible_event.clone());
+					break;
+				}
 			}
-		}
+			found
+		};
+		// Read guard is dropped here — safe to await
 
-		match matching_event {
+		match matching_event.as_ref() {
 			None => miss_input = true,
 			Some(event) => match event {
 				/* Main menu */
