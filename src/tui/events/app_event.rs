@@ -168,6 +168,12 @@ get_key_bindings! {
 
 		CopyResponsePart(EventKeyBinding),
 
+		/* Response Body Selection */
+
+		EnterResponseBodySelection(EventKeyBinding),
+		ExitResponseBodySelection(EventKeyBinding),
+		KeyEventSelectResponseBody(EventKeyBinding),
+
 		/* Request export */
 
 		ExportRequest(EventKeyBinding),

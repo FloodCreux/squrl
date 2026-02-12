@@ -120,6 +120,9 @@ nest! {
 
 				/// Will use param_next_tab depending on the selected view
 				pub result_next_tab: KeyCombination,
+
+				/// Enter selection mode in response body
+				pub select_response_body: KeyCombination,
 			}
 		},
 	}
@@ -283,6 +286,8 @@ impl Default for ResultTabs {
 			yank_response_part: key!(y),
 
 			result_next_tab: key!(shift - backtab),
+
+			select_response_body: key!(o),
 		}
 	}
 }

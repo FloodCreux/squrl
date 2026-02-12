@@ -115,4 +115,8 @@ pub enum AppState {
 
 	#[strum(to_string = "Displaying request export")]
 	DisplayingRequestExport,
+
+	/* Response */
+	#[strum(to_string = "Selecting response body")]
+	SelectingResponseBody,
 }

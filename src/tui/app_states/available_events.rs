@@ -801,6 +801,16 @@ impl AppState {
 							"Yank response part",
 							Some("Yank"),
 						)),
+						EnterResponseBodySelection(EventKeyBinding::new(
+							vec![
+								key_bindings
+									.request_selected
+									.result_tabs
+									.select_response_body,
+							],
+							"Select response body",
+							Some("Select"),
+						)),
 					];
 
 					if params_events_allowed {
@@ -1363,6 +1373,22 @@ impl AppState {
 					Some("Yank"),
 				)),
 			],
+			SelectingResponseBody => [
+				vec![
+					ExitResponseBodySelection(EventKeyBinding::new(
+						vec![key_bindings.generic.navigation.go_back],
+						"Exit selection",
+						Some("Exit"),
+					)),
+					KeyEventSelectResponseBody(EventKeyBinding::new(vec![], "Any input", None)),
+				],
+				generate_text_input_documentation(
+					key_bindings.generic.text_input.mode,
+					false,
+					false,
+				),
+			]
+			.concat(),
 		}
 	}
 }

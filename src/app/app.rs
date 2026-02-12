@@ -121,6 +121,7 @@ pub struct App<'a> {
 	pub result_throbber_state: ThrobberState,
 	pub result_vertical_scrollbar: StatefulScrollbar,
 	pub result_horizontal_scrollbar: StatefulScrollbar,
+	pub response_body_text_area: TextInput,
 
 	pub last_messages_area_size: (u16, u16),
 
@@ -260,6 +261,7 @@ impl App<'_> {
 			received_response: Arc::new(Mutex::new(false)),
 			result_vertical_scrollbar: StatefulScrollbar::default(),
 			result_horizontal_scrollbar: StatefulScrollbar::default(),
+			response_body_text_area: TextInput::new_multiline(),
 
 			last_messages_area_size: (0, 0),
 			script_console: ScriptConsole {

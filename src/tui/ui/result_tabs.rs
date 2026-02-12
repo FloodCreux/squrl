@@ -19,7 +19,10 @@ use crate::models::protocol::protocol::Protocol;
 use crate::models::protocol::ws::ws::Sender;
 use crate::models::request::Request;
 use crate::models::response::ResponseContent;
+use crate::tui::app_states::AppState;
 use crate::tui::utils::centered_rect::centered_rect;
+use crate::tui::utils::stateful::text_input::MultiLineTextInput;
+use crate::tui::utils::syntax_highlighting::SYNTAX_SET;
 
 #[derive(Default, Clone, Copy, PartialOrd, PartialEq, Display, FromRepr, EnumIter)]
 pub enum RequestResultTabs {
@@ -200,28 +203,38 @@ impl App<'_> {
 					None => {}
 					Some(content) => match content {
 						ResponseContent::Body(body) => {
-							let lines: Vec<Line> = if !self.config.is_syntax_highlighting_disabled()
-								&& self.syntax_highlighting.highlighted_body.is_some()
-							{
-								self.syntax_highlighting.highlighted_body.clone().unwrap()
+							// If in selection mode, render the TextInput instead
+							if self.state == AppState::SelectingResponseBody {
+								let syntax = SYNTAX_SET.find_syntax_plain_text().clone();
+								frame.render_widget(
+									MultiLineTextInput(&mut self.response_body_text_area, syntax),
+									request_result_layout[2],
+								);
 							} else {
-								body.lines().map(Line::raw).collect()
-							};
+								let lines: Vec<Line> =
+									if !self.config.is_syntax_highlighting_disabled()
+										&& self.syntax_highlighting.highlighted_body.is_some()
+									{
+										self.syntax_highlighting.highlighted_body.clone().unwrap()
+									} else {
+										body.lines().map(Line::raw).collect()
+									};
 
-							let mut body_paragraph = Paragraph::new(lines);
+								let mut body_paragraph = Paragraph::new(lines);
 
-							if self.config.should_wrap_body() {
-								body_paragraph = body_paragraph
-									.wrap(Wrap::default())
-									.scroll((self.result_vertical_scrollbar.scroll, 0));
-							} else {
-								body_paragraph = body_paragraph.scroll((
-									self.result_vertical_scrollbar.scroll,
-									self.result_horizontal_scrollbar.scroll,
-								));
+								if self.config.should_wrap_body() {
+									body_paragraph = body_paragraph
+										.wrap(Wrap::default())
+										.scroll((self.result_vertical_scrollbar.scroll, 0));
+								} else {
+									body_paragraph = body_paragraph.scroll((
+										self.result_vertical_scrollbar.scroll,
+										self.result_horizontal_scrollbar.scroll,
+									));
+								}
+
+								frame.render_widget(body_paragraph, request_result_layout[2]);
 							}
-
-							frame.render_widget(body_paragraph, request_result_layout[2]);
 						}
 						ResponseContent::Image(image_response) => match &image_response.image {
 							_ if self.config.is_image_preview_disabled() => {

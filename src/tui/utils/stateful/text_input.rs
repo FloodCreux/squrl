@@ -222,6 +222,22 @@ impl TextInput {
 		}
 	}
 
+	pub fn new_multiline() -> Self {
+		let state = EditorState::default();
+
+		Self {
+			state,
+			event_handler: None,
+			default_mode: EditorMode::Normal,
+			block_title: None,
+			is_single_line: false,
+			insert_mode_only: false,
+			highlight_text: true,
+			highlight_block: false,
+			display_cursor: true,
+		}
+	}
+
 	pub fn update_handler(&mut self) {
 		let editor_handler = EditorEventHandler::new(generate_key_handler(
 			self.is_single_line,

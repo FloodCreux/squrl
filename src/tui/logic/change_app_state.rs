@@ -304,4 +304,29 @@ impl App<'_> {
 	pub fn display_request_export_state(&mut self) {
 		self.set_app_state(AppState::DisplayingRequestExport);
 	}
+
+	pub fn select_response_body_state(&mut self) {
+		let local_selected_request = self.get_selected_request_as_local();
+		let selected_request = local_selected_request.read();
+
+		// Only allow selection if there's a response body
+		if let Some(content) = &selected_request.response.content {
+			use crate::models::response::ResponseContent;
+			if let ResponseContent::Body(body) = content {
+				// Sync the response body to the text area
+				self.response_body_text_area.clear();
+				self.response_body_text_area.push_str(body);
+				self.response_body_text_area.move_cursor_start();
+				self.response_body_text_area.reset_mode();
+				self.response_body_text_area.update_handler();
+
+				self.set_app_state(AppState::SelectingResponseBody);
+			}
+		}
+	}
+
+	pub fn exit_response_body_selection_state(&mut self) {
+		self.response_body_text_area.reset_selection();
+		self.set_app_state(AppState::SelectedRequest);
+	}
 }

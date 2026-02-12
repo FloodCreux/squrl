@@ -143,7 +143,8 @@ impl App<'_> {
 			| EditingPostRequestScript
 			| EditingRequestSettings
 			| ChoosingRequestExportFormat
-			| DisplayingRequestExport => {
+			| DisplayingRequestExport
+			| SelectingResponseBody => {
 				let local_selected_request = self.get_selected_request_as_local();
 				let selected_request = local_selected_request.read();
 
@@ -190,6 +191,7 @@ impl App<'_> {
 				| EditingPreRequestScript
 				| EditingPostRequestScript
 				| EditingRequestSettings
+				| SelectingResponseBody
 		)
 	}
 }
