@@ -132,8 +132,15 @@ impl App<'_> {
 				AppEvent::DisplayEnvEditor(_) => self.display_env_editor_state(),
 				AppEvent::DisplayCookies(_) => self.display_cookies_state(),
 				AppEvent::DisplayLogs(_) => self.display_logs_state(),
+				AppEvent::DisplayThemePicker(_) => self.choose_theme_state(),
 
-				AppEvent::GoBackToLastState(_) => self.normal_state(),
+				AppEvent::GoBackToLastState(_) => match self.state {
+					crate::tui::app_states::AppState::ChoosingTheme => {
+						self.theme_popup.cancel();
+						self.normal_state();
+					}
+					_ => self.normal_state(),
+				},
 
 				/* Env */
 				AppEvent::EditEnvVariable(_) => {
@@ -809,6 +816,23 @@ impl App<'_> {
 				}
 				AppEvent::KeyEventSelectResponseBody(_) => {
 					self.response_body_text_area.key_event(key, Some(terminal))
+				}
+
+				/* Theme Picker */
+				AppEvent::ThemePickerMoveUp(_) => {
+					debug!("ThemePickerMoveUp event triggered");
+					self.theme_popup.previous();
+				}
+				AppEvent::ThemePickerMoveDown(_) => {
+					debug!("ThemePickerMoveDown event triggered");
+					self.theme_popup.next();
+				}
+				AppEvent::ThemePickerConfirm(_) => {
+					debug!("ThemePickerConfirm event triggered");
+					if let Some(theme_name) = self.theme_popup.confirm() {
+						self.save_theme_to_global_config(&theme_name);
+					}
+					self.go_back_to_last_state();
 				}
 
 				/* Others */

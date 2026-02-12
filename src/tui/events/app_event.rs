@@ -27,6 +27,7 @@ get_key_bindings! {
 		DisplayEnvEditor(EventKeyBinding),
 		DisplayCookies(EventKeyBinding),
 		DisplayLogs(EventKeyBinding),
+		DisplayThemePicker(EventKeyBinding),
 
 		GoBackToLastState(EventKeyBinding),
 
@@ -286,6 +287,12 @@ get_key_bindings! {
 		RequestSettingsToggleSettingLeft(EventKeyBinding),
 		RequestSettingsToggleSettingRight(EventKeyBinding),
 		ModifyRequestSettings(EventKeyBinding),
+
+		/* Theme Picker */
+
+		ThemePickerMoveUp(EventKeyBinding),
+		ThemePickerMoveDown(EventKeyBinding),
+		ThemePickerConfirm(EventKeyBinding),
 
 		/* Others */
 

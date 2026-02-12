@@ -119,4 +119,8 @@ pub enum AppState {
 	/* Response */
 	#[strum(to_string = "Selecting response body")]
 	SelectingResponseBody,
+
+	/* Theme */
+	#[strum(to_string = "Choosing theme")]
+	ChoosingTheme,
 }

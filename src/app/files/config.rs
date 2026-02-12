@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
-use std::fs::OpenOptions;
-use std::io::Read;
+use std::fs::{self, OpenOptions};
+use std::io::{Read, Write};
 use std::path::Path;
 use std::sync::OnceLock;
-use tracing::trace;
+use tracing::{trace, warn};
 
 use crate::app::app::App;
 use crate::errors::panic_error;
@@ -13,6 +13,10 @@ pub static SKIP_SAVE_REQUESTS_RESPONSE: OnceLock<bool> = OnceLock::new();
 
 #[derive(Default, Serialize, Deserialize)]
 pub struct Config {
+	#[serde(default)]
+	/// Theme preset name (e.g., "dracula", "catppuccin_mocha", "gruvbox")
+	pub theme: Option<String>,
+
 	#[serde(default)]
 	/// Should disable syntax highlighting for responses
 	pub disable_syntax_highlighting: Option<bool>,
@@ -49,6 +53,10 @@ pub struct Proxy {
 }
 
 impl Config {
+	pub fn get_theme(&self) -> Option<&str> {
+		self.theme.as_deref()
+	}
+
 	pub fn is_syntax_highlighting_disabled(&self) -> bool {
 		self.disable_syntax_highlighting.unwrap_or(false)
 	}
@@ -139,6 +147,10 @@ impl App<'_> {
 
 		// Replace an attribute if it is not set
 
+		if self.config.theme.is_none() {
+			self.config.theme = global_config.theme;
+		}
+
 		if self.config.disable_syntax_highlighting.is_none() {
 			self.config.disable_syntax_highlighting = global_config.disable_syntax_highlighting;
 		}
@@ -171,5 +183,65 @@ impl App<'_> {
 		self.config.set_should_skip_requests_response();
 
 		trace!("Global config file parsed!");
+	}
+
+	/// Save theme selection to global config file
+	pub fn save_theme_to_global_config(&mut self, theme_name: &str) {
+		use crate::cli::args::ARGS;
+
+		let global_config_path = match &ARGS.user_config_directory {
+			Some(dir) => dir.join("global.toml"),
+			None => {
+				warn!("Could not determine user config directory for saving theme");
+				return;
+			}
+		};
+
+		// Read existing config or create new one
+		let mut config: Config = if global_config_path.exists() {
+			match fs::read_to_string(&global_config_path) {
+				Ok(content) => toml::from_str(&content).unwrap_or_default(),
+				Err(_) => Config::default(),
+			}
+		} else {
+			Config::default()
+		};
+
+		// Update theme
+		config.theme = Some(theme_name.to_string());
+
+		// Also update our local config
+		self.config.theme = Some(theme_name.to_string());
+
+		// Serialize and write
+		match toml::to_string_pretty(&config) {
+			Ok(content) => {
+				// Ensure directory exists
+				if let Some(parent) = global_config_path.parent() {
+					let _ = fs::create_dir_all(parent);
+				}
+
+				match OpenOptions::new()
+					.write(true)
+					.create(true)
+					.truncate(true)
+					.open(&global_config_path)
+				{
+					Ok(mut file) => {
+						if let Err(e) = file.write_all(content.as_bytes()) {
+							warn!("Could not write global config file: {}", e);
+						} else {
+							trace!("Saved theme '{}' to global config", theme_name);
+						}
+					}
+					Err(e) => {
+						warn!("Could not open global config file for writing: {}", e);
+					}
+				}
+			}
+			Err(e) => {
+				warn!("Could not serialize config: {}", e);
+			}
+		}
 	}
 }

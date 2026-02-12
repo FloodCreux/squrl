@@ -125,6 +125,11 @@ impl AppState {
 						"Display logs",
 						None,
 					)),
+					DisplayThemePicker(EventKeyBinding::new(
+						vec![key_bindings.main_menu.display_theme_picker],
+						"Theme picker",
+						None,
+					)),
 				];
 
 				base_events.extend(other_events);
@@ -1389,6 +1394,28 @@ impl AppState {
 				),
 			]
 			.concat(),
+			ChoosingTheme => vec![
+				GoBackToLastState(EventKeyBinding::new(
+					vec![key_bindings.generic.navigation.go_back],
+					"Cancel",
+					Some("Cancel"),
+				)),
+				ThemePickerMoveUp(EventKeyBinding::new(
+					vec![key_bindings.generic.navigation.move_cursor_up],
+					"Previous theme",
+					Some("Up"),
+				)),
+				ThemePickerMoveDown(EventKeyBinding::new(
+					vec![key_bindings.generic.navigation.move_cursor_down],
+					"Next theme",
+					Some("Down"),
+				)),
+				ThemePickerConfirm(EventKeyBinding::new(
+					vec![key_bindings.generic.navigation.select],
+					"Confirm theme",
+					Some("Confirm"),
+				)),
+			],
 		}
 	}
 }

@@ -41,6 +41,7 @@ nest! {
 			pub display_env_editor: KeyCombination,
 			pub display_cookies: KeyCombination,
 			pub display_logs: KeyCombination,
+			pub display_theme_picker: KeyCombination,
 		},
 
 		pub generic: #[derive(Copy, Clone, Deserialize)] #[serde(default)] pub struct Generic {
@@ -176,6 +177,7 @@ impl Default for MainMenu {
 			display_env_editor: key!(ctrl - e),
 			display_cookies: key!(c),
 			display_logs: key!(l),
+			display_theme_picker: key!(shift - T),
 		}
 	}
 }

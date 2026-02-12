@@ -1,0 +1,35 @@
+# Catppuccin Macchiato - Dark Catppuccin variant
+# https://github.com/catppuccin/catppuccin
+
+[UI]
+font_color = { Rgb = [198, 160, 246] }  # Mauve
+main_foreground_color = { Rgb = [198, 160, 246] }  # Mauve
+secondary_foreground_color = { Rgb = [128, 135, 162] }  # Overlay1
+main_background_color = { Rgb = [54, 58, 79] }  # Surface0
+secondary_background_color = { Rgb = [36, 39, 58] }  # Base
+separator_color = { Rgb = [91, 96, 120] }  # Surface2
+
+[Others]
+selection_highlight_color = { Rgb = [238, 212, 159] }  # Yellow
+environment_variable_highlight_color = { Rgb = [139, 213, 202] }  # Teal
+
+[HTTP.Methods]
+GET = { Rgb = [166, 218, 149] }  # Green
+POST = { Rgb = [238, 212, 159] }  # Yellow
+PUT = { Rgb = [138, 173, 244] }  # Blue
+PATCH = { Rgb = [139, 213, 202] }  # Teal
+DELETE = { Rgb = [237, 135, 150] }  # Red
+HEAD = { Rgb = [166, 218, 149] }  # Green
+OPTIONS = { Rgb = [245, 189, 230] }  # Pink
+TRACE = { Rgb = [245, 169, 127] }  # Peach
+CONNECT = { Rgb = [198, 160, 246] }  # Mauve
+
+[Websocket.connection_status]
+connected = { Rgb = [166, 218, 149] }  # Green
+disconnected = { Rgb = [237, 135, 150] }  # Red
+
+[Websocket.messages]
+server_foreground_color = { Rgb = [138, 173, 244] }  # Blue
+server_background_color = { Rgb = [54, 58, 79] }  # Surface0
+you_background_color = { Rgb = [198, 160, 246] }  # Mauve
+details_color = { Rgb = [128, 135, 162] }  # Overlay1

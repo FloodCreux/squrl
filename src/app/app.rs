@@ -30,6 +30,7 @@ use crate::tui::utils::stateful::stateful_scrollbar::StatefulScrollbar;
 use crate::tui::utils::stateful::stateful_tree::StatefulTree;
 use crate::tui::utils::stateful::text_input::TextInput;
 use crate::tui::utils::stateful::text_input_selection::TextInputSelection;
+use crate::tui::utils::stateful::theme_popup::ThemePopup;
 use crate::tui::utils::stateful::validation_popup::ValidationPopup;
 use crate::tui::utils::syntax_highlighting::SyntaxHighlighting;
 #[cfg(feature = "clipboard")]
@@ -133,6 +134,9 @@ pub struct App<'a> {
 
 	pub export_request: ChoicePopup<ExportFormat>,
 	pub display_request_export: DisplayPopup,
+
+	/* Theme */
+	pub theme_popup: ThemePopup,
 
 	#[cfg(feature = "clipboard")]
 	pub clipboard: Option<Clipboard>,
@@ -277,6 +281,9 @@ impl App<'_> {
 				selection: 0,
 			},
 			display_request_export: DisplayPopup::default(),
+
+			/* Theme */
+			theme_popup: ThemePopup::new(),
 
 			#[cfg(feature = "clipboard")]
 			clipboard: Clipboard::new().ok(),

@@ -120,6 +120,7 @@ impl<'a> App<'a> {
 			DeletingRequest => self.render_deleting_request_popup(frame),
 			RenamingCollection => self.render_renaming_collection_popup(frame),
 			RenamingRequest => self.render_renaming_request_popup(frame),
+			ChoosingTheme => self.render_theme_picker_popup(frame),
 			_ => {}
 		}
 	}

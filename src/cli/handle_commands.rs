@@ -4,6 +4,7 @@ use crate::cli::args::Command::*;
 use crate::cli::commands::import::ImportType;
 use crate::cli::handlers::completions::generate_completions;
 use crate::cli::handlers::man::generate_man_pages;
+use crate::cli::handlers::theme::handle_theme_command;
 use crate::errors::panic_error;
 
 impl App<'_> {
@@ -29,6 +30,7 @@ impl App<'_> {
 			},
 			Man(_) => generate_man_pages(),
 			Request(request_command) => self.handle_request_command(request_command).await,
+			Theme(theme_command) => handle_theme_command(theme_command),
 			Try(try_command) => {
 				self.try_request(&try_command.new_request_command, &try_command.send_command)
 					.await

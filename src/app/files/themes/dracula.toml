@@ -1,0 +1,35 @@
+# Dracula theme - Purple-based dark theme
+# https://draculatheme.com/
+
+[UI]
+font_color = { Rgb = [189, 147, 249] }  # Purple
+main_foreground_color = { Rgb = [189, 147, 249] }  # Purple
+secondary_foreground_color = { Rgb = [98, 114, 164] }  # Comment
+main_background_color = { Rgb = [68, 71, 90] }  # Current Line
+secondary_background_color = { Rgb = [40, 42, 54] }  # Background
+separator_color = { Rgb = [98, 114, 164] }  # Comment
+
+[Others]
+selection_highlight_color = { Rgb = [255, 121, 198] }  # Pink
+environment_variable_highlight_color = { Rgb = [139, 233, 253] }  # Cyan
+
+[HTTP.Methods]
+GET = { Rgb = [80, 250, 123] }  # Green
+POST = { Rgb = [241, 250, 140] }  # Yellow
+PUT = { Rgb = [139, 233, 253] }  # Cyan
+PATCH = { Rgb = [139, 233, 253] }  # Cyan
+DELETE = { Rgb = [255, 85, 85] }  # Red
+HEAD = { Rgb = [80, 250, 123] }  # Green
+OPTIONS = { Rgb = [255, 121, 198] }  # Pink
+TRACE = { Rgb = [241, 250, 140] }  # Yellow
+CONNECT = { Rgb = [189, 147, 249] }  # Purple
+
+[Websocket.connection_status]
+connected = { Rgb = [80, 250, 123] }  # Green
+disconnected = { Rgb = [255, 85, 85] }  # Red
+
+[Websocket.messages]
+server_foreground_color = { Rgb = [139, 233, 253] }  # Cyan
+server_background_color = { Rgb = [68, 71, 90] }  # Current Line
+you_background_color = { Rgb = [189, 147, 249] }  # Purple
+details_color = { Rgb = [98, 114, 164] }  # Comment

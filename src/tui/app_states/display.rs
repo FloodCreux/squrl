@@ -166,6 +166,10 @@ impl App<'_> {
 					])
 				}
 			}
+
+			ChoosingTheme => Line::from(self.state.to_string())
+				.fg(THEME.read().ui.font_color)
+				.bg(THEME.read().ui.main_background_color),
 		}
 	}
 

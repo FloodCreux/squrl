@@ -8,6 +8,7 @@ use crate::cli::commands::env::EnvCommand;
 use crate::cli::commands::import::ImportCommand;
 use crate::cli::commands::man::ManCommand;
 use crate::cli::commands::request_commands::request_commands::RequestCommand;
+use crate::cli::commands::theme::ThemeCommand;
 use crate::cli::commands::try_command::TryCommand;
 use crate::errors::panic_error;
 use clap::builder::Styles;
@@ -47,6 +48,10 @@ pub struct Args {
 	/// Avoid using ANSI format for log file/output
 	#[arg(long, global = true, default_value_t = false)]
 	pub no_ansi_log: bool,
+
+	/// Use a preset theme (overrides config file setting)
+	#[arg(long, global = true)]
+	pub theme: Option<String>,
 
 	#[command(flatten)]
 	pub verbose: Verbosity,
@@ -91,6 +96,10 @@ squrl
  - completions
 	  - bash, powershell, fish, zsh
  - man
+ - theme
+	  - list
+	  - preview
+	  - export
 */
 
 #[derive(Subcommand, Debug, Clone)]
@@ -113,6 +122,9 @@ pub enum Command {
 	/// Create a completion file
 	Completions(CompletionsCommand),
 
+	/// Manage themes (list, preview, export)
+	Theme(ThemeCommand),
+
 	Man(ManCommand),
 }
 
@@ -129,7 +141,7 @@ lazy_static! {
 				// Commands that take an output dir
 				Command::Completions(CompletionsCommand { output_directory, .. }) | Command::Man(ManCommand { output_directory, .. }) => (output_directory, false),
 				// Commands that use no dir at all
-				Command::Try(_) => (None, false),
+				Command::Try(_) | Command::Theme(_) => (None, false),
 				// Commands that use the app dir
 				_ => (Some(choose_app_directory(args.directory, &config_directory)), true)
 			},
@@ -146,6 +158,7 @@ lazy_static! {
 			// should_run_tui: args.tui,
 			should_save: !args.dry_run,
 			should_parse_directory,
+			theme: args.theme,
 			verbosity: args.verbose,
 			ansi_log: !args.no_ansi_log
 		}
@@ -214,6 +227,7 @@ pub struct GlobalArgs {
 	// pub should_run_tui: bool,
 	pub should_save: bool,
 	pub should_parse_directory: bool,
+	pub theme: Option<String>,
 	pub verbosity: Verbosity,
 	pub ansi_log: bool,
 }

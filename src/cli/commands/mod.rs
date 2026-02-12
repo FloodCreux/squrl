@@ -6,4 +6,5 @@ pub(crate) mod key;
 pub(crate) mod key_value;
 pub(crate) mod man;
 pub(crate) mod request_commands;
+pub(crate) mod theme;
 pub(crate) mod try_command;

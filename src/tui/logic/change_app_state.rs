@@ -350,4 +350,13 @@ impl App<'_> {
 		self.response_body_text_area.reset_selection();
 		self.set_app_state(AppState::SelectedRequest);
 	}
+
+	pub fn choose_theme_state(&mut self) {
+		self.theme_popup.init();
+		self.set_app_state(AppState::ChoosingTheme);
+	}
+
+	pub fn go_back_to_last_state(&mut self) {
+		self.normal_state();
+	}
 }

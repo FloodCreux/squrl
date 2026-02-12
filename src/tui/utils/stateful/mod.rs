@@ -12,4 +12,5 @@ pub(crate) mod stateful_tree;
 pub(crate) mod table_navigation;
 pub(crate) mod text_input;
 pub(crate) mod text_input_selection;
+pub(crate) mod theme_popup;
 pub(crate) mod validation_popup;

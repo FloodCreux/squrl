@@ -4,3 +4,4 @@ pub(crate) mod env;
 pub(crate) mod import;
 pub(crate) mod man;
 pub(crate) mod request;
+pub(crate) mod theme;

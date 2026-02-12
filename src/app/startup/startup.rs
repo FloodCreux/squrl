@@ -62,7 +62,7 @@ impl<'a> App<'a> {
 			CLI(command.clone())
 		} else {
 			self.parse_key_bindings_file();
-			self.parse_theme_file();
+			self.load_theme();
 			self.update_text_inputs_handler();
 
 			TUI

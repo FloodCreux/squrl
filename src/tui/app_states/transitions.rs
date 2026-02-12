@@ -39,7 +39,8 @@ pub fn next_app_state(app_state: &AppState) -> AppState {
 		EditingRequestSettings => ChoosingRequestExportFormat,
 		ChoosingRequestExportFormat => DisplayingRequestExport,
 		DisplayingRequestExport => SelectingResponseBody,
-		SelectingResponseBody => Normal,
+		SelectingResponseBody => ChoosingTheme,
+		ChoosingTheme => Normal,
 	}
 }
 
@@ -82,5 +83,6 @@ pub fn previous_app_state(app_state: &AppState) -> AppState {
 		ChoosingRequestExportFormat => EditingRequestSettings,
 		DisplayingRequestExport => ChoosingRequestExportFormat,
 		SelectingResponseBody => DisplayingRequestExport,
+		ChoosingTheme => SelectingResponseBody,
 	}
 }

@@ -1,0 +1,35 @@
+# Gruvbox Dark - Retro groove color scheme
+# https://github.com/morhetz/gruvbox
+
+[UI]
+font_color = { Rgb = [211, 134, 155] }  # Purple
+main_foreground_color = { Rgb = [211, 134, 155] }  # Purple
+secondary_foreground_color = { Rgb = [146, 131, 116] }  # Gray
+main_background_color = { Rgb = [60, 56, 54] }  # bg1
+secondary_background_color = { Rgb = [40, 40, 40] }  # bg0
+separator_color = { Rgb = [80, 73, 69] }  # bg2
+
+[Others]
+selection_highlight_color = { Rgb = [250, 189, 47] }  # Yellow
+environment_variable_highlight_color = { Rgb = [142, 192, 124] }  # Aqua
+
+[HTTP.Methods]
+GET = { Rgb = [184, 187, 38] }  # Green
+POST = { Rgb = [250, 189, 47] }  # Yellow
+PUT = { Rgb = [131, 165, 152] }  # Blue
+PATCH = { Rgb = [142, 192, 124] }  # Aqua
+DELETE = { Rgb = [251, 73, 52] }  # Red
+HEAD = { Rgb = [184, 187, 38] }  # Green
+OPTIONS = { Rgb = [211, 134, 155] }  # Purple
+TRACE = { Rgb = [254, 128, 25] }  # Orange
+CONNECT = { Rgb = [131, 165, 152] }  # Blue
+
+[Websocket.connection_status]
+connected = { Rgb = [184, 187, 38] }  # Green
+disconnected = { Rgb = [251, 73, 52] }  # Red
+
+[Websocket.messages]
+server_foreground_color = { Rgb = [131, 165, 152] }  # Blue
+server_background_color = { Rgb = [60, 56, 54] }  # bg1
+you_background_color = { Rgb = [211, 134, 155] }  # Purple
+details_color = { Rgb = [146, 131, 116] }  # Gray

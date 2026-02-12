@@ -15,11 +15,11 @@ use crate::cli::args::ARGS;
 use crate::errors::panic_error;
 
 nest! {
-	#[derive(Serialize, Deserialize)]
+	#[derive(Clone, Serialize, Deserialize)]
 	pub struct Theme {
 		#[serde(alias = "UI")]
 		pub ui:
-			#[derive(Serialize, Deserialize)]
+			#[derive(Clone, Serialize, Deserialize)]
 			pub struct ThemeUI {
 				pub font_color: Color,
 				pub app_background: Option<Color>,
@@ -35,18 +35,18 @@ nest! {
 
 		#[serde(alias = "Others")]
 		pub others:
-			#[derive(Serialize, Deserialize)]
+			#[derive(Clone, Serialize, Deserialize)]
 			pub struct ThemeOthers {
 				pub selection_highlight_color: Color,
 				pub environment_variable_highlight_color: Color,
 			},
 
 		#[serde(alias = "HTTP")]
-		pub http: #[derive(Serialize, Deserialize)]
+		pub http: #[derive(Clone, Serialize, Deserialize)]
 			pub struct ThemeHttp {
 			#[serde(alias = "Methods")]
 			pub methods:
-				#[derive(Serialize, Deserialize)]
+				#[derive(Clone, Serialize, Deserialize)]
 				pub struct ThemeMethods {
 					#[serde(alias = "GET")]
 					pub get: Color,
@@ -71,11 +71,11 @@ nest! {
 
 		#[serde(alias = "Websocket")]
 		pub websocket:
-			#[derive(Serialize, Deserialize)]
+			#[derive(Clone, Serialize, Deserialize)]
 			pub struct ThemeWebsocket {
 				#[serde(alias = "Connection Statuses")]
 				pub connection_status:
-					#[derive(Serialize, Deserialize)]
+					#[derive(Clone, Serialize, Deserialize)]
 					pub struct ThemeConnectionStatuses {
 						#[serde(alias = "Connected")]
 						pub connected: Color,
@@ -85,7 +85,7 @@ nest! {
 
 				#[serde(alias = "Messages")]
 				pub messages:
-					#[derive(Serialize, Deserialize)]
+					#[derive(Clone, Serialize, Deserialize)]
 					pub struct ThemeMessages {
 						#[serde(alias = "server_foreground_color")]
 						pub server_foreground_color: Color,
@@ -153,7 +153,122 @@ lazy_static! {
 	pub static ref THEME: RwLock<Theme> = RwLock::new(Theme::default());
 }
 
+/// Set the global theme
+pub fn set_theme(theme: Theme) {
+	*THEME.write() = theme;
+}
+
+/// Get a clone of the current theme
+pub fn get_theme() -> Theme {
+	THEME.read().clone()
+}
+
+/// Load and apply a theme by name from presets or user themes directory
+pub fn load_theme_by_name(
+	name: &str,
+	user_themes_dir: Option<&std::path::Path>,
+) -> Result<(), String> {
+	use crate::app::files::theme_presets::load_theme_by_name as load_preset;
+
+	let theme = load_preset(name, user_themes_dir)?;
+	set_theme(theme);
+	trace!("Applied theme: {}", name);
+	Ok(())
+}
+
 impl App<'_> {
+	/// Load theme with the following priority order:
+	/// 1. CLI --theme flag
+	/// 2. SQURL_THEME environment variable (path to custom theme file)
+	/// 3. ~/.config/squrl/theme.toml (custom theme file)
+	/// 4. Config file theme field (preset name)
+	/// 5. Default theme
+	pub fn load_theme(&mut self) {
+		let user_themes_dir = ARGS
+			.user_config_directory
+			.as_ref()
+			.map(|d| d.join("themes"));
+
+		// 1. Check CLI --theme flag first
+		if let Some(theme_name) = &ARGS.theme {
+			trace!("Loading theme from CLI flag: {}", theme_name);
+			match load_theme_by_name(theme_name, user_themes_dir.as_deref()) {
+				Ok(()) => return,
+				Err(e) => {
+					warn!("Could not load theme '{}' from CLI flag: {}", theme_name, e);
+					// Fall through to other methods
+				}
+			}
+		}
+
+		// 2. Check SQURL_THEME environment variable
+		if let Ok(env_theme) = env::var("SQURL_THEME") {
+			let path = expand_tilde(PathBuf::from(env_theme));
+			trace!("Loading theme from SQURL_THEME env: {}", path.display());
+			if self.load_theme_from_file(&path) {
+				return;
+			}
+		}
+
+		// 3. Check ~/.config/squrl/theme.toml
+		if let Some(theme_path) = ARGS
+			.user_config_directory
+			.as_ref()
+			.map(|dir| dir.join("theme.toml"))
+			.filter(|p| p.exists())
+		{
+			trace!("Loading theme from user config: {}", theme_path.display());
+			if self.load_theme_from_file(&theme_path) {
+				return;
+			}
+		}
+
+		// 4. Check config file theme field
+		if let Some(theme_name) = self.config.get_theme() {
+			trace!("Loading theme from config file: {}", theme_name);
+			match load_theme_by_name(theme_name, user_themes_dir.as_deref()) {
+				Ok(()) => return,
+				Err(e) => {
+					warn!("Could not load theme '{}' from config: {}", theme_name, e);
+				}
+			}
+		}
+
+		// 5. Fall back to default
+		trace!("Using default theme");
+	}
+
+	/// Load a theme from a file path, returns true if successful
+	fn load_theme_from_file(&self, path: &PathBuf) -> bool {
+		let mut theme_file = match OpenOptions::new().read(true).open(path) {
+			Ok(theme_file) => theme_file,
+			Err(e) => {
+				warn!("Could not open theme file '{}': {}", path.display(), e);
+				return false;
+			}
+		};
+
+		let mut file_content = String::new();
+		if let Err(e) = theme_file.read_to_string(&mut file_content) {
+			warn!("Could not read theme file '{}': {}", path.display(), e);
+			return false;
+		}
+
+		match toml::from_str::<Theme>(&file_content) {
+			Ok(theme) => {
+				set_theme(theme);
+				trace!("Theme loaded from file: {}", path.display());
+				true
+			}
+			Err(e) => {
+				warn!("Could not parse theme file '{}': {}", path.display(), e);
+				false
+			}
+		}
+	}
+
+	/// Legacy method - kept for backwards compatibility
+	#[allow(dead_code)]
 	pub fn parse_theme_file(&mut self) {
 		let path = match env::var("SQURL_THEME") {
 			// If the SQURL_THEME environment variable exists
