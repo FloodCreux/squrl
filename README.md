@@ -42,13 +42,13 @@ A terminal-based HTTP and WebSocket client built with Rust. Think Postman or Ins
 ### Pre-built binary (recommended)
 
 ```sh
-curl -fsSL https://codeberg.org/flood-mike/squrl/raw/branch/main/curl-install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/FloodCreux/squrl/main/curl-install.sh | sh
 ```
 
 ### Build from source
 
 ```sh
-git clone https://codeberg.org/flood-mike/squrl.git
+git clone https://github.com/FloodCreux/squrl.git
 cd squrl
 ./install.sh
 ```
