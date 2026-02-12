@@ -30,7 +30,7 @@ A terminal-based HTTP and WebSocket client built with Rust. Think Postman or Ins
 - **Request bodies** -- raw text, JSON, XML, HTML, JavaScript, file upload, URL-encoded form, and multipart
 - **Pre/post request scripts** -- JavaScript execution via embedded Boa runtime
 - **Response handling** -- pretty-printed JSON, syntax highlighting, image preview, cookies, and headers
-- **Import** -- Postman collections & environments, cURL commands, OpenAPI specs, and `.http` files
+- **Import** -- Postman collections & environments, cURL commands, OpenAPI specs, and `.http` files (including `WEBSOCKET` requests)
 - **Export** -- HTTP, cURL, PHP Guzzle, Node.js Axios, and Rust reqwest
 - **Themes** -- 9 built-in themes (Gruber Darker, Dracula, Catppuccin variants, Gruvbox, and more) plus custom TOML themes
 - **Key bindings** -- fully customizable with Vim, Emacs, and default modes
@@ -214,9 +214,27 @@ Collection files support an optional `folders` field for grouping requests:
 }
 ```
 
-Folders appear in the collection tree between the collection and its root-level requests. Deleting a folder moves its requests to the collection root. Existing collection files without folders continue to work unchanged.
+Folders appear in the collection tree between the collection and its root-level requests. When creating a new request in the TUI, the popup includes a folder selector -- choose "None (root)" to add to the collection root, or pick a folder to add the request directly into it. If your cursor is already inside a folder, it is pre-selected. Deleting a folder moves its requests to the collection root. Existing collection files without folders continue to work unchanged.
 
-squrl also auto-loads `.http` files from a `requests/` subdirectory when inside a git repository. Subdirectories are searched recursively, and files found inside a child directory of `requests/` are grouped into a folder named after that top-level child directory.
+squrl also auto-loads `.http` files from a `requests/` subdirectory when inside a git repository. Subdirectories are searched recursively, and files found inside a child directory of `requests/` are grouped into a folder named after that top-level child directory. These collections start as ephemeral (in-memory only), but are automatically persisted to disk on first modification.
+
+`.http` files support standard HTTP methods as well as `WEBSOCKET` for WebSocket connections:
+
+```http
+### List Users
+GET https://api.example.com/users
+
+### Create User
+POST https://api.example.com/users
+Content-Type: application/json
+
+{"name": "Jane Doe"}
+
+### Echo WebSocket
+WEBSOCKET wss://echo.websocket.org
+```
+
+WebSocket entries support headers and authentication just like HTTP requests.
 
 ```
 requests/
