@@ -63,11 +63,11 @@ impl App<'_> {
 			name: collection_name.clone(),
 			last_position: Some(self.collections.len() - 1),
 			requests: vec![],
-			path: ARGS.directory.as_ref().unwrap().join(format!(
-				"{}.{}",
-				collection_name,
-				file_format.to_string()
-			)),
+			path: ARGS
+				.directory
+				.as_ref()
+				.unwrap()
+				.join(format!("{}.{}", collection_name, file_format)),
 			file_format,
 		}];
 
@@ -111,7 +111,7 @@ impl App<'_> {
 		}
 
 		// Prevent from having an empty collection
-		if collections.len() > 1 && collections[0].requests.len() == 0 {
+		if collections.len() > 1 && collections[0].requests.is_empty() {
 			collections.remove(0);
 		}
 
@@ -206,7 +206,7 @@ impl App<'_> {
 		};
 
 		// Parse based on file extension
-		let spec: OpenAPI = if path_buf.extension().map_or(false, |ext| ext == "json") {
+		let spec: OpenAPI = if path_buf.extension().is_some_and(|ext| ext == "json") {
 			match serde_json::from_str(&spec_content) {
 				Ok(spec) => spec,
 				Err(e) => {
@@ -250,11 +250,11 @@ impl App<'_> {
 			name: collection_name.clone(),
 			last_position: Some(self.collections.len() - 1),
 			requests: Vec::new(),
-			path: ARGS.directory.as_ref().unwrap().join(format!(
-				"{}.{}",
-				collection_name,
-				file_format.to_string()
-			)),
+			path: ARGS
+				.directory
+				.as_ref()
+				.unwrap()
+				.join(format!("{}.{}", collection_name, file_format)),
 			file_format,
 		};
 
@@ -280,8 +280,8 @@ impl App<'_> {
 					// Process each HTTP method in this path
 					openapi::process_path_operations(
 						&mut collection,
-						&path_item,
-						&path,
+						path_item,
+						path,
 						&base_url,
 						&spec,
 					)?;
@@ -339,11 +339,11 @@ impl App<'_> {
 					name: collection_name.clone(),
 					last_position: Some(self.collections.len() - 1),
 					requests: vec![],
-					path: ARGS.directory.as_ref().unwrap().join(format!(
-						"{}.{}",
-						collection_name,
-						file_format.to_string()
-					)),
+					path: ARGS
+						.directory
+						.as_ref()
+						.unwrap()
+						.join(format!("{}.{}", collection_name, file_format)),
 					file_format,
 				};
 
@@ -399,7 +399,7 @@ impl App<'_> {
 					path: ARGS.directory.as_ref().unwrap().join(format!(
 						"{}.{}",
 						collection_name.clone(),
-						file_format.to_string()
+						file_format
 					)),
 					file_format,
 				};

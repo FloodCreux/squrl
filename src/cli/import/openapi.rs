@@ -322,19 +322,18 @@ pub fn process_request_body(
 			form @ "application/x-www-form-urlencoded" | form @ "multipart/form-data" => {
 				let mut form_data = Vec::new();
 
-				if let Some(schema) = &media_type.schema {
-					if let ReferenceOr::Item(schema) = schema {
-						if let SchemaKind::Type(Type::Object(obj)) = &schema.schema_kind {
-							for (prop_name, schema) in &obj.properties {
-								form_data.push(KeyValue {
-									enabled: true,
-									data: (
-										prop_name.clone(),
-										generate_sample_json(&schema.clone().unbox(), spec)?,
-									),
-								});
-							}
-						}
+				if let Some(schema) = &media_type.schema
+					&& let ReferenceOr::Item(schema) = schema
+					&& let SchemaKind::Type(Type::Object(obj)) = &schema.schema_kind
+				{
+					for (prop_name, schema) in &obj.properties {
+						form_data.push(KeyValue {
+							enabled: true,
+							data: (
+								prop_name.clone(),
+								generate_sample_json(&schema.clone().unbox(), spec)?,
+							),
+						});
 					}
 				}
 
@@ -416,10 +415,10 @@ pub fn generate_sample_json(
 			Type::Object(obj) => {
 				let mut props = serde_json::Map::new();
 				for (prop_name, prop_schema) in &obj.properties {
-					if let Ok(sample) = generate_sample_json(&prop_schema.clone().unbox(), spec) {
-						if let Ok(v) = serde_json::from_str(&sample) {
-							props.insert(prop_name.clone(), v);
-						}
+					if let Ok(sample) = generate_sample_json(&prop_schema.clone().unbox(), spec)
+						&& let Ok(v) = serde_json::from_str(&sample)
+					{
+						props.insert(prop_name.clone(), v);
 					}
 				}
 				serde_json::Value::Object(props)
@@ -470,7 +469,7 @@ pub fn generate_sample_json(
 
 pub fn process_security(
 	request: &mut Request,
-	security_requirements: &Vec<SecurityRequirement>,
+	security_requirements: &[SecurityRequirement],
 	spec: &OpenAPI,
 ) -> anyhow::Result<()> {
 	// Process only the first security requirement for simplicity
@@ -478,44 +477,45 @@ pub fn process_security(
 		// Take only the first security scheme for simplicity
 		if let Some((scheme_name, _scopes)) = security_req.iter().next() {
 			// Find the security scheme in components
-			if let Some(components) = &spec.components {
-				if let Some(scheme) = components.security_schemes.get(scheme_name) {
-					match scheme {
-						ReferenceOr::Item(scheme) => {
-							match &scheme {
-								SecurityScheme::APIKey { name, location, .. } => {
-									match location {
-										APIKeyLocation::Header => request
-											.modify_or_create_header(&name.clone(), "API_KEY"),
-										APIKeyLocation::Query => request.params.push(KeyValue {
-											enabled: true,
-											data: (name.clone(), "API_KEY".to_string()),
-										}),
-										// Not supported
-										APIKeyLocation::Cookie => {}
+			if let Some(components) = &spec.components
+				&& let Some(scheme) = components.security_schemes.get(scheme_name)
+			{
+				match scheme {
+					ReferenceOr::Item(scheme) => {
+						match &scheme {
+							SecurityScheme::APIKey { name, location, .. } => {
+								match location {
+									APIKeyLocation::Header => {
+										request.modify_or_create_header(&name.clone(), "API_KEY")
 									}
+									APIKeyLocation::Query => request.params.push(KeyValue {
+										enabled: true,
+										data: (name.clone(), "API_KEY".to_string()),
+									}),
+									// Not supported
+									APIKeyLocation::Cookie => {}
 								}
-								SecurityScheme::HTTP { scheme, .. } => {
-									request.auth = match scheme.as_str() {
-										"basic" => Auth::BasicAuth(BasicAuth {
-											username: "username".to_string(),
-											password: "password".to_string(),
-										}),
-										"bearer" => Auth::BearerToken(BearerToken {
-											token: "BEARER_TOKEN".to_string(),
-										}),
-										// Digest not supported
-										_ => Auth::NoAuth,
-									}
-								}
-								// Not supported
-								SecurityScheme::OAuth2 { .. }
-								| SecurityScheme::OpenIDConnect { .. } => {}
 							}
+							SecurityScheme::HTTP { scheme, .. } => {
+								request.auth = match scheme.as_str() {
+									"basic" => Auth::BasicAuth(BasicAuth {
+										username: "username".to_string(),
+										password: "password".to_string(),
+									}),
+									"bearer" => Auth::BearerToken(BearerToken {
+										token: "BEARER_TOKEN".to_string(),
+									}),
+									// Digest not supported
+									_ => Auth::NoAuth,
+								}
+							}
+							// Not supported
+							SecurityScheme::OAuth2 { .. }
+							| SecurityScheme::OpenIDConnect { .. } => {}
 						}
-						// For simplicity, not resolving nested references
-						ReferenceOr::Reference { .. } => {}
 					}
+					// For simplicity, not resolving nested references
+					ReferenceOr::Reference { .. } => {}
 				}
 			}
 		}

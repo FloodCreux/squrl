@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 pub fn key_value_vec_to_items_list<'a>(
 	local_env: &Option<Arc<RwLock<Environment>>>,
-	rows: &Vec<KeyValue>,
+	rows: &[KeyValue],
 ) -> (Vec<ListItem<'a>>, Vec<ListItem<'a>>) {
 	let mut keys: Vec<ListItem> = vec![];
 	let mut values: Vec<ListItem> = vec![];

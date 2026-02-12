@@ -4,31 +4,106 @@ use edtui::EditorMode;
 
 macro_rules! for_all_inputs {
 	($self:ident, |$input:ident| $body:expr) => {{
-		{ let $input = &mut $self.env_editor_table.selection_text_input; $body; }
-		{ let $input = &mut $self.new_collection_input; $body; }
-		{ let $input = &mut $self.new_request_popup.text_input; $body; }
-		{ let $input = &mut $self.rename_collection_input; $body; }
-		{ let $input = &mut $self.rename_request_input; $body; }
-		{ let $input = &mut $self.url_text_input; $body; }
-		{ let $input = &mut $self.query_params_table.selection_text_input; $body; }
-		{ let $input = &mut $self.auth_basic_username_text_input; $body; }
-		{ let $input = &mut $self.auth_basic_password_text_input; $body; }
-		{ let $input = &mut $self.auth_bearer_token_text_input; $body; }
-		{ let $input = &mut $self.auth_jwt_secret_text_input; $body; }
-		{ let $input = &mut $self.auth_jwt_payload_text_area; $body; }
-		{ let $input = &mut $self.auth_digest_username_text_input; $body; }
-		{ let $input = &mut $self.auth_digest_password_text_input; $body; }
-		{ let $input = &mut $self.auth_digest_domains_text_input; $body; }
-		{ let $input = &mut $self.auth_digest_realm_text_input; $body; }
-		{ let $input = &mut $self.auth_digest_nonce_text_input; $body; }
-		{ let $input = &mut $self.auth_digest_opaque_text_input; $body; }
-		{ let $input = &mut $self.headers_table.selection_text_input; $body; }
-		{ let $input = &mut $self.body_text_area; $body; }
-		{ let $input = &mut $self.body_form_table.selection_text_input; $body; }
-		{ let $input = &mut $self.body_file_text_input; $body; }
-		{ let $input = &mut $self.message_text_area; $body; }
-		{ let $input = &mut $self.script_console.pre_request_text_area; $body; }
-		{ let $input = &mut $self.script_console.post_request_text_area; $body; }
+		{
+			let $input = &mut $self.env_editor_table.selection_text_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.new_collection_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.new_request_popup.text_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.rename_collection_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.rename_request_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.url_text_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.query_params_table.selection_text_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.auth_basic_username_text_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.auth_basic_password_text_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.auth_bearer_token_text_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.auth_jwt_secret_text_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.auth_jwt_payload_text_area;
+			$body;
+		}
+		{
+			let $input = &mut $self.auth_digest_username_text_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.auth_digest_password_text_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.auth_digest_domains_text_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.auth_digest_realm_text_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.auth_digest_nonce_text_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.auth_digest_opaque_text_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.headers_table.selection_text_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.body_text_area;
+			$body;
+		}
+		{
+			let $input = &mut $self.body_form_table.selection_text_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.body_file_text_input;
+			$body;
+		}
+		{
+			let $input = &mut $self.message_text_area;
+			$body;
+		}
+		{
+			let $input = &mut $self.script_console.pre_request_text_area;
+			$body;
+		}
+		{
+			let $input = &mut $self.script_console.post_request_text_area;
+			$body;
+		}
 	}};
 }
 
@@ -77,7 +152,9 @@ impl App<'_> {
 
 		// Set insert_mode_only for table inputs
 		self.env_editor_table.selection_text_input.insert_mode_only = true;
-		self.query_params_table.selection_text_input.insert_mode_only = true;
+		self.query_params_table
+			.selection_text_input
+			.insert_mode_only = true;
 		self.headers_table.selection_text_input.insert_mode_only = true;
 		self.body_form_table.selection_text_input.insert_mode_only = true;
 

@@ -532,10 +532,7 @@ async fn test_404_not_found_status() {
 	mock.assert_async().await;
 
 	let response = result.unwrap();
-	assert_eq!(
-		response.status_code,
-		Some("404 Not Found".to_string())
-	);
+	assert_eq!(response.status_code, Some("404 Not Found".to_string()));
 	match response.content {
 		Some(ResponseContent::Body(body)) => assert_eq!(body, "Not Found"),
 		other => panic!("Expected Body content, got {:?}", other),

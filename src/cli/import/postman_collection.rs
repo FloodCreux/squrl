@@ -41,12 +41,12 @@ pub enum ImportPostmanError {
 pub fn recursive_has_requests(
 	item: &mut Items,
 	collections: &mut Vec<Collection>,
-	mut nesting_prefix: &mut String,
-	mut depth_level: &mut u16,
+	nesting_prefix: &mut String,
+	depth_level: &mut u16,
 	max_depth: u16,
 	file_format: CollectionFileFormat,
 ) -> anyhow::Result<Option<Arc<RwLock<Request>>>> {
-	return if is_folder(&item) {
+	if is_folder(item) {
 		let mut requests: Vec<Arc<RwLock<Request>>> = vec![];
 
 		let mut folder_name = item.clone().name.unwrap();
@@ -70,8 +70,8 @@ pub fn recursive_has_requests(
 				if let Some(request) = recursive_has_requests(
 					&mut sub_item,
 					collections,
-					&mut nesting_prefix,
-					&mut depth_level,
+					nesting_prefix,
+					depth_level,
 					max_depth,
 					file_format,
 				)? {
@@ -86,18 +86,18 @@ pub fn recursive_has_requests(
 			}
 		}
 
-		if requests.len() > 0 {
+		if !requests.is_empty() {
 			println!("\tFound collection \"{}\"", collection_name);
 
 			let collection = Collection {
 				name: collection_name.clone(),
 				last_position: Some(collections.len() - 1),
 				requests,
-				path: ARGS.directory.as_ref().unwrap().join(format!(
-					"{}.{}",
-					collection_name,
-					file_format.to_string()
-				)),
+				path: ARGS
+					.directory
+					.as_ref()
+					.unwrap()
+					.join(format!("{}.{}", collection_name, file_format)),
 				file_format,
 			};
 
@@ -108,11 +108,11 @@ pub fn recursive_has_requests(
 		Ok(None)
 	} else {
 		Ok(Some(Arc::new(RwLock::new(parse_request(item.clone())?))))
-	};
+	}
 }
 
 pub fn recursive_get_requests(item: &mut Items) -> anyhow::Result<Vec<Arc<RwLock<Request>>>> {
-	return if let Some(items) = &mut item.item {
+	if let Some(items) = &mut item.item {
 		let mut requests: Vec<Arc<RwLock<Request>>> = vec![];
 
 		for item in items {
@@ -122,7 +122,7 @@ pub fn recursive_get_requests(item: &mut Items) -> anyhow::Result<Vec<Arc<RwLock
 		Ok(requests)
 	} else {
 		Ok(vec![Arc::new(RwLock::new(parse_request(item.clone())?))])
-	};
+	}
 }
 
 pub fn is_folder(folder: &Items) -> bool {
@@ -167,7 +167,7 @@ pub fn parse_request(item: Items) -> anyhow::Result<Request> {
 
 			/* QUERY PARAMS */
 
-			match retrieve_query_params(&request_class) {
+			match retrieve_query_params(request_class) {
 				None => {}
 				Some(query_params) => request.params = query_params,
 			}
@@ -186,7 +186,7 @@ pub fn parse_request(item: Items) -> anyhow::Result<Request> {
 
 			/* AUTH */
 
-			match retrieve_auth(&request_class) {
+			match retrieve_auth(request_class) {
 				None => {}
 				Some(auth) => match auth {
 					Ok(auth) => request.auth = auth,
@@ -198,14 +198,14 @@ pub fn parse_request(item: Items) -> anyhow::Result<Request> {
 
 			/* HEADERS */
 
-			match retrieve_headers(&request_class) {
+			match retrieve_headers(request_class) {
 				None => {}
 				Some(headers) => request.headers = headers,
 			}
 
 			/* BODY */
 
-			match retrieve_body(&request_class) {
+			match retrieve_body(request_class) {
 				None => {}
 				Some(body) => {
 					match &body {
@@ -224,7 +224,7 @@ pub fn parse_request(item: Items) -> anyhow::Result<Request> {
 		RequestUnion::String(_) => {}
 	}
 
-	return Ok(request);
+	Ok(request)
 }
 
 pub fn retrieve_query_params(request_class: &RequestClass) -> Option<Vec<KeyValue>> {
@@ -255,7 +255,7 @@ pub fn retrieve_body(request_class: &RequestClass) -> Option<ContentType> {
 		Body::BodyClass(body) => {
 			let body_mode = body.mode?;
 
-			return match body_mode {
+			match body_mode {
 				Mode::Raw => {
 					let body_as_raw = body.raw?;
 
@@ -299,7 +299,7 @@ pub fn retrieve_body(request_class: &RequestClass) -> Option<ContentType> {
 									FormParameterSrcUnion::File(file) => file,
 									// If there are many files, tries to get the first one
 									FormParameterSrcUnion::Files(files) => {
-										files.get(0)?.to_string()
+										files.first()?.to_string()
 									}
 								};
 
@@ -338,7 +338,7 @@ pub fn retrieve_body(request_class: &RequestClass) -> Option<ContentType> {
 
 					Some(ContentType::Form(url_encoded))
 				}
-			};
+			}
 		}
 	}
 }
@@ -369,11 +369,8 @@ pub fn retrieve_auth(request_class: &RequestClass) -> Option<anyhow::Result<Auth
 			let mut bearer_token = String::new();
 
 			for bearer_token_attribute in bearer_token_attributes {
-				match bearer_token_attribute.key.as_str() {
-					"token" => {
-						bearer_token = bearer_token_attribute.value.unwrap().as_str()?.to_string()
-					}
-					_ => {}
+				if bearer_token_attribute.key.as_str() == "token" {
+					bearer_token = bearer_token_attribute.value.unwrap().as_str()?.to_string()
 				}
 			}
 

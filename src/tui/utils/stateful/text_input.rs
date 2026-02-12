@@ -250,6 +250,7 @@ impl TextInput {
 		self.state.lines.clear();
 	}
 
+	#[allow(clippy::inherent_to_string)]
 	pub fn to_string(&self) -> String {
 		self.state.lines.to_string()
 	}

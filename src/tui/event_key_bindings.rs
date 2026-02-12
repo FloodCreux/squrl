@@ -21,10 +21,7 @@ impl EventKeyBinding {
 		EventKeyBinding {
 			keys,
 			event_name: String::from(event_name),
-			short_name: match short_name {
-				None => None,
-				Some(short_name) => Some(String::from(short_name)),
-			},
+			short_name: short_name.map(String::from),
 		}
 	}
 
@@ -73,6 +70,6 @@ impl EventKeyBinding {
 			spans.push(Span::raw(" "));
 		}
 
-		return Some(spans);
+		Some(spans)
 	}
 }

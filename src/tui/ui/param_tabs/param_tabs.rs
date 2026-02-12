@@ -96,11 +96,7 @@ impl App<'_> {
 				RequestParamsTabs::Auth => match request.auth {
 					NoAuth => tab.to_string().to_uppercase(),
 					BasicAuth(_) | BearerToken(_) | JwtToken(_) | Digest(_) => {
-						format!(
-							"{} ({})",
-							tab.to_string().to_uppercase(),
-							request.auth.to_string()
-						)
+						format!("{} ({})", tab.to_string().to_uppercase(), request.auth)
 					}
 				},
 				RequestParamsTabs::Headers => match request.headers.is_empty() {
@@ -117,11 +113,7 @@ impl App<'_> {
 					match http_request.body {
 						NoBody => tab.to_string().to_uppercase(),
 						Multipart(_) | Form(_) | File(_) | Raw(_) | Json(_) | Xml(_) | Html(_)
-						| Javascript(_) => format!(
-							"{} ({})",
-							tab.to_string().to_uppercase(),
-							http_request.body.to_string()
-						),
+						| Javascript(_) => format!("{} ({})", tab.to_string().to_uppercase(), http_request.body),
 					}
 				}
 				RequestParamsTabs::Message => {
@@ -130,7 +122,7 @@ impl App<'_> {
 					format!(
 						"{} ({})",
 						tab.to_string().to_uppercase(),
-						ws_request.message_type.to_string()
+						ws_request.message_type
 					)
 				}
 				RequestParamsTabs::Scripts => tab.to_string().to_uppercase(),

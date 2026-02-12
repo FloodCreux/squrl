@@ -199,6 +199,7 @@ impl Default for TextInput {
 	}
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for TextAreaMode {
 	fn default() -> Self {
 		TextAreaMode::Default
@@ -286,6 +287,7 @@ impl Default for ResultTabs {
 	}
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for KeyBindings {
 	fn default() -> Self {
 		KeyBindings {
@@ -373,8 +375,8 @@ impl App<'_> {
 
 pub fn unique_key_and_help(help: Span<'static>, key: Span<'static>) -> Vec<Span<'static>> {
 	if help.to_string() == key.to_string() {
-		return vec![help];
+		vec![help]
 	} else {
-		return vec![help, Span::raw(" "), key];
+		vec![help, Span::raw(" "), key]
 	}
 }

@@ -155,24 +155,24 @@ lazy_static! {
 fn get_app_config_dir() -> Option<PathBuf> {
 	let project_directory = ProjectDirs::from("com", "flood-creux", "squrl");
 
-	let config_directory = match project_directory {
+	match project_directory {
 		Some(project_directory) => {
 			let config_directory = project_directory.config_dir().to_path_buf();
 
 			// Create the config dir if it does not exist
 			if !config_directory.exists() {
-				fs::create_dir_all(&config_directory).expect(&format!(
-					"Could not recursively create folder \"{}\"",
-					config_directory.display()
-				));
+				fs::create_dir_all(&config_directory).unwrap_or_else(|_| {
+					panic!(
+						"Could not recursively create folder \"{}\"",
+						config_directory.display()
+					)
+				});
 			}
 
 			Some(config_directory)
 		}
 		None => None,
-	};
-
-	config_directory
+	}
 }
 
 fn get_user_config_dir() -> Option<PathBuf> {

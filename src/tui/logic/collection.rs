@@ -136,7 +136,7 @@ impl App<'_> {
 				| ContentType::Javascript(body) => {
 					self.body_form_table.rows = Vec::new();
 
-					self.body_text_area.push_str(&body);
+					self.body_text_area.push_str(body);
 				}
 			},
 			Protocol::WsRequest(ws_request) => {
@@ -153,12 +153,12 @@ impl App<'_> {
 
 		let pre_request_script = match &selected_request.scripts.pre_request_script {
 			None => "",
-			Some(pre_request_script) => &pre_request_script,
+			Some(pre_request_script) => pre_request_script,
 		};
 
 		let post_request_script = match &selected_request.scripts.post_request_script {
 			None => "",
-			Some(pre_request_script) => &pre_request_script,
+			Some(pre_request_script) => pre_request_script,
 		};
 
 		self.script_console
@@ -338,19 +338,14 @@ impl App<'_> {
 				let selected_request_index = self.collections_tree.state.selected().to_vec();
 				let collection_index = selected_request_index[0];
 
-				match self.duplicate_collection(collection_index) {
-					Ok(_) => {}
-					Err(_) => return,
-				}
+				let _ = self.duplicate_collection(collection_index);
 			}
 			// Selection on a request
 			2 => {
 				let selected_request_index = self.collections_tree.state.selected().to_vec();
 
-				match self.duplicate_request(selected_request_index[0], selected_request_index[1]) {
-					Ok(_) => {}
-					Err(_) => return,
-				}
+				let _ =
+					self.duplicate_request(selected_request_index[0], selected_request_index[1]);
 			}
 			_ => {}
 		}

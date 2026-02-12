@@ -26,6 +26,7 @@ impl App<'_> {
 			.read(true)
 			.write(true)
 			.create(true)
+			.truncate(false)
 			.open(path_buf.clone())
 			.expect("\tCould not open collection file");
 
@@ -37,9 +38,8 @@ impl App<'_> {
 			Json => match serde_json::from_str(&file_content) {
 				Ok(collection) => collection,
 				Err(e) => panic_error(format!(
-					"Could not parse JSON collection \"{}\"\n\t{}",
-					path_buf.display(),
-					e.to_string()
+					"Could not parse JSON collection \"{}\"\n\t{e}",
+					path_buf.display()
 				)),
 			},
 			Yaml => match serde_yaml::from_str(&file_content) {

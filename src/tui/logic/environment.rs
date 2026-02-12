@@ -108,20 +108,18 @@ pub fn tui_add_color_to_env_keys<'a>(
 		keys.extend(vec!["NOW", "TIMESTAMP", "UUIDv4", "UUIDv7"]);
 
 		for match_ in regex.captures_iter(&input) {
-			for sub_match in match_.iter() {
-				if let Some(sub_match) = sub_match {
-					for key in &keys {
-						if sub_match.as_str() == &format!("{{{{{}}}}}", key) {
-							let range = sub_match.range();
+			for sub_match in match_.iter().flatten() {
+				for key in &keys {
+					if sub_match.as_str() == format!("{{{{{}}}}}", key) {
+						let range = sub_match.range();
 
-							spans.push(Span::raw(input[tmp_index..range.start].to_string()));
-							spans.push(
-								Span::raw(sub_match.as_str().to_owned())
-									.fg(THEME.read().others.environment_variable_highlight_color),
-							);
+						spans.push(Span::raw(input[tmp_index..range.start].to_string()));
+						spans.push(
+							Span::raw(sub_match.as_str().to_owned())
+								.fg(THEME.read().others.environment_variable_highlight_color),
+						);
 
-							tmp_index = range.end;
-						}
+						tmp_index = range.end;
 					}
 				}
 			}
@@ -132,5 +130,5 @@ pub fn tui_add_color_to_env_keys<'a>(
 		spans.push(Span::raw(input.to_string()));
 	}
 
-	return Line::from(spans);
+	Line::from(spans)
 }

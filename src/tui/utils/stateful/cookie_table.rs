@@ -35,10 +35,18 @@ impl Default for StatefulCookieTable {
 }
 
 impl TableNavigation for StatefulCookieTable {
-	fn rows_len(&self) -> usize { self.rows.len() }
-	fn columns_count(&self) -> usize { COOKIES_COLUMNS_NUMBER }
-	fn selection(&self) -> Option<(usize, usize)> { self.selection }
-	fn set_selection(&mut self, selection: Option<(usize, usize)>) { self.selection = selection; }
+	fn rows_len(&self) -> usize {
+		self.rows.len()
+	}
+	fn columns_count(&self) -> usize {
+		COOKIES_COLUMNS_NUMBER
+	}
+	fn selection(&self) -> Option<(usize, usize)> {
+		self.selection
+	}
+	fn set_selection(&mut self, selection: Option<(usize, usize)>) {
+		self.selection = selection;
+	}
 
 	fn select_row_in_all_states(&mut self, row: usize) {
 		for list_state in self.lists_states.iter_mut() {

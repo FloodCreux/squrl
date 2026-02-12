@@ -16,7 +16,7 @@ impl SettingsPopup {
 	}
 
 	pub fn previous(&mut self) {
-		if self.selection as isize - 1 >= 0 {
+		if self.selection as isize > 0 {
 			self.selection -= 1;
 		} else {
 			self.selection = self.settings.len() - 1;

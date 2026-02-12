@@ -17,6 +17,7 @@ use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, trace};
 
+#[allow(clippy::await_holding_lock)]
 pub async fn send_ws_request(
 	prepared_request: reqwest_middleware::RequestBuilder,
 	local_request: Arc<RwLock<Request>>,
@@ -178,8 +179,8 @@ pub async fn send_ws_request(
 			let message = websocket_rx.try_next().await;
 			drop(websocket_rx);
 			match message {
-				Ok(message) => match message {
-					Some(message) => {
+				Ok(message) => {
+					if let Some(message) = message {
 						let message_type = match message {
 							reqwest_websocket::Message::Text(text) => MessageType::Text(text),
 							reqwest_websocket::Message::Binary(binary) => {
@@ -212,8 +213,7 @@ pub async fn send_ws_request(
 
 						*received_response.lock() = true;
 					}
-					None => {}
-				},
+				}
 				Err(error) => {
 					let mut request = local_request.write();
 					let ws_request = request.get_ws_request_mut().unwrap();
@@ -231,5 +231,5 @@ pub async fn send_ws_request(
 		}
 	});
 
-	return Ok(modified_response);
+	Ok(modified_response)
 }

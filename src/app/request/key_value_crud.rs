@@ -17,6 +17,7 @@ impl App<'_> {
 		find_key(accessor(&req), key)
 	}
 
+	#[allow(clippy::too_many_arguments)]
 	pub fn modify_kv(
 		&mut self,
 		collection_index: usize,
@@ -115,4 +116,3 @@ impl App<'_> {
 		Ok(())
 	}
 }
-

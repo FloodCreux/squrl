@@ -12,7 +12,7 @@ impl App<'_> {
 
 			let export_format = self.export_request.get_selection();
 			let export_result = self
-				.export_request_to_string_with_format(&export_format, &selected_request)
+				.export_request_to_string_with_format(export_format, &selected_request)
 				.unwrap_or_else(|error| error.to_string());
 
 			self.display_request_export.content = export_result.clone();

@@ -67,7 +67,7 @@ fn should_skip_requests_response(_: &RequestResponse) -> bool {
 }
 
 impl App<'_> {
-	pub fn key_value_vec_to_tuple_vec(&self, key_value: &Vec<KeyValue>) -> Vec<(String, String)> {
+	pub fn key_value_vec_to_tuple_vec(&self, key_value: &[KeyValue]) -> Vec<(String, String)> {
 		key_value
 			.iter()
 			.filter_map(|param| {
@@ -267,7 +267,7 @@ impl Request {
 				base_url += "?";
 
 				for (index, enabled_param) in enabled_params.iter().enumerate() {
-					base_url += &enabled_param;
+					base_url += enabled_param;
 
 					if index != enabled_params.len() - 1 {
 						base_url += "&";
@@ -276,7 +276,7 @@ impl Request {
 			}
 		}
 
-		return base_url;
+		base_url
 	}
 
 	pub fn find_and_delete_header(&mut self, input_header: &str) {

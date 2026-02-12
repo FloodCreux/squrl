@@ -200,14 +200,13 @@ impl App<'_> {
 					None => {}
 					Some(content) => match content {
 						ResponseContent::Body(body) => {
-							let lines: Vec<Line>;
-							if !self.config.is_syntax_highlighting_disabled()
+							let lines: Vec<Line> = if !self.config.is_syntax_highlighting_disabled()
 								&& self.syntax_highlighting.highlighted_body.is_some()
 							{
-								lines = self.syntax_highlighting.highlighted_body.clone().unwrap();
+								self.syntax_highlighting.highlighted_body.clone().unwrap()
 							} else {
-								lines = body.lines().map(|line| Line::raw(line)).collect();
-							}
+								body.lines().map(Line::raw).collect()
+							};
 
 							let mut body_paragraph = Paragraph::new(lines);
 
@@ -338,7 +337,7 @@ impl App<'_> {
 						let timestamp = message.timestamp.format(timestamp_format).to_string();
 
 						messages.push(
-							Line::raw(format!("{} {}", message.content.to_string(), timestamp))
+							Line::raw(format!("{} {}", message.content, timestamp))
 								.fg(THEME.read().websocket.messages.details_color)
 								.alignment(alignment),
 						);

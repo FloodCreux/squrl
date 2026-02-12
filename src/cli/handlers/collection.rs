@@ -10,7 +10,7 @@ impl App<'_> {
 		collection_command: &CollectionCommand,
 	) -> anyhow::Result<()> {
 		if let Some(environment_name) = &collection_command.env {
-			let environment_index = self.find_environment(&environment_name)?;
+			let environment_index = self.find_environment(environment_name)?;
 			self.selected_environment = environment_index;
 		}
 
@@ -59,7 +59,7 @@ impl App<'_> {
 		let collection_index = self.find_collection(collection_name)?;
 		let collection = &self.collections[collection_index];
 
-		print_collection(&collection, false, !without_request_names);
+		print_collection(collection, false, !without_request_names);
 
 		Ok(())
 	}

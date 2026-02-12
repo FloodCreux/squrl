@@ -3,6 +3,7 @@ use ratatui::prelude::Color;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumString};
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Default, Debug, Copy, Clone, EnumString, Display, Serialize, Deserialize)]
 pub enum Method {
 	#[default]
@@ -43,7 +44,7 @@ impl Method {
 		}
 	}
 
-	pub fn to_reqwest(&self) -> reqwest::Method {
+	pub fn to_reqwest(self) -> reqwest::Method {
 		match self {
 			Method::GET => reqwest::Method::GET,
 			Method::POST => reqwest::Method::POST,
@@ -59,15 +60,15 @@ impl Method {
 }
 
 pub fn next_method(method: &Method) -> Method {
-	match method {
-		&Method::GET => Method::POST,
-		&Method::POST => Method::PUT,
-		&Method::PUT => Method::PATCH,
-		&Method::PATCH => Method::DELETE,
-		&Method::DELETE => Method::OPTIONS,
-		&Method::OPTIONS => Method::HEAD,
-		&Method::HEAD => Method::TRACE,
-		&Method::TRACE => Method::CONNECT,
-		&Method::CONNECT => Method::GET,
+	match *method {
+		Method::GET => Method::POST,
+		Method::POST => Method::PUT,
+		Method::PUT => Method::PATCH,
+		Method::PATCH => Method::DELETE,
+		Method::DELETE => Method::OPTIONS,
+		Method::OPTIONS => Method::HEAD,
+		Method::HEAD => Method::TRACE,
+		Method::TRACE => Method::CONNECT,
+		Method::CONNECT => Method::GET,
 	}
 }

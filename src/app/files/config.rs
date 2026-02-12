@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs::OpenOptions;
 use std::io::Read;
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::OnceLock;
 use tracing::trace;
 
@@ -78,7 +78,7 @@ impl Config {
 	pub fn get_preferred_collection_file_format(&self) -> CollectionFileFormat {
 		match &self.preferred_collection_file_format {
 			None => CollectionFileFormat::default(),
-			Some(file_format) => file_format.clone(),
+			Some(file_format) => *file_format,
 		}
 	}
 
@@ -88,7 +88,7 @@ impl Config {
 }
 
 impl App<'_> {
-	pub fn parse_config_file(&mut self, path_buf: &PathBuf) {
+	pub fn parse_config_file(&mut self, path_buf: &Path) {
 		let mut file_content = String::new();
 
 		trace!("Trying to open \"squrl.toml\" config file");
@@ -96,7 +96,7 @@ impl App<'_> {
 		let mut config_file = OpenOptions::new()
 			.read(true)
 			.write(true)
-			.open(path_buf.clone())
+			.open(path_buf)
 			.expect("\tCould not open config file");
 
 		config_file
@@ -115,7 +115,7 @@ impl App<'_> {
 		trace!("Config file parsed!");
 	}
 
-	pub fn parse_global_config_file(&mut self, path_buf: &PathBuf) {
+	pub fn parse_global_config_file(&mut self, path_buf: &Path) {
 		let mut file_content = String::new();
 
 		trace!(
@@ -125,7 +125,7 @@ impl App<'_> {
 
 		let mut global_config_file = OpenOptions::new()
 			.read(true)
-			.open(path_buf.clone())
+			.open(path_buf)
 			.expect("\tCould not open global config file");
 
 		global_config_file

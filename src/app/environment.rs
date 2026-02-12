@@ -28,17 +28,11 @@ pub enum EnvironmentError {
 
 impl App<'_> {
 	pub fn get_selected_env_as_local(&self) -> Option<Arc<RwLock<Environment>>> {
-		match self.environments.get(self.selected_environment) {
-			None => None,
-			Some(env) => Some(env.clone()),
-		}
+		self.environments.get(self.selected_environment).cloned()
 	}
 
 	pub fn get_env_as_local_from_index(&self, index: usize) -> Option<Arc<RwLock<Environment>>> {
-		match self.environments.get(index) {
-			None => None,
-			Some(env) => Some(env.clone()),
-		}
+		self.environments.get(index).cloned()
 	}
 
 	pub fn find_environment(&self, environment_name: &str) -> anyhow::Result<usize> {
@@ -267,6 +261,6 @@ impl App<'_> {
 			.replace("{{UUIDv4}}", &Uuid::new_v4().to_string())
 			.replace("{{UUIDv7}}", &Uuid::now_v7().to_string());
 
-		return tmp_string;
+		tmp_string
 	}
 }

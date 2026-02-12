@@ -71,10 +71,18 @@ impl<'a> StatefulCustomTable<'a> {
 }
 
 impl TableNavigation for StatefulCustomTable<'_> {
-	fn rows_len(&self) -> usize { self.rows.len() }
-	fn columns_count(&self) -> usize { 2 }
-	fn selection(&self) -> Option<(usize, usize)> { self.selection }
-	fn set_selection(&mut self, selection: Option<(usize, usize)>) { self.selection = selection; }
+	fn rows_len(&self) -> usize {
+		self.rows.len()
+	}
+	fn columns_count(&self) -> usize {
+		2
+	}
+	fn selection(&self) -> Option<(usize, usize)> {
+		self.selection
+	}
+	fn set_selection(&mut self, selection: Option<(usize, usize)>) {
+		self.selection = selection;
+	}
 
 	fn select_row_in_all_states(&mut self, row: usize) {
 		self.left_state.select(Some(row));

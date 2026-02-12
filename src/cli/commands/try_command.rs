@@ -242,9 +242,13 @@ mod tests {
 
 	#[test]
 	fn new_request_parses_single_header() {
-		let cli =
-			NewRequestCli::try_parse_from(["test", "--add-header", "Content-Type", "application/json"])
-				.unwrap();
+		let cli = NewRequestCli::try_parse_from([
+			"test",
+			"--add-header",
+			"Content-Type",
+			"application/json",
+		])
+		.unwrap();
 		assert_eq!(cli.cmd.add_header, vec!["Content-Type", "application/json"]);
 	}
 
@@ -290,7 +294,8 @@ mod tests {
 
 	#[test]
 	fn new_request_parses_bearer_token() {
-		let cli = NewRequestCli::try_parse_from(["test", "--auth-bearer-token", "mytoken123"]).unwrap();
+		let cli =
+			NewRequestCli::try_parse_from(["test", "--auth-bearer-token", "mytoken123"]).unwrap();
 		assert_eq!(cli.cmd.auth.auth_bearer_token, vec!["mytoken123"]);
 	}
 
@@ -369,7 +374,8 @@ mod tests {
 
 	#[test]
 	fn new_request_parses_body_json() {
-		let cli = NewRequestCli::try_parse_from(["test", "--body-json", r#"{"key":"value"}"#]).unwrap();
+		let cli =
+			NewRequestCli::try_parse_from(["test", "--body-json", r#"{"key":"value"}"#]).unwrap();
 		assert_eq!(cli.cmd.body.body_json.unwrap(), r#"{"key":"value"}"#);
 	}
 
@@ -393,8 +399,8 @@ mod tests {
 
 	#[test]
 	fn new_request_parses_body_javascript() {
-		let cli =
-			NewRequestCli::try_parse_from(["test", "--body-javascript", "console.log('hi')"]).unwrap();
+		let cli = NewRequestCli::try_parse_from(["test", "--body-javascript", "console.log('hi')"])
+			.unwrap();
 		assert_eq!(cli.cmd.body.body_javascript.unwrap(), "console.log('hi')");
 	}
 
@@ -425,20 +431,22 @@ mod tests {
 
 	#[test]
 	fn new_request_parses_body_multipart() {
-		let cli =
-			NewRequestCli::try_parse_from(["test", "--add-body-multipart", "field", "data"]).unwrap();
+		let cli = NewRequestCli::try_parse_from(["test", "--add-body-multipart", "field", "data"])
+			.unwrap();
 		assert_eq!(cli.cmd.body.add_body_multipart, vec!["field", "data"]);
 	}
 
 	#[test]
 	fn new_request_parses_body_file() {
-		let cli = NewRequestCli::try_parse_from(["test", "--body-file", "/path/to/file.txt"]).unwrap();
+		let cli =
+			NewRequestCli::try_parse_from(["test", "--body-file", "/path/to/file.txt"]).unwrap();
 		assert_eq!(cli.cmd.body.body_file.unwrap(), "/path/to/file.txt");
 	}
 
 	#[test]
 	fn new_request_body_types_are_mutually_exclusive() {
-		let result = NewRequestCli::try_parse_from(["test", "--body-json", "{}", "--body-raw", "text"]);
+		let result =
+			NewRequestCli::try_parse_from(["test", "--body-json", "{}", "--body-raw", "text"]);
 		assert!(result.is_err());
 	}
 
@@ -685,8 +693,8 @@ mod tests {
 
 	#[test]
 	fn try_command_with_env() {
-		let cli =
-			TryCli::try_parse_from(["test", "--url", "http://example.com", "--env", "local"]).unwrap();
+		let cli = TryCli::try_parse_from(["test", "--url", "http://example.com", "--env", "local"])
+			.unwrap();
 		assert_eq!(cli.cmd.send_command.env.as_deref(), Some("local"));
 	}
 

@@ -54,11 +54,11 @@ impl App<'_> {
 			name: new_collection_name.clone(),
 			last_position,
 			requests: vec![],
-			path: ARGS.directory.as_ref().unwrap().join(format!(
-				"{}.{}",
-				new_collection_name,
-				file_format.to_string()
-			)),
+			path: ARGS
+				.directory
+				.as_ref()
+				.unwrap()
+				.join(format!("{}.{file_format}", new_collection_name)),
 			file_format,
 		};
 
@@ -165,11 +165,11 @@ impl App<'_> {
 		info!("Collection \"{}\" duplicated", collection.name);
 
 		collection.name = format!("{} copy", collection.name);
-		collection.path = ARGS.directory.as_ref().unwrap().join(format!(
-			"{}.{}",
-			collection.name,
-			collection.file_format.to_string()
-		));
+		collection.path = ARGS
+			.directory
+			.as_ref()
+			.unwrap()
+			.join(format!("{}.{}", collection.name, collection.file_format));
 		self.collections.insert(collection_index + 1, collection);
 		self.save_collection_to_file(collection_index + 1);
 
@@ -205,4 +205,45 @@ impl App<'_> {
 
 fn sanitize_name(name: String) -> String {
 	name.trim().replace("/", "").replace("\"", "")
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn test_sanitize_name_normal_string() {
+		assert_eq!(sanitize_name("my-collection".to_string()), "my-collection");
+	}
+
+	#[test]
+	fn test_sanitize_name_trims_whitespace() {
+		assert_eq!(
+			sanitize_name("  my-collection  ".to_string()),
+			"my-collection"
+		);
+	}
+
+	#[test]
+	fn test_sanitize_name_removes_slashes() {
+		assert_eq!(sanitize_name("my/collection".to_string()), "mycollection");
+	}
+
+	#[test]
+	fn test_sanitize_name_removes_quotes() {
+		assert_eq!(sanitize_name("my\"name\"".to_string()), "myname");
+	}
+
+	#[test]
+	fn test_sanitize_name_removes_all_special() {
+		assert_eq!(
+			sanitize_name("  my/\"collection\"  ".to_string()),
+			"mycollection"
+		);
+	}
+
+	#[test]
+	fn test_sanitize_name_empty_after_sanitization() {
+		assert_eq!(sanitize_name("  /\"  ".to_string()), "");
+	}
 }

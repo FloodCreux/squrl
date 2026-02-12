@@ -18,6 +18,7 @@ pub struct RequestCommand {
 	pub request_subcommand: RequestSubcommand,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Subcommand, Debug, Clone)]
 pub enum RequestSubcommand {
 	Info {

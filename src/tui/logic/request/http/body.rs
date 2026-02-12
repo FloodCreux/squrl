@@ -27,13 +27,16 @@ impl App<'_> {
 		let selection = self.body_form_table.selection.unwrap();
 		let input_text = self.body_form_table.selection_text_input.to_string();
 
-		if let Err(_) = self.modify_request_form_data(
-			selected_request_index.0,
-			selected_request_index.1,
-			input_text,
-			selection.1,
-			selection.0,
-		) {
+		if self
+			.modify_request_form_data(
+				selected_request_index.0,
+				selected_request_index.1,
+				input_text,
+				selection.1,
+				selection.0,
+			)
+			.is_err()
+		{
 			return;
 		}
 
@@ -43,12 +46,15 @@ impl App<'_> {
 	pub fn tui_create_new_form_data(&mut self) {
 		let selected_request_index = &self.collections_tree.selected.unwrap();
 
-		if let Err(_) = self.create_new_form_data(
-			selected_request_index.0,
-			selected_request_index.1,
-			String::from("key"),
-			String::from("value"),
-		) {
+		if self
+			.create_new_form_data(
+				selected_request_index.0,
+				selected_request_index.1,
+				String::from("key"),
+				String::from("value"),
+			)
+			.is_err()
+		{
 			return;
 		}
 
@@ -64,11 +70,14 @@ impl App<'_> {
 		let selection = self.body_form_table.selection.unwrap();
 		let selected_request_index = &self.collections_tree.selected.unwrap();
 
-		if let Err(_) = self.delete_form_data(
-			selected_request_index.0,
-			selected_request_index.1,
-			selection.0,
-		) {
+		if self
+			.delete_form_data(
+				selected_request_index.0,
+				selected_request_index.1,
+				selection.0,
+			)
+			.is_err()
+		{
 			return;
 		}
 
@@ -84,12 +93,15 @@ impl App<'_> {
 		let selection = self.body_form_table.selection.unwrap();
 		let selected_request_index = &self.collections_tree.selected.unwrap();
 
-		if let Err(_) = self.toggle_form_data(
-			selected_request_index.0,
-			selected_request_index.1,
-			None,
-			selection.0,
-		) {
+		if self
+			.toggle_form_data(
+				selected_request_index.0,
+				selected_request_index.1,
+				None,
+				selection.0,
+			)
+			.is_err()
+		{
 			return;
 		}
 
@@ -104,11 +116,14 @@ impl App<'_> {
 		let selection = self.body_form_table.selection.unwrap();
 		let selected_request_index = &self.collections_tree.selected.unwrap();
 
-		if let Err(_) = self.duplicate_form_data(
-			selected_request_index.0,
-			selected_request_index.1,
-			selection.0,
-		) {
+		if self
+			.duplicate_form_data(
+				selected_request_index.0,
+				selected_request_index.1,
+				selection.0,
+			)
+			.is_err()
+		{
 			return;
 		}
 

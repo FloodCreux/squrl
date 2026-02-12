@@ -96,7 +96,7 @@ pub fn execute_pre_request_script(
 			Err(error) => (None, env, error.to_string()),
 		};
 
-	return (result_request, result_env_values, console_output);
+	(result_request, result_env_values, console_output)
 }
 
 pub fn execute_post_request_script(
@@ -158,5 +158,5 @@ pub fn execute_post_request_script(
 			Err(error) => (None, env, error.to_string()),
 		};
 
-	return (response_result, result_env_values, console_output);
+	(response_result, result_env_values, console_output)
 }

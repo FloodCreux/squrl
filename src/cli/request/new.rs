@@ -83,7 +83,7 @@ pub fn create_request_from_new_request_command(
 		protocol,
 		params,
 		auth,
-		headers: vec![base_headers, headers].concat(),
+		headers: [base_headers, headers].concat(),
 		scripts: RequestScripts {
 			pre_request_script: new_request_command.pre_request_script,
 			post_request_script: new_request_command.post_request_script,
@@ -118,7 +118,7 @@ fn string_array_to_key_value_array(string_array: Vec<String>) -> Vec<KeyValue> {
 		})
 	}
 
-	return key_value_array;
+	key_value_array
 }
 
 fn get_auth_from_auth_args(auth_args: AuthArgs) -> anyhow::Result<Auth> {
@@ -132,17 +132,17 @@ fn get_auth_from_auth_args(auth_args: AuthArgs) -> anyhow::Result<Auth> {
 			token: auth_args.auth_bearer_token[0].clone(),
 		}))
 	} else if !auth_args.auth_jwt_token.is_empty() {
-		return Ok(Auth::JwtToken(JwtToken {
+		Ok(Auth::JwtToken(JwtToken {
 			algorithm: JwtAlgorithm::from_str(&auth_args.auth_jwt_token[0], true)
 				.map_err(|e| anyhow!(e))?,
 			secret_type: JwtSecretType::from_str(&auth_args.auth_jwt_token[1], true)
 				.map_err(|e| anyhow!(e))?,
 			secret: auth_args.auth_jwt_token[2].clone(),
 			payload: auth_args.auth_jwt_token[3].clone(),
-		}));
+		}))
 	} else if !auth_args.auth_digest.is_empty() {
 		let www_authenticate_header = &auth_args.auth_digest[2];
-		return match extract_www_authenticate_digest_data(www_authenticate_header) {
+		match extract_www_authenticate_digest_data(www_authenticate_header) {
 			Ok((domains, realm, nonce, opaque, stale, algorithm, qop, user_hash, charset)) => {
 				Ok(Auth::Digest(Digest {
 					username: auth_args.auth_digest[0].clone(),
@@ -160,32 +160,32 @@ fn get_auth_from_auth_args(auth_args: AuthArgs) -> anyhow::Result<Auth> {
 				}))
 			}
 			Err(error) => panic_error(error),
-		};
+		}
 	} else {
-		return Ok(Auth::NoAuth);
+		Ok(Auth::NoAuth)
 	}
 }
 
 fn get_content_type_from_body_args(body_args: BodyArgs) -> ContentType {
 	if let Some(file_path) = &body_args.body_file {
-		return ContentType::File(file_path.clone());
+		ContentType::File(file_path.clone())
 	} else if !body_args.add_body_multipart.is_empty() {
 		let multipart_key_values = string_array_to_key_value_array(body_args.add_body_multipart);
-		return ContentType::Multipart(multipart_key_values);
+		ContentType::Multipart(multipart_key_values)
 	} else if !body_args.add_body_form.is_empty() {
 		let form_key_values = string_array_to_key_value_array(body_args.add_body_form);
-		return ContentType::Form(form_key_values);
+		ContentType::Form(form_key_values)
 	} else if let Some(raw) = &body_args.body_raw {
-		return ContentType::Raw(raw.clone());
+		ContentType::Raw(raw.clone())
 	} else if let Some(json) = &body_args.body_json {
-		return ContentType::Json(json.clone());
+		ContentType::Json(json.clone())
 	} else if let Some(xml) = &body_args.body_xml {
-		return ContentType::Xml(xml.clone());
+		ContentType::Xml(xml.clone())
 	} else if let Some(html) = &body_args.body_html {
-		return ContentType::Html(html.clone());
+		ContentType::Html(html.clone())
 	} else if let Some(javascript) = &body_args.body_javascript {
-		return ContentType::Javascript(javascript.clone());
+		ContentType::Javascript(javascript.clone())
 	} else {
-		return ContentType::NoBody;
+		ContentType::NoBody
 	}
 }

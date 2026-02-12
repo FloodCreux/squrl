@@ -8,6 +8,7 @@ use textwrap::wrap;
 use tracing::info;
 
 impl App<'_> {
+	#[allow(clippy::await_holding_lock)]
 	pub async fn tui_send_request_message(&mut self) {
 		let selected_request_index = &self.collections_tree.selected.unwrap();
 		let local_selected_request = self.get_request_as_local_from_indexes(selected_request_index);

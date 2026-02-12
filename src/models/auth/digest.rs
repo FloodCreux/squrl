@@ -69,6 +69,7 @@ pub enum DigestQop {
 	AuthInt,
 }
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Default, Clone, ValueEnum, Display, Serialize, Deserialize)]
 pub enum DigestCharset {
 	#[default]
@@ -77,7 +78,7 @@ pub enum DigestCharset {
 }
 
 impl Digest {
-	pub fn update_from_www_authenticate_header(&mut self, headers: &Vec<(String, String)>) {
+	pub fn update_from_www_authenticate_header(&mut self, headers: &[(String, String)]) {
 		let www_authenticate_header = headers.iter().find_map(|(header, value)| {
 			if header == "www-authenticate" {
 				Some(value)
@@ -231,6 +232,7 @@ pub fn toggle_digest_charset(charset: &DigestCharset) -> DigestCharset {
 	}
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn digest_to_authorization_header(
 	username: &str,
 	password: &str,
@@ -270,12 +272,10 @@ pub fn digest_to_authorization_header(
 		nc,
 	};
 
-	let answer = www_authenticate_header
+	www_authenticate_header
 		.respond(&context)
 		.unwrap()
-		.to_header_string();
-
-	answer
+		.to_header_string()
 }
 
 #[derive(Error, Debug)]
@@ -296,6 +296,7 @@ pub enum DigestError {
 	InvalidCharset(String),
 }
 
+#[allow(clippy::type_complexity)]
 pub fn extract_www_authenticate_digest_data(
 	www_authenticate_header: &str,
 ) -> Result<
@@ -401,7 +402,7 @@ fn parse_header_map(input: &str) -> Result<HashMap<String, String>, DigestError>
 	let mut current_token = None;
 	let mut current_value = String::new();
 
-	for (char_n, c) in input.chars().enumerate() {
+	for (char_n, c) in input.char_indices() {
 		match state {
 			ParserState::P_WHITE => {
 				if c.is_alphabetic() {

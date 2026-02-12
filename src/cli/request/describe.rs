@@ -19,7 +19,7 @@ impl App<'_> {
 		let request = local_request.read();
 
 		println!("name: {}", request.name);
-		println!("protocol: {}", request.protocol.to_string());
+		println!("protocol: {}", request.protocol);
 
 		if let Protocol::HttpRequest(request) = &request.protocol {
 			println!("method: {}", request.method);
@@ -63,8 +63,7 @@ impl App<'_> {
 				..
 			}) => println!(
 				"auth: Digest\n\tusername: {username}\n\tpassword: {password}\n\tdomains: {domains}\n\trealm: {realm}\n\tnonce: {nonce}\n\topaque: {opaque}\n\tstale: {}\n\talgorithm: {algorithm}\n\tqop: {qop}\n\tuser_hash: {}\n\tcharset: {charset}",
-				stale.to_string(),
-				user_hash.to_string()
+				stale, user_hash
 			),
 		}
 

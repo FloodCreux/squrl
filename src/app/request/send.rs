@@ -237,9 +237,9 @@ impl App<'_> {
 					opaque.clone(),
 					*stale,
 					algorithm,
-					&qop,
+					qop,
 					*user_hash,
-					&charset,
+					charset,
 					digest.nc,
 				);
 
@@ -260,8 +260,8 @@ impl App<'_> {
 						let value = self.replace_env_keys_by_value(&form_data.data.1);
 
 						// If the value starts with !!, then it is supposed to be a file
-						if value.starts_with("!!") {
-							let path = PathBuf::from(&value[2..]);
+						if let Some(file_path) = value.strip_prefix("!!") {
+							let path = PathBuf::from(file_path);
 
 							match get_file_content_with_name(path) {
 								Ok((file_content, file_name)) => {
@@ -280,12 +280,12 @@ impl App<'_> {
 					request_builder = request_builder.multipart(multipart);
 				}
 				Form(form_data) => {
-					let form = self.key_value_vec_to_tuple_vec(&form_data);
+					let form = self.key_value_vec_to_tuple_vec(form_data);
 
 					request_builder = request_builder.form(&form);
 				}
 				File(file_path) => {
-					let file_path_with_env_values = self.replace_env_keys_by_value(&file_path);
+					let file_path_with_env_values = self.replace_env_keys_by_value(file_path);
 					let path = PathBuf::from(file_path_with_env_values);
 
 					match tokio::fs::File::open(path).await {
@@ -340,7 +340,7 @@ impl App<'_> {
 				};
 
 				let (result_request, env_variables, console_output) =
-					execute_pre_request_script(pre_request_script, &request, env_values);
+					execute_pre_request_script(pre_request_script, request, env_values);
 
 				match &env {
 					None => {}
@@ -349,7 +349,7 @@ impl App<'_> {
 						Some(env_variables) => {
 							let mut env = local_env.write();
 							env.values = env_variables;
-							save_environment_to_file(&*env);
+							save_environment_to_file(&env);
 						}
 					},
 				}
@@ -390,7 +390,7 @@ impl App<'_> {
 						Some(env_variables) => {
 							let mut env = env.write();
 							env.values = env_variables;
-							save_environment_to_file(&*env);
+							save_environment_to_file(&env);
 						}
 					},
 				}
@@ -412,5 +412,5 @@ pub fn get_file_content_with_name(path: PathBuf) -> std::io::Result<(Vec<u8>, St
 
 	let file_name = path.file_name().unwrap().to_str().unwrap();
 
-	return Ok((buffer, file_name.to_string()));
+	Ok((buffer, file_name.to_string()))
 }

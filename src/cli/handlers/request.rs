@@ -98,7 +98,7 @@ impl App<'_> {
 					self.cli_print_request_method(collection_index, request_index)
 				}
 				MethodCommand::Set { new_method } => {
-					self.modify_request_method(collection_index, request_index, new_method.clone())
+					self.modify_request_method(collection_index, request_index, *new_method)
 				}
 			},
 			RequestSubcommand::Params { subcommand, .. } => {
@@ -214,12 +214,9 @@ impl App<'_> {
 				),
 				_ => unreachable!(),
 			},
-			KeyValueCommand::Toggle { state, .. } => self.toggle_query_param(
-				collection_index,
-				request_index,
-				state.clone(),
-				query_param_index,
-			),
+			KeyValueCommand::Toggle { state, .. } => {
+				self.toggle_query_param(collection_index, request_index, *state, query_param_index)
+			}
 			_ => unreachable!(),
 		}
 	}
@@ -280,7 +277,7 @@ impl App<'_> {
 				_ => unreachable!(),
 			},
 			KeyValueCommand::Toggle { state, .. } => {
-				self.toggle_header(collection_index, request_index, state.clone(), header_index)
+				self.toggle_header(collection_index, request_index, *state, header_index)
 			}
 			_ => unreachable!(),
 		}
@@ -359,7 +356,7 @@ impl App<'_> {
 					KeyValueCommand::Toggle { state, .. } => self.toggle_form_data(
 						collection_index,
 						request_index,
-						state.clone(),
+						*state,
 						form_data_index,
 					),
 					_ => unreachable!(),

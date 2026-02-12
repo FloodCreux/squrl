@@ -1,6 +1,6 @@
 use std::fs::{File, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
-use std::path::PathBuf;
+use std::path::Path;
 use std::str::from_utf8;
 use std::sync::Arc;
 use std::{env, fs};
@@ -22,7 +22,7 @@ lazy_static! {
 
 impl App<'_> {
 	/// Add the environment file to the app environments
-	pub fn add_environment_from_file(&mut self, path_buf: &PathBuf) {
+	pub fn add_environment_from_file(&mut self, path_buf: &Path) {
 		let file_name = path_buf
 			.file_name()
 			.unwrap()
@@ -33,7 +33,7 @@ impl App<'_> {
 
 		trace!("Trying to open \"{}\" env file", path_buf.display());
 
-		let env_file: File = match File::open(path_buf.clone()) {
+		let env_file: File = match File::open(path_buf) {
 			Ok(env_file) => env_file,
 			Err(e) => panic_error(format!("Could not open environment file\n\t{e}")),
 		};
@@ -41,7 +41,7 @@ impl App<'_> {
 		let environment = Environment {
 			name: file_name,
 			values: read_environment_from_file(env_file),
-			path: path_buf.clone(),
+			path: path_buf.to_path_buf(),
 		};
 
 		self.environments.push(Arc::new(RwLock::new(environment)));
@@ -60,11 +60,9 @@ fn read_environment_from_file(file: File) -> IndexMap<String, String> {
 	let reader = BufReader::new(file);
 	let mut environment_values = IndexMap::new();
 
-	for line in reader.lines() {
-		if let Ok(line) = line {
-			if let Some((key, value)) = parse_line(line.trim().as_bytes()) {
-				environment_values.insert(key, value);
-			}
+	for line in reader.lines().map_while(Result::ok) {
+		if let Some((key, value)) = parse_line(line.trim().as_bytes()) {
+			environment_values.insert(key, value);
 		}
 	}
 
@@ -135,4 +133,93 @@ pub fn save_environment_to_file(environment: &Environment) {
 		.expect("Could not move temp file to environment file");
 
 	trace!("Environment saved")
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn test_parse_line_valid() {
+		let result = parse_line(b"KEY=value");
+		assert_eq!(result, Some(("KEY".to_string(), "value".to_string())));
+	}
+
+	#[test]
+	fn test_parse_line_comment() {
+		let result = parse_line(b"# this is a comment");
+		assert_eq!(result, None);
+	}
+
+	#[test]
+	fn test_parse_line_empty() {
+		let result = parse_line(b"");
+		assert_eq!(result, None);
+	}
+
+	#[test]
+	fn test_parse_line_whitespace_only() {
+		let result = parse_line(b"   ");
+		assert_eq!(result, None);
+	}
+
+	#[test]
+	fn test_parse_line_quoted_value() {
+		let result = parse_line(b"KEY=\"quoted value\"");
+		assert_eq!(
+			result,
+			Some(("KEY".to_string(), "quoted value".to_string()))
+		);
+	}
+
+	#[test]
+	fn test_parse_line_single_quoted_value() {
+		let result = parse_line(b"KEY='single quoted'");
+		assert_eq!(
+			result,
+			Some(("KEY".to_string(), "single quoted".to_string()))
+		);
+	}
+
+	#[test]
+	fn test_parse_line_equals_in_value() {
+		let result = parse_line(b"KEY=a=b=c");
+		assert_eq!(result, Some(("KEY".to_string(), "a=b=c".to_string())));
+	}
+
+	#[test]
+	fn test_parse_line_no_equals() {
+		let result = parse_line(b"INVALID");
+		assert_eq!(result, None);
+	}
+
+	#[test]
+	fn test_parse_line_whitespace_trimmed() {
+		let result = parse_line(b"  KEY=value  ");
+		assert_eq!(result, Some(("KEY".to_string(), "value".to_string())));
+	}
+
+	#[test]
+	fn test_parse_line_empty_value() {
+		let result = parse_line(b"KEY=");
+		assert_eq!(result, Some(("KEY".to_string(), "".to_string())));
+	}
+
+	#[test]
+	fn test_parse_line_comment_with_leading_whitespace() {
+		let result = parse_line(b"  # indented comment");
+		assert_eq!(result, None);
+	}
+
+	#[test]
+	fn test_parse_line_url_value() {
+		let result = parse_line(b"API_URL=https://api.example.com/v1");
+		assert_eq!(
+			result,
+			Some((
+				"API_URL".to_string(),
+				"https://api.example.com/v1".to_string()
+			))
+		);
+	}
 }

@@ -66,10 +66,11 @@ impl App<'_> {
 				1 => self.edit_request_auth_password_state(),
 				_ => {}
 			},
-			BearerToken(_) => match self.auth_text_input_selection.selected {
-				0 => self.edit_request_auth_bearer_token_state(),
-				_ => {}
-			},
+			BearerToken(_) => {
+				if self.auth_text_input_selection.selected == 0 {
+					self.edit_request_auth_bearer_token_state()
+				}
+			}
 			JwtToken(_) => match self.auth_text_input_selection.selected {
 				0 => {}
 				1 => {}

@@ -12,7 +12,7 @@ impl App<'_> {
 		{
 			let selected_request = local_selected_request.read();
 			let selected_http_request = selected_request.get_http_request()?;
-			println!("{}", selected_http_request.method.to_string())
+			println!("{}", selected_http_request.method)
 		}
 
 		Ok(())

@@ -7,7 +7,7 @@ pub struct TextInputSelection {
 
 impl TextInputSelection {
 	pub fn previous(&mut self) {
-		if self.selected as isize - 1 >= 0 {
+		if self.selected as isize > 0 {
 			self.selected -= 1;
 		} else {
 			self.selected = self.max_selection - 1;

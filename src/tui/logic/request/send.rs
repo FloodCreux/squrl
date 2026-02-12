@@ -10,6 +10,7 @@ use tokio::task;
 use tracing::info;
 
 impl App<'_> {
+	#[allow(clippy::await_holding_lock)]
 	pub async fn tui_send_request(&mut self) {
 		let local_selected_request = self.get_selected_request_as_local();
 
@@ -28,27 +29,27 @@ impl App<'_> {
 		match &mut selected_request.protocol {
 			Protocol::HttpRequest(_) => {}
 			Protocol::WsRequest(ws_request) => {
-				if ws_request.is_connected {
-					if let Some(websocket) = ws_request.websocket.clone() {
-						drop(websocket.rx);
+				if ws_request.is_connected
+					&& let Some(websocket) = ws_request.websocket.clone()
+				{
+					drop(websocket.rx);
 
-						// Lock each time to avoid potential deadlock if the user is spamming "send request"
-						websocket
-							.tx
-							.lock()
-							.send(reqwest_websocket::Message::Close {
-								code: CloseCode::Normal,
-								reason: String::new(),
-							})
-							.await
-							.unwrap();
+					// Lock each time to avoid potential deadlock if the user is spamming "send request"
+					websocket
+						.tx
+						.lock()
+						.send(reqwest_websocket::Message::Close {
+							code: CloseCode::Normal,
+							reason: String::new(),
+						})
+						.await
+						.unwrap();
 
-						websocket.tx.lock().close().await.unwrap();
+					websocket.tx.lock().close().await.unwrap();
 
-						ws_request.websocket = None;
-						ws_request.is_connected = false;
-						return;
-					}
+					ws_request.websocket = None;
+					ws_request.is_connected = false;
+					return;
 				}
 			}
 		}
@@ -92,24 +93,19 @@ impl App<'_> {
 				Ok(response) => {
 					let mut selected_request = local_selected_request.write();
 
-					match &mut selected_request.auth {
-						Auth::Digest(digest) => {
-							digest.update_from_www_authenticate_header(&response.headers)
-						}
-						_ => {}
+					if let Auth::Digest(digest) = &mut selected_request.auth {
+						digest.update_from_www_authenticate_header(&response.headers)
 					}
 
 					selected_request.response = response;
 
 					*local_should_refresh_scrollbars.lock() = true;
-					return;
 				}
 				Err(response_error) => {
 					let mut selected_request = local_selected_request.write();
 					selected_request.response.status_code = Some(response_error.to_string());
-					return;
 				}
-			};
+			}
 		});
 	}
 }

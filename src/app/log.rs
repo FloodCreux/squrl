@@ -24,7 +24,7 @@ impl<S: Subscriber> Layer<S> for LogCounterLayer {
 		}
 
 		let now = Utc::now().format("%H:%M:%S").to_string();
-		let level = e.metadata().level().clone();
+		let level = *e.metadata().level();
 		let target = e.metadata().target().to_string();
 		let mut message = String::new();
 		e.record(&mut StringVisitor(&mut message));

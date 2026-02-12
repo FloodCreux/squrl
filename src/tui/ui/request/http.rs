@@ -55,7 +55,7 @@ impl App<'_> {
 		// REQUEST METHOD
 
 		let http_request = request.get_http_request().unwrap();
-		let method = http_request.method.clone();
+		let method = http_request.method;
 
 		let method_block = Block::new()
 			.borders(Borders::NONE)
@@ -64,7 +64,7 @@ impl App<'_> {
 
 		let method_area = method_block.inner(request_header_layout[0]);
 
-		let method_paragraph = Paragraph::new(format!("[ {} ]", method.to_string()))
+		let method_paragraph = Paragraph::new(format!("[ {} ]", method))
 			.style(Modifier::BOLD)
 			.fg(method.get_color())
 			.centered();

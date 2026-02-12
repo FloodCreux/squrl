@@ -2,6 +2,7 @@ use clap::ValueEnum;
 use serde::Serialize;
 use strum::{Display, VariantArray};
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Default, Display, VariantArray, ValueEnum, Serialize, Clone)]
 pub enum ExportFormat {
 	#[default]

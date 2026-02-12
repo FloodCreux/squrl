@@ -100,11 +100,11 @@ impl<'a> App<'a> {
 		);
 
 		let footer_left = Block::new()
-			.title(Line::from(state_line))
+			.title(state_line)
 			.title_alignment(Alignment::Left);
 
 		let footer_right = Block::new()
-			.title(Line::from(available_keys))
+			.title(available_keys)
 			.title_alignment(Alignment::Right);
 
 		frame.render_widget(footer_left, main_layout[2]);

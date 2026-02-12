@@ -43,7 +43,7 @@ pub fn next_message_type(message_type: &MessageType) -> MessageType {
 		MessageType::Text(text) => MessageType::Binary(text.as_bytes().to_vec().into_boxed_slice()),
 		MessageType::Binary(binary) => MessageType::Ping(binary.clone()),
 		MessageType::Ping(ping) => MessageType::Pong(ping.clone()),
-		MessageType::Pong(pong) => MessageType::Close(String::from_utf8_lossy(&pong).to_string()),
+		MessageType::Pong(pong) => MessageType::Close(String::from_utf8_lossy(pong).to_string()),
 		MessageType::Close(close) => MessageType::Text(close.clone()),
 	}
 }

@@ -55,7 +55,7 @@ pub fn parse_http_files_recursively(
 
 		let file_path = entry.path().to_path_buf();
 
-		if file_path.extension().map_or(false, |ext| ext == "http") {
+		if file_path.extension().is_some_and(|ext| ext == "http") {
 			let parsed = parse_http_file(&file_path)?;
 			requests.extend(parsed);
 		}
@@ -176,7 +176,7 @@ pub fn parse_http_content(content: &str) -> anyhow::Result<Vec<Arc<RwLock<Reques
 		}
 
 		// Trim trailing blank lines from body
-		while body_lines.last().map_or(false, |l| l.trim().is_empty()) {
+		while body_lines.last().is_some_and(|l| l.trim().is_empty()) {
 			body_lines.pop();
 		}
 
@@ -272,13 +272,12 @@ fn extract_auth_from_headers(headers: &[(String, String)]) -> Auth {
 	match auth_header {
 		None => Auth::NoAuth,
 		Some((_, value)) => {
-			if value.starts_with("Bearer ") {
+			if let Some(token) = value.strip_prefix("Bearer ") {
 				Auth::BearerToken(BearerToken {
-					token: value[7..].to_string(),
+					token: token.to_string(),
 				})
-			} else if value.starts_with("Basic ") {
+			} else if let Some(encoded) = value.strip_prefix("Basic ") {
 				// Decode base64 basic auth
-				let encoded = &value[6..];
 				match base64_decode_basic_auth(encoded) {
 					Some((username, password)) => Auth::BasicAuth(BasicAuth { username, password }),
 					None => Auth::NoAuth,

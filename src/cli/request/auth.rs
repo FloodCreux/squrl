@@ -50,8 +50,7 @@ impl App<'_> {
 					..
 				}) => println!(
 					"username: {username}\n\tpassword: {password}\n\tdomains: {domains}\n\trealm: {realm}\n\tnonce: {nonce}\n\topaque: {opaque}\n\tstale: {}\n\talgorithm: {algorithm}\n\tqop: {qop}\n\tuser_hash: {}\n\tcharset: {charset}",
-					stale.to_string(),
-					user_hash.to_string()
+					stale, user_hash
 				),
 			}
 		}

@@ -6,6 +6,7 @@ use clap::Subcommand;
 use serde::{Deserialize, Serialize};
 use strum::Display;
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Subcommand, Clone, Default, Debug, Display, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Auth {

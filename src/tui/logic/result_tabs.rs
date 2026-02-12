@@ -80,13 +80,10 @@ impl App<'_> {
 
 		if let Some(file_format) =
 			find_file_format_in_content_type(&selected_request.response.headers)
-		{
-			if let Some(ResponseContent::Body(response_content)) =
+			&& let Some(ResponseContent::Body(response_content)) =
 				&selected_request.response.content.as_ref()
-			{
-				self.syntax_highlighting.highlighted_body =
-					highlight(response_content, &file_format);
-			}
+		{
+			self.syntax_highlighting.highlighted_body = highlight(response_content, &file_format);
 		}
 
 		if let Some(pre_request_console_output) =
@@ -239,6 +236,6 @@ impl App<'_> {
 			}
 		}
 
-		return max_tmp;
+		max_tmp
 	}
 }

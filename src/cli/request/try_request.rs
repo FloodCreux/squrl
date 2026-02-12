@@ -17,8 +17,7 @@ impl App<'_> {
 			create_request_from_new_request_command(String::new(), new_request_command.clone())?;
 		let local_request = Arc::new(RwLock::new(new_request));
 
-		self.local_send_request(&send_command, local_request)
-			.await?;
+		self.local_send_request(send_command, local_request).await?;
 
 		Ok(())
 	}

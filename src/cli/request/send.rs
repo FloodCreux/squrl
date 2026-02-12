@@ -33,8 +33,7 @@ impl App<'_> {
 		let local_request =
 			self.get_request_as_local_from_indexes(&(collection_index, request_index));
 
-		self.local_send_request(&send_command, local_request)
-			.await?;
+		self.local_send_request(send_command, local_request).await?;
 
 		if self.config.should_save_requests_response() {
 			self.save_collection_to_file(collection_index);
@@ -59,7 +58,7 @@ impl App<'_> {
 		}
 
 		for request in requests {
-			self.local_send_request(&send_command, request).await?;
+			self.local_send_request(send_command, request).await?;
 
 			if self.config.should_save_requests_response() {
 				self.save_collection_to_file(collection_index);
@@ -69,6 +68,7 @@ impl App<'_> {
 		Ok(())
 	}
 
+	#[allow(clippy::await_holding_lock)]
 	pub async fn local_send_request(
 		&mut self,
 		send_command: &SendCommand,
@@ -88,10 +88,10 @@ impl App<'_> {
 		let prepared_request = match self.prepare_request(&mut request).await {
 			Ok(prepared_request) => prepared_request,
 			Err(error) => {
-				if send_command.console {
-					if let Some(pre_request_output) = &request.console_output.pre_request_output {
-						println!("{}", pre_request_output);
-					}
+				if send_command.console
+					&& let Some(pre_request_output) = &request.console_output.pre_request_output
+				{
+					println!("{}", pre_request_output);
 				}
 
 				return Err(anyhow!(error));
@@ -220,7 +220,7 @@ impl App<'_> {
 					if let Ok(Some(line)) = lines.next_line().await {
 						if line.ends_with("\u{1b}") {
 							let line = &line[..line.len() - 1];
-							buffer.push_str(&line);
+							buffer.push_str(line);
 							buffer.push('\n');
 						} else {
 							buffer.push_str(&line);
@@ -230,23 +230,23 @@ impl App<'_> {
 							let mut request = local_local_request.write();
 							let ws_request = request.get_ws_request_mut().unwrap();
 
-							if ws_request.is_connected {
-								if let Some(websocket) = &ws_request.websocket {
-									info!("Sending message");
+							if ws_request.is_connected
+								&& let Some(websocket) = &ws_request.websocket
+							{
+								info!("Sending message");
 
-									websocket
-										.tx
-										.lock()
-										.send(reqwest_websocket::Message::Text(text.clone()))
-										.await
-										.unwrap();
+								websocket
+									.tx
+									.lock()
+									.send(reqwest_websocket::Message::Text(text.clone()))
+									.await
+									.unwrap();
 
-									ws_request.messages.push(Message {
-										timestamp: Local::now(),
-										sender: Sender::You,
-										content: MessageType::Text(text),
-									});
-								}
+								ws_request.messages.push(Message {
+									timestamp: Local::now(),
+									sender: Sender::You,
+									content: MessageType::Text(text),
+								});
 							}
 						}
 					}
@@ -266,8 +266,8 @@ impl App<'_> {
 					for message in messages {
 						println!(
 							"=== {} - New {} message from {} ===\n{}",
-							message.timestamp.format("%H:%M:%S %d/%m/%Y").to_string(),
-							message.content.to_string(),
+							message.timestamp.format("%H:%M:%S %d/%m/%Y"),
+							message.content,
 							message.sender,
 							message.content.to_content()
 						)

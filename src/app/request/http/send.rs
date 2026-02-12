@@ -14,6 +14,7 @@ use reqwest::header::CONTENT_TYPE;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, trace};
 
+#[allow(clippy::await_holding_lock)]
 pub async fn send_http_request(
 	prepared_request: reqwest_middleware::RequestBuilder,
 	local_request: Arc<RwLock<Request>>,
@@ -105,12 +106,9 @@ pub async fn send_http_request(
 									// If the request response content can be pretty printed
 									if request.settings.pretty_print_response_content.as_bool() {
 										// Match the file format
-										match file_format.as_str() {
-											"json" => {
-												result_body = jsonxf::pretty_print(&result_body).unwrap_or(result_body);
-											},
-											_ => {}
-										}
+										if file_format.as_str() == "json" {
+														  result_body = jsonxf::pretty_print(&result_body).unwrap_or(result_body);
+													  }
 									}
 								}
 
@@ -175,5 +173,5 @@ pub async fn send_http_request(
 		request.cancellation_token = CancellationToken::new();
 	}
 
-	return Ok(modified_response);
+	Ok(modified_response)
 }

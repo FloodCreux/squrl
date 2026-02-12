@@ -16,12 +16,12 @@ pub fn centered_rect(columns: u16, lines: u16, r: Rect) -> Rect {
 		.split(r);
 
 	// Then cut the middle vertical piece into three width-wise pieces
-	return Layout::default()
+	Layout::default()
 		.direction(Direction::Horizontal)
 		.constraints([
 			Constraint::Percentage(y_space),
 			Constraint::Length(columns),
 			Constraint::Percentage(y_space),
 		])
-		.split(popup_layout[1])[1]; // Return the middle chunk
+		.split(popup_layout[1])[1] // Return the middle chunk
 }

@@ -13,6 +13,7 @@ use tracing_log::AsTrace;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
+#[allow(clippy::large_enum_variant)]
 pub enum AppMode {
 	TUI,
 	CLI(Command),
@@ -99,11 +100,11 @@ impl<'a> App<'a> {
 				continue;
 			}
 
-			if let Some(filter) = &ARGS.collection_filter {
-				if !filter.is_match(file_name) {
-					trace!("File \"{file_name}\" does not match filter");
-					continue;
-				}
+			if let Some(filter) = &ARGS.collection_filter
+				&& !filter.is_match(file_name)
+			{
+				trace!("File \"{file_name}\" does not match filter");
+				continue;
 			}
 
 			if file_name.ends_with(".json") {
@@ -122,12 +123,12 @@ impl<'a> App<'a> {
 			}
 		}
 
-		if let Some(user_config_dir) = &ARGS.user_config_directory {
-			if ARGS.config_directory.as_ref() != Some(user_config_dir) {
-				let user_global_config_path = user_config_dir.join("global.toml");
-				if user_global_config_path.exists() {
-					self.parse_global_config_file(&user_global_config_path);
-				}
+		if let Some(user_config_dir) = &ARGS.user_config_directory
+			&& ARGS.config_directory.as_ref() != Some(user_config_dir)
+		{
+			let user_global_config_path = user_config_dir.join("global.toml");
+			if user_global_config_path.exists() {
+				self.parse_global_config_file(&user_global_config_path);
 			}
 		}
 
@@ -146,7 +147,7 @@ impl<'a> App<'a> {
 
 		// Auto-load .http files from a "requests" subdirectory if we're in a git repo
 		// Added after the save loop and sort to avoid saving ephemeral collections to disk
-		if let Some(cwd) = std::env::current_dir().ok() {
+		if let Ok(cwd) = std::env::current_dir() {
 			let requests_dir = cwd.join("requests");
 			if cwd.join(".git").exists() && requests_dir.is_dir() {
 				let collection_name = cwd
@@ -159,9 +160,7 @@ impl<'a> App<'a> {
 					Ok(entries) => entries
 						.filter_map(|e| e.ok())
 						.map(|e| e.path())
-						.filter(|p| {
-							p.is_file() && p.extension().map_or(false, |ext| ext == "http")
-						})
+						.filter(|p| p.is_file() && p.extension().is_some_and(|ext| ext == "http"))
 						.collect(),
 					Err(_) => vec![],
 				};
@@ -207,7 +206,7 @@ impl<'a> App<'a> {
 	fn create_log_file(&mut self) -> File {
 		let path = ARGS.directory.as_ref().unwrap().join("squrl.log");
 
-		let log_file = match OpenOptions::new()
+		match OpenOptions::new()
 			.write(true)
 			.create(true)
 			.truncate(true)
@@ -215,8 +214,6 @@ impl<'a> App<'a> {
 		{
 			Ok(log_file) => log_file,
 			Err(e) => panic_error(format!("Could not open log file\n\t{e}")),
-		};
-
-		return log_file;
+		}
 	}
 }

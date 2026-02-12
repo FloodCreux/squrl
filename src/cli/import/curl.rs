@@ -66,7 +66,7 @@ pub fn parse_requests_recursively(
 		requests.push(request);
 	}
 
-	return Ok(requests);
+	Ok(requests)
 }
 
 /// TODO: parse everything with regexes in order to handle everything
@@ -174,11 +174,9 @@ pub fn parse_request(path: &PathBuf, request_name: String) -> anyhow::Result<Arc
 					}),
 				},
 				Some(authorization_header_value) => {
-					if authorization_header_value.starts_with("Bearer ") {
-						let bearer_token = authorization_header_value[7..].to_string();
-
+					if let Some(bearer_token) = authorization_header_value.strip_prefix("Bearer ") {
 						Auth::BearerToken(BearerToken {
-							token: bearer_token,
+							token: bearer_token.to_string(),
 						})
 					} else if authorization_header_value.starts_with("Digest ") {
 						let (username, password) = match digest_credentials {
@@ -256,5 +254,5 @@ pub fn parse_request(path: &PathBuf, request_name: String) -> anyhow::Result<Arc
 		..Default::default()
 	};
 
-	return Ok(Arc::new(RwLock::new(request)));
+	Ok(Arc::new(RwLock::new(request)))
 }

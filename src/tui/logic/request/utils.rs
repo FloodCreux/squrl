@@ -54,8 +54,8 @@ impl App<'_> {
 					.map(|m| {
 						format!(
 							"=== {} - New {} message from {} ===\n{}",
-							m.timestamp.format("%H:%M:%S %d/%m/%Y").to_string(),
-							m.content.to_string(),
+							m.timestamp.format("%H:%M:%S %d/%m/%Y"),
+							m.content,
 							m.sender,
 							m.content.to_content()
 						)
