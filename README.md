@@ -3,6 +3,7 @@
 A terminal-based HTTP and WebSocket client built with Rust. Think Postman or Insomnia, but in your terminal -- no GUI required.
 
 ![squrl homepage](assets/home.png)
+[squrl request](assets/request.png)
 
 ## Table of Contents
 
@@ -180,10 +181,10 @@ https_proxy = "https://..."
 
 ### Environment variables
 
-| Variable | Description |
-|---|---|
-| `SQURL_MAIN_DIR` | Working directory |
-| `SQURL_THEME` | Path to a custom theme TOML file |
+| Variable             | Description                            |
+| -------------------- | -------------------------------------- |
+| `SQURL_MAIN_DIR`     | Working directory                      |
+| `SQURL_THEME`        | Path to a custom theme TOML file       |
 | `SQURL_KEY_BINDINGS` | Path to a custom keybindings TOML file |
 
 ### Working directory layout
