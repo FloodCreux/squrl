@@ -1,0 +1,35 @@
+# VS Code Dark+ theme
+# Based on https://github.com/microsoft/vscode default dark theme
+
+[UI]
+font_color = { Rgb = [212, 212, 212] }  # editor.foreground #D4D4D4
+main_foreground_color = { Rgb = [86, 156, 214] }  # keyword/blue #569cd6
+secondary_foreground_color = { Rgb = [128, 128, 128] }  # comments gray #808080
+main_background_color = { Rgb = [37, 37, 38] }  # menu.background #252526
+secondary_background_color = { Rgb = [30, 30, 30] }  # editor.background #1E1E1E
+separator_color = { Rgb = [69, 69, 69] }  # menu.separatorBackground #454545
+
+[Others]
+selection_highlight_color = { Rgb = [220, 220, 170] }  # function declarations #DCDCAA
+environment_variable_highlight_color = { Rgb = [156, 220, 254] }  # variable #9CDCFE
+
+[HTTP.Methods]
+GET = { Rgb = [78, 201, 176] }  # types/teal #4EC9B0
+POST = { Rgb = [220, 220, 170] }  # function #DCDCAA
+PUT = { Rgb = [86, 156, 214] }  # keyword/blue #569cd6
+PATCH = { Rgb = [156, 220, 254] }  # variable #9CDCFE
+DELETE = { Rgb = [244, 71, 71] }  # invalid/error #f44747
+HEAD = { Rgb = [78, 201, 176] }  # types/teal #4EC9B0
+OPTIONS = { Rgb = [197, 134, 192] }  # control flow #C586C0
+TRACE = { Rgb = [206, 145, 120] }  # string #ce9178
+CONNECT = { Rgb = [86, 156, 214] }  # keyword/blue #569cd6
+
+[Websocket.connection_status]
+connected = { Rgb = [106, 153, 85] }  # comment/green #6A9955
+disconnected = { Rgb = [244, 71, 71] }  # invalid/error #f44747
+
+[Websocket.messages]
+server_foreground_color = { Rgb = [86, 156, 214] }  # keyword/blue #569cd6
+server_background_color = { Rgb = [37, 37, 38] }  # menu.background #252526
+you_background_color = { Rgb = [0, 122, 204] }  # activityBarBadge.background #007ACC
+details_color = { Rgb = [128, 128, 128] }  # gray #808080

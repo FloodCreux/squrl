@@ -1,0 +1,35 @@
+# OpenCode theme - Based on OpenCode's OC-1 dark theme
+# Inspired by https://github.com/anomalyco/opencode
+
+[UI]
+font_color = { Rgb = [238, 238, 238] }  # text-strong #eeeeee
+main_foreground_color = { Rgb = [250, 178, 131] }  # primary/accent #fab283
+secondary_foreground_color = { Rgb = [169, 160, 158] }  # text-weak (smoke-dark-9)
+main_background_color = { Rgb = [28, 23, 23] }  # background-weak #1c1717
+secondary_background_color = { Rgb = [21, 19, 19] }  # background-strong #151313
+separator_color = { Rgb = [53, 47, 47] }  # border (smoke-dark-alpha-7)
+
+[Others]
+selection_highlight_color = { Rgb = [252, 213, 58] }  # warning #fcd53a
+environment_variable_highlight_color = { Rgb = [237, 178, 241] }  # info #edb2f1
+
+[HTTP.Methods]
+GET = { Rgb = [18, 201, 5] }  # success #12c905
+POST = { Rgb = [252, 213, 58] }  # warning #fcd53a
+PUT = { Rgb = [86, 182, 194] }  # cyan #56b6c2
+PATCH = { Rgb = [147, 233, 246] }  # syntax-constant #93e9f6
+DELETE = { Rgb = [252, 83, 58] }  # error #fc533a
+HEAD = { Rgb = [18, 201, 5] }  # success #12c905
+OPTIONS = { Rgb = [237, 178, 241] }  # info #edb2f1
+TRACE = { Rgb = [255, 186, 146] }  # syntax-primitive #ffba92
+CONNECT = { Rgb = [250, 178, 131] }  # primary #fab283
+
+[Websocket.connection_status]
+connected = { Rgb = [18, 201, 5] }  # success #12c905
+disconnected = { Rgb = [252, 83, 58] }  # error #fc533a
+
+[Websocket.messages]
+server_foreground_color = { Rgb = [86, 182, 194] }  # cyan #56b6c2
+server_background_color = { Rgb = [28, 23, 23] }  # background-weak #1c1717
+you_background_color = { Rgb = [250, 178, 131] }  # primary #fab283
+details_color = { Rgb = [169, 160, 158] }  # text-weak

@@ -14,6 +14,8 @@ pub mod builtin {
 	pub const CATPPUCCIN_FRAPPE: &str = include_str!("themes/catppuccin_frappe.toml");
 	pub const CATPPUCCIN_LATTE: &str = include_str!("themes/catppuccin_latte.toml");
 	pub const GRUVBOX: &str = include_str!("themes/gruvbox.toml");
+	pub const OPENCODE: &str = include_str!("themes/opencode.toml");
+	pub const VSCODE_DARK: &str = include_str!("themes/vscode_dark.toml");
 }
 
 /// All built-in theme names and their TOML content
@@ -25,6 +27,8 @@ pub const BUILTIN_THEMES: &[(&str, &str)] = &[
 	("catppuccin_frappe", builtin::CATPPUCCIN_FRAPPE),
 	("catppuccin_latte", builtin::CATPPUCCIN_LATTE),
 	("gruvbox", builtin::GRUVBOX),
+	("opencode", builtin::OPENCODE),
+	("vscode_dark", builtin::VSCODE_DARK),
 ];
 
 /// Returns a list of all built-in theme names
