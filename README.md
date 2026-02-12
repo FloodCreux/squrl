@@ -9,6 +9,7 @@ A terminal-based HTTP and WebSocket client built with Rust. Think Postman or Ins
 
 - [Features](#features)
 - [Installation](#installation)
+- [Docker](#docker)
 - [Usage](#usage)
   - [TUI (interactive)](#tui)
   - [CLI](#cli)
@@ -60,6 +61,32 @@ just install
 ```
 
 This builds a release binary and installs the binary, shell completions, and man page to `~/.local`.
+
+## Docker
+
+A multi-stage Dockerfile is included for building a minimal Docker image containing the statically linked `squrl` binary. It uses [cargo-chef](https://github.com/LukeMathWalker/cargo-chef) for dependency caching and [cargo-zigbuild](https://github.com/rust-cross/cargo-zigbuild) for cross-compilation.
+
+### Build
+
+```sh
+# Build for your current platform
+docker build -t squrl .
+
+# Build for both amd64 and arm64
+docker buildx build --platform linux/amd64,linux/arm64 -t squrl .
+```
+
+### Run
+
+```sh
+# Launch the TUI (mount your working directory so squrl can access collections and environments)
+docker run -it --rm -v "$(pwd):/app" squrl
+
+# Run a CLI command
+docker run -it --rm -v "$(pwd):/app" squrl try GET https://httpbin.org/get
+```
+
+> **Note:** The Docker image is built without clipboard support since there is no display server available inside the container.
 
 ## Usage
 

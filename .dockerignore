@@ -1,0 +1,10 @@
+target/
+.git/
+.github/
+.ideas/
+.DS_Store
+*.swp
+*.swo
+*~
+squrl.log
+result
