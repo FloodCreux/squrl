@@ -125,3 +125,6 @@ reqwest-tracing = "0.7.0"
 
 [dev-dependencies]
 mockito = "1.7.2"
+assert_cmd = "2.0"
+predicates = "3.1"
+tempfile = "3.14"

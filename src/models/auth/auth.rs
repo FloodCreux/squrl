@@ -31,7 +31,6 @@ pub enum Auth {
 	JwtToken(JwtToken),
 
 	#[strum(to_string = "Digest")]
-	#[clap(visible_alias = "digest")]
 	/// Digest auth method
 	Digest(Digest),
 }

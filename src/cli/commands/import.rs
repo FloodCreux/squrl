@@ -22,7 +22,7 @@ nest! {
 			OpenApi(OpenApiImport),
 
 			/// Import an .http file
-			#[clap(alias = "http-file")]
+			#[clap(alias = "http_file")]
 			HttpFile(HttpFileImport)
 		}
 	}
