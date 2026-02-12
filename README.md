@@ -24,7 +24,7 @@ A terminal-based HTTP and WebSocket client built with Rust. Think Postman or Ins
 - **Dual interface** -- interactive TUI and full-featured CLI
 - **HTTP client** -- all 9 standard methods (GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD, TRACE, CONNECT) with configurable timeouts, redirects, and proxy support
 - **WebSocket support** -- connect, send/receive messages, and track connection state
-- **Collections** -- organize requests in JSON or YAML files with tree-based navigation
+- **Collections** -- organize requests in JSON or YAML files with tree-based navigation and optional folder grouping
 - **Environments** -- key-value variables with `{{variable}}` substitution across URLs, headers, bodies, auth, and scripts
 - **Authentication** -- Basic, Bearer Token, JWT (HS/RS/ES/PS/EdDSA), and Digest (MD5, SHA-256, SHA-512)
 - **Request bodies** -- raw text, JSON, XML, HTML, JavaScript, file upload, URL-encoded form, and multipart
@@ -198,6 +198,23 @@ squrl_main_dir/
   squrl.toml            # Local configuration
   squrl.log             # Auto-generated log file (TUI mode)
 ```
+
+Collection files support an optional `folders` field for grouping requests:
+
+```json
+{
+  "name": "My API",
+  "folders": [
+    {
+      "name": "Users",
+      "requests": [...]
+    }
+  ],
+  "requests": [...]
+}
+```
+
+Folders appear in the collection tree between the collection and its root-level requests. Deleting a folder moves its requests to the collection root. Existing collection files without folders continue to work unchanged.
 
 squrl also auto-loads `.http` files from a `requests/` subdirectory when inside a git repository.
 
