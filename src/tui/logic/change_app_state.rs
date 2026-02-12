@@ -5,7 +5,7 @@ use crate::models::protocol::http::body::ContentType;
 use crate::models::protocol::protocol::Protocol;
 use crate::tui::app_states::AppState;
 use crate::tui::ui::param_tabs::param_tabs::RequestParamsTabs;
-use crate::tui::utils::stateful::cookie_table::cookie_to_row;
+use crate::tui::utils::stateful::cookie_table::{StatefulCookieTable, cookie_to_row};
 use edtui::actions::MoveToEndOfLine;
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
@@ -110,6 +110,42 @@ impl App<'_> {
 
 		self.tui_update_cookies_table_selection();
 		self.set_app_state(AppState::DisplayingCookies);
+	}
+
+	pub fn edit_cookie_state(&mut self) {
+		if self.cookies_popup.cookies_table.rows.is_empty() {
+			return;
+		}
+
+		let selection = match self.cookies_popup.cookies_table.selection {
+			Some(s) => s,
+			None => return,
+		};
+
+		// Only Name (1) and Value (2) columns are editable
+		if !StatefulCookieTable::is_editable_column(selection.1) {
+			return;
+		}
+
+		let text = &self.cookies_popup.cookies_table.rows[selection.0][selection.1];
+
+		self.cookies_popup
+			.cookies_table
+			.selection_text_input
+			.reset_mode();
+		self.cookies_popup
+			.cookies_table
+			.selection_text_input
+			.clear();
+		self.cookies_popup
+			.cookies_table
+			.selection_text_input
+			.push_str(text);
+		self.cookies_popup
+			.cookies_table
+			.selection_text_input
+			.move_cursor_line_end();
+		self.set_app_state(AppState::EditingCookies);
 	}
 
 	pub fn display_logs_state(&mut self) {

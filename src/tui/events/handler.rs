@@ -189,7 +189,45 @@ impl App<'_> {
 				AppEvent::CookiesMoveLeft(_) => self.cookies_popup.cookies_table.left(),
 				AppEvent::CookiesMoveRight(_) => self.cookies_popup.cookies_table.right(),
 
+				AppEvent::EditCookie(_) => {
+					if self.cookies_popup.cookies_table.selection.is_some() {
+						self.edit_cookie_state()
+					}
+				}
+				AppEvent::CreateCookie(_) => self.tui_create_cookie(),
 				AppEvent::DeleteCookie(_) => self.tui_delete_cookie(),
+
+				AppEvent::ModifyCookie(_) => match self
+					.cookies_popup
+					.cookies_table
+					.selection_text_input
+					.is_in_default_mode()
+				{
+					true => self.tui_modify_cookie(),
+					false => self
+						.cookies_popup
+						.cookies_table
+						.selection_text_input
+						.key_event(key, None),
+				},
+				AppEvent::CancelEditCookie(_) => match self
+					.cookies_popup
+					.cookies_table
+					.selection_text_input
+					.is_in_default_mode()
+				{
+					true => self.display_cookies_state(),
+					false => self
+						.cookies_popup
+						.cookies_table
+						.selection_text_input
+						.key_event(key, None),
+				},
+				AppEvent::KeyEventEditCookie(_) => self
+					.cookies_popup
+					.cookies_table
+					.selection_text_input
+					.key_event(key, None),
 
 				/* Logs */
 				AppEvent::ScrollLogsUp(_) => self.logs_vertical_scrollbar.page_up(),

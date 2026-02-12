@@ -7,8 +7,10 @@ use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Paragraph};
 
 use crate::app::app::App;
 use crate::app::files::theme::THEME;
+use crate::tui::app_states::AppState;
 use crate::tui::utils::centered_rect::centered_rect;
 use crate::tui::utils::stateful::cookie_table::{COOKIES_COLUMNS_NUMBER, CookieColumns};
+use crate::tui::utils::stateful::text_input::SingleLineTextInput;
 
 impl App<'_> {
 	pub fn render_cookies_popup(&mut self, frame: &mut Frame) {
@@ -58,7 +60,10 @@ impl App<'_> {
 				let cookies_lines = vec![
 					Line::default(),
 					Line::from("No cookies"),
-					Line::from("(Add one by sending a request)".fg(THEME.read().ui.font_color)),
+					Line::from(
+						"(Add one by sending a request or pressing 'n')"
+							.fg(THEME.read().ui.font_color),
+					),
 				];
 
 				let cookies_paragraph = Paragraph::new(cookies_lines).centered();
@@ -67,7 +72,7 @@ impl App<'_> {
 			}
 			Some(selection) => {
 				self.render_cookie_list(selection, frame, cookies_layout[1]);
-				//self.render_cookie_cursor(selection, horizontal_margin + 1, frame, cookies_layout[1]);
+				self.render_cookie_cursor(selection, frame, cookies_layout[1]);
 			}
 		}
 	}
@@ -122,35 +127,43 @@ impl App<'_> {
 		}
 	}
 
-	/*
-	fn render_cookie_cursor(&mut self, selection: (usize, usize), horizontal_margin: u16, frame: &mut Frame, area: Rect) {
-		if self.state == EditingCookies {
-			let cell_with = area.width / COOKIES_COLUMNS_NUMBER as u16;
-
-			let even_odd_adjustment = match area.width % 2 {
-				1 => 1,
-				0 => 2,
-				_ => 0
-			};
-
-			let width_adjustment = cell_with - even_odd_adjustment;
-
-			let height_adjustment = (selection.0 - self.cookies_popup.cookies_table.lists_states[0].offset()) as u16 % area.height;
-
-			let selection_position_x = area.x + width_adjustment + horizontal_margin;
-			let selection_position_y = area.y + height_adjustment;
-
-			let param_text = self.cookies_popup.cookies_table.selection_text_input.text.clone();
-
-			let text_input = Paragraph::new(format!("{:fill$}", param_text, fill = (cell_with - horizontal_margin) as usize));
-			let text_rect = Rect::new(selection_position_x, selection_position_y, cell_with, 1);
-
-			frame.render_widget(text_input, text_rect);
-
-			frame.set_cursor(
-				selection_position_x + self.cookies_popup.cookies_table.selection_text_input.cursor_position as u16,
-				selection_position_y
-			);
+	fn render_cookie_cursor(&mut self, selection: (usize, usize), frame: &mut Frame, area: Rect) {
+		if self.state != AppState::EditingCookies {
+			return;
 		}
-	}*/
+
+		// Use the same layout as render_cookie_list to find exact cell positions
+		let table_layout = Layout::new(Horizontal, CookieColumns::constraints())
+			.horizontal_margin(2)
+			.split(area);
+
+		let col_area = table_layout[selection.1];
+
+		let row_offset = self.cookies_popup.cookies_table.lists_states[0].offset();
+		let visible_row = (selection.0 - row_offset) as u16;
+
+		if visible_row >= col_area.height {
+			return;
+		}
+
+		let text_rect = Rect::new(col_area.x, col_area.y + visible_row, col_area.width, 1);
+
+		// Clear the cell area and render the text input
+		let blank = " ".repeat(text_rect.width as usize);
+		frame.render_widget(Paragraph::new(blank), text_rect);
+
+		self.cookies_popup
+			.cookies_table
+			.selection_text_input
+			.display_cursor = true;
+		self.cookies_popup
+			.cookies_table
+			.selection_text_input
+			.highlight_text = true;
+
+		frame.render_widget(
+			SingleLineTextInput(&mut self.cookies_popup.cookies_table.selection_text_input),
+			text_rect,
+		);
+	}
 }

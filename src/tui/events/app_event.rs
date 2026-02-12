@@ -51,7 +51,13 @@ get_key_bindings! {
 		CookiesMoveDown(EventKeyBinding),
 		CookiesMoveLeft(EventKeyBinding),
 		CookiesMoveRight(EventKeyBinding),
+		EditCookie(EventKeyBinding),
+		CreateCookie(EventKeyBinding),
 		DeleteCookie(EventKeyBinding),
+
+		ModifyCookie(EventKeyBinding),
+		CancelEditCookie(EventKeyBinding),
+		KeyEventEditCookie(EventKeyBinding),
 
 		/* Logs */
 

@@ -201,6 +201,11 @@ impl AppState {
 					"Quit",
 					Some("Quit"),
 				)),
+				EditCookie(EventKeyBinding::new(
+					vec![key_bindings.generic.list_and_table_actions.edit_element],
+					"Edit cookie",
+					None,
+				)),
 				CookiesMoveUp(EventKeyBinding::new(
 					vec![key_bindings.generic.navigation.move_cursor_up],
 					"Move up",
@@ -221,17 +226,34 @@ impl AppState {
 					"Move right",
 					Some("Right"),
 				)),
+				CreateCookie(EventKeyBinding::new(
+					vec![key_bindings.generic.list_and_table_actions.create_element],
+					"Create cookie",
+					Some("Create cookie"),
+				)),
 				DeleteCookie(EventKeyBinding::new(
 					vec![key_bindings.generic.list_and_table_actions.delete_element],
 					"Delete cookie",
 					Some("Delete"),
 				)),
 			],
-			EditingCookies => vec![Documentation(EventKeyBinding::new(
-				vec![*EMPTY_KEY],
-				"Not implemented yet",
-				None,
-			))],
+			EditingCookies => [
+				vec![
+					ModifyCookie(EventKeyBinding::new(
+						vec![key_bindings.generic.text_input.save_and_quit_single_line],
+						"Confirm",
+						Some("Confirm"),
+					)),
+					CancelEditCookie(EventKeyBinding::new(
+						vec![key_bindings.generic.text_input.quit_without_saving],
+						"Cancel",
+						Some("Cancel"),
+					)),
+					KeyEventEditCookie(EventKeyBinding::new(vec![], "Any input", None)),
+				],
+				generate_text_input_documentation(key_bindings.generic.text_input.mode, true, true),
+			]
+			.concat(),
 			DisplayingLogs => vec![
 				GoBackToLastState(EventKeyBinding::new(
 					vec![key_bindings.generic.navigation.go_back],

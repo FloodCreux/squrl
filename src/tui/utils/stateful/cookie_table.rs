@@ -71,6 +71,11 @@ impl Default for StatefulCookieTable {
 }
 
 impl StatefulCookieTable {
+	/// Returns true if the given column index is editable (Name = 1, Value = 2)
+	pub fn is_editable_column(col: usize) -> bool {
+		col == 1 || col == 2
+	}
+
 	fn decrement_x(&self, i: usize) -> usize {
 		if i == 0 { self.rows.len() - 1 } else { i - 1 }
 	}
