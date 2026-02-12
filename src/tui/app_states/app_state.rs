@@ -17,6 +17,9 @@ pub enum AppState {
 	#[strum(to_string = "Displaying cookies")]
 	DisplayingCookies,
 
+	#[strum(to_string = "Editing cookies")]
+	EditingCookies,
+
 	/* Logs */
 	#[strum(to_string = "Displaying logs")]
 	DisplayingLogs,

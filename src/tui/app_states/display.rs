@@ -72,6 +72,7 @@ impl App<'_> {
 			| CreatingNewRequest
 			| CreatingNewFolder
 			| DisplayingCookies
+			| EditingCookies
 			| DisplayingLogs => Line::from(self.state.to_string())
 				.fg(THEME.read().ui.font_color)
 				.bg(THEME.read().ui.main_background_color),
@@ -212,6 +213,7 @@ impl App<'_> {
 		matches!(
 			self.state,
 			EditingEnvVariable
+				| EditingCookies
 				| CreatingNewCollection
 				| CreatingNewRequest
 				| CreatingNewFolder

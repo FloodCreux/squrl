@@ -227,6 +227,11 @@ impl AppState {
 					Some("Delete"),
 				)),
 			],
+			EditingCookies => vec![Documentation(EventKeyBinding::new(
+				vec![*EMPTY_KEY],
+				"Not implemented yet",
+				None,
+			))],
 			DisplayingLogs => vec![
 				GoBackToLastState(EventKeyBinding::new(
 					vec![key_bindings.generic.navigation.go_back],

@@ -185,7 +185,7 @@ impl Default for MainMenu {
 impl Default for Generic {
 	fn default() -> Self {
 		Generic {
-			display_help: key!(Ctrl - h),
+			display_help: key!('?'),
 			text_input: TextInput::default(),
 			navigation: Navigation::default(),
 			list_and_table_actions: ListAndTableActions::default(),

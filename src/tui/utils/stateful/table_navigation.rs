@@ -56,13 +56,13 @@ pub trait TableNavigation {
 		self.set_selection(Some((sel.0, y)));
 	}
 
-	fn right(&mut self) {
-		if self.rows_len() == 0 || self.selection().is_none() {
-			return;
-		}
-
-		let sel = self.selection().unwrap();
-		let y = wrapping_increment(sel.1, self.columns_count());
-		self.set_selection(Some((sel.0, y)));
-	}
+	// fn right(&mut self) {
+	// 	if self.rows_len() == 0 || self.selection().is_none() {
+	// 		return;
+	// 	}
+	//
+	// 	let sel = self.selection().unwrap();
+	// 	let y = wrapping_increment(sel.1, self.columns_count());
+	// 	self.set_selection(Some((sel.0, y)));
+	// }
 }

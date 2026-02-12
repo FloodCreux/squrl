@@ -111,6 +111,7 @@ impl<'a> App<'a> {
 
 		match self.state {
 			ChoosingElementToCreate => self.render_creating_element_popup(frame),
+			DisplayingCookies | EditingCookies => self.render_cookies_popup(frame),
 			CreatingNewCollection => self.render_creating_new_collection_popup(frame),
 			CreatingNewRequest => self.render_creating_new_request_popup(frame),
 			CreatingNewFolder => self.render_creating_new_folder_popup(frame),
@@ -122,6 +123,10 @@ impl<'a> App<'a> {
 			RenamingFolder => self.render_renaming_folder_popup(frame),
 			ChoosingTheme => self.render_theme_picker_popup(frame),
 			_ => {}
+		}
+
+		if self.should_display_help {
+			self.render_help_popup(frame);
 		}
 	}
 
