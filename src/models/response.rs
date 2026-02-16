@@ -1,6 +1,5 @@
 use image::DynamicImage;
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct RequestResponse {
@@ -24,12 +23,6 @@ pub struct ImageResponse {
 
 	#[serde(skip)]
 	pub image: Option<DynamicImage>,
-}
-
-#[derive(Error, Debug)]
-pub enum RequestResponseError {
-	#[error("COULD NOT DECODE RESPONSE TEXT OR BYTES")]
-	CouldNotDecodeResponse,
 }
 
 #[cfg(test)]
@@ -86,12 +79,6 @@ mod tests {
 			ResponseContent::Image(img) => assert_eq!(img.data, data),
 			_ => panic!("Expected Image variant"),
 		}
-	}
-
-	#[test]
-	fn error_display_message() {
-		let err = RequestResponseError::CouldNotDecodeResponse;
-		assert_eq!(err.to_string(), "COULD NOT DECODE RESPONSE TEXT OR BYTES");
 	}
 
 	#[test]

@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use std::sync::Arc;
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::collection::CollectionError::{CollectionNameAlreadyExists, CollectionNameIsEmpty};
 use crate::app::collection::FolderError::{FolderNameAlreadyExists, FolderNameIsEmpty};
 use crate::app::collection::RequestError::RequestNameIsEmpty;

@@ -4,7 +4,7 @@ use ratatui::text::{Line, Span};
 use regex::Regex;
 use std::sync::Arc;
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::environment::OS_ENV_VARS;
 use crate::app::files::theme::THEME;
 use crate::models::environment::Environment;

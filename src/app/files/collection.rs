@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use anyhow::{Context, anyhow};
 use tracing::{info, trace, warn};
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::utils::write_via_temp_file;
 use crate::cli::args::ARGS;
 use crate::models::collection::CollectionFileFormat::{Json, Yaml};
@@ -43,7 +43,7 @@ impl App<'_> {
 			Json => serde_json::from_str(&file_content).with_context(|| {
 				format!("Could not parse JSON collection \"{}\"", path_buf.display())
 			})?,
-			Yaml => serde_yml::from_str(&file_content).with_context(|| {
+			Yaml => serde_yaml_ng::from_str(&file_content).with_context(|| {
 				format!("Could not parse YAML collection \"{}\"", path_buf.display())
 			})?,
 		};
@@ -103,7 +103,7 @@ impl App<'_> {
 		let collection_stringed = match collection.file_format {
 			Json => serde_json::to_string_pretty(collection)
 				.context("Could not serialize collection to JSON")?,
-			Yaml => serde_yml::to_string(collection)
+			Yaml => serde_yaml_ng::to_string(collection)
 				.context("Could not serialize collection to YAML")?,
 		};
 

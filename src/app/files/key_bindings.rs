@@ -12,7 +12,7 @@ use serde::Deserialize;
 use std::sync::LazyLock;
 use tracing::{trace, warn};
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::utils::expand_tilde;
 use crate::cli::args::ARGS;
 
@@ -72,10 +72,6 @@ nest! {
 
 				pub alt_move_cursor_up: KeyCombination,
 				pub alt_move_cursor_down: KeyCombination,
-				#[allow(dead_code)]
-				pub alt_move_cursor_left: KeyCombination,
-				#[allow(dead_code)]
-				pub alt_move_cursor_right: KeyCombination,
 
 				pub go_back: KeyCombination,
 				pub select: KeyCombination,
@@ -220,8 +216,6 @@ impl Default for Navigation {
 
 			alt_move_cursor_up: key!(Up),
 			alt_move_cursor_down: key!(Down),
-			alt_move_cursor_left: key!(Left),
-			alt_move_cursor_right: key!(Right),
 
 			go_back: key!(esc),
 			select: key!(enter),

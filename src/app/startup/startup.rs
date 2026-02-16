@@ -1,11 +1,11 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::log::LogCounterLayer;
-use crate::app::startup::startup::AppMode::{CLI, TUI};
 use crate::cli::args::{ARGS, Command};
 use crate::cli::import::http_file;
 use crate::errors::panic_error;
 use crate::models::collection::{Collection, CollectionFileFormat};
 use crate::models::folder::Folder;
+use AppMode::{CLI, TUI};
 use anyhow::Context;
 use clap_verbosity_flag::log::LevelFilter;
 use std::collections::BTreeMap;

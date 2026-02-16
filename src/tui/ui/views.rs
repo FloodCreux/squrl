@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum RequestView {

@@ -8,7 +8,7 @@ use thiserror::Error;
 use tracing::{info, trace};
 use uuid::Uuid;
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::environment::EnvironmentError::{
 	EnvironmentNotFound, KeyAlreadyExists, KeyNotFound,
 };

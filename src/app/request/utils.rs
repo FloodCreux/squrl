@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use parking_lot::RwLock;
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::models::request::Request;
 use crate::tui::utils::stateful::stateful_tree::SelectedRequest;
 

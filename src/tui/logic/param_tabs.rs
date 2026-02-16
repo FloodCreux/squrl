@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::models::protocol::protocol::Protocol;
 use crate::tui::ui::param_tabs::param_tabs::RequestParamsTabs;
 

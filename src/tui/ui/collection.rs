@@ -7,7 +7,7 @@ use ratatui::widgets::{Block, Borders};
 use rayon::prelude::*;
 use tui_tree_widget::{Tree, TreeItem};
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::theme::THEME;
 
 impl<'a> App<'a> {

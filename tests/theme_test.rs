@@ -36,11 +36,12 @@ fn test_theme_export() {
 
 	let status = output.get_output().status;
 	if !status.success() {
-		// Should only fail if the file already exists
-		let stdout = String::from_utf8(output.get_output().stdout.clone()).unwrap();
+		// Should only fail if the file already exists.
+		// Error messages are written to stderr via `panic_error()`.
+		let stderr = String::from_utf8(output.get_output().stderr.clone()).unwrap();
 		assert!(
-			stdout.contains("already exists"),
-			"Expected 'already exists' error, got: {stdout}"
+			stderr.contains("already exists"),
+			"Expected 'already exists' error, got: {stderr}"
 		);
 	}
 }

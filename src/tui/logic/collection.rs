@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::models::auth::auth::Auth;
 use crate::models::auth::basic::BasicAuth;
 use crate::models::auth::bearer_token::BearerToken;
@@ -195,20 +195,6 @@ impl App<'_> {
 			}
 			3 => true,
 			_ => false,
-		}
-	}
-
-	/// Returns true if the current tree selection points to a folder.
-	#[allow(dead_code)]
-	fn is_selection_a_folder(&self) -> bool {
-		let selected = self.collections_tree.state.selected();
-		if selected.len() == 2 {
-			let collection_index = selected[0];
-			let child_index = selected[1];
-			let folder_count = self.core.collections[collection_index].folders.len();
-			child_index < folder_count
-		} else {
-			false
 		}
 	}
 

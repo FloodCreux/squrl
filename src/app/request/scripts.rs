@@ -2,7 +2,7 @@ use boa_engine::{Context, Source};
 use indexmap::IndexMap;
 use tracing::{info, trace};
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::models::request::Request;
 use crate::models::response::RequestResponse;
 use crate::models::scripts::ScriptType;

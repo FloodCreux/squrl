@@ -1,2 +1,5 @@
 mod prepare_terminal;
-pub mod startup;
+#[allow(clippy::module_inception)]
+mod startup;
+
+pub use startup::AppMode;

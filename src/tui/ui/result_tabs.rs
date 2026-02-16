@@ -13,7 +13,7 @@ use strum::{Display, EnumIter, FromRepr};
 use textwrap::wrap;
 use throbber_widgets_tui::{BRAILLE_DOUBLE, Throbber, WhichUse};
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::theme::THEME;
 use crate::models::protocol::protocol::Protocol;
 use crate::models::protocol::ws::ws::Sender;

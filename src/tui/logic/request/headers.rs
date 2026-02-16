@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 
 impl App<'_> {
 	/// Reset selection if headers are provided, either set it to none

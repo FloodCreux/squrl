@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::tui::utils::stateful::cookie_table::COOKIES_COLUMNS_NUMBER;
 use reqwest::Url;
 

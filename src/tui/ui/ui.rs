@@ -8,7 +8,7 @@ use ratatui::style::Stylize;
 use ratatui::text::Line;
 use ratatui::widgets::{Block, Borders};
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::theme::THEME;
 use crate::models::protocol::protocol::Protocol;
 use crate::tui::app_states::AppState::*;

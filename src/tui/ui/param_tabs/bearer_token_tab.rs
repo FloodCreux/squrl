@@ -2,7 +2,7 @@ use ratatui::Frame;
 use ratatui::layout::Direction::Vertical;
 use ratatui::layout::{Constraint, Layout, Rect};
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::tui::app_states::AppState::EditingRequestAuthBearerToken;
 use crate::tui::utils::stateful::text_input::SingleLineTextInput;
 

@@ -5,7 +5,7 @@ use ratatui::widgets::{
 	Block, Borders, Clear, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
 };
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::theme::THEME;
 use crate::tui::utils::centered_rect::centered_rect;
 

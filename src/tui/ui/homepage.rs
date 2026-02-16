@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::theme::THEME;
 use ratatui::Frame;
 use ratatui::layout::Direction::{Horizontal, Vertical};
@@ -15,28 +15,28 @@ impl App<'_> {
 		let inner_block_area = block.inner(rect);
 
 		let description_string = r#"
-                                   xxxxxxxxxx                                                           
-                               xxxxxxxxxxxxxxxxxx                                                       
-                             +xxxxxxxxxxxxxxxxxxxxx               x                                     
-                            xxxxxxxxxxxxxxxxxxxxxxxxx             xxx                                   
-                            xxxxxxxxxxxXxxxxxxxxxxxxxx            xxx                                   
-                            xxxxxxxxxxxxxxxxxxxxxxxxxx            +xxx                                  
-                            xxxxxxxxxxxxxXxxxxxxxxxxxxx       ;;;;;;;;;;                                
-                            xxxxxxxxxxxxxxxxxxxxxxxxxxx      ;;;;;.   ;;;;                              
-                             xxxxxxxxxxxXxxxxxxxxxxxxxx.    ;;;;;      ;;;;                             
-                                 xxxxxxXxxxxxxxxxxxxxxxx   ;;;;;;   &&  ;;;;                            
-                                      Xxxxxxxxxxx;;;;;;;;;;;;;;;;;;      ;;;                            
-                                     Xxxxxxxxxx;;;;;;;;;;;;;;;;;;;;;;;;;;;;;                            
-                                    Xxxxxxxxx;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;x                            
-                                   XXxxxxxxx;;;;;;;;;;;;;+++++++++  :;;.                                
-                                   Xxxxxxxxx;;;;;;;;;;+++++++++++++++.                                  
-                                   Xxxxxxxxx;;;;;;;;;+++++++++++++++++++++                              
-                                   Xxxxxxxxx;;;;;;;;+++++++++++ +++++                                   
-                                   xxxxxxxxx;;;;;;;++++++++++++                                         
-                                    Xxxxxxxxx;;;;;+++++++++++++                                         
-                                     Xxxxxxxxx;;;;++++++++++++                                          
-                                       xxxxxxxx;;++++++++++++++                                         
-                                           xxxxxx+++++++++++++++                                        
+                                   xxxxxxxxxx
+                               xxxxxxxxxxxxxxxxxx
+                             +xxxxxxxxxxxxxxxxxxxxx               x
+                            xxxxxxxxxxxxxxxxxxxxxxxxx             xxx
+                            xxxxxxxxxxxXxxxxxxxxxxxxxx            xxx
+                            xxxxxxxxxxxxxxxxxxxxxxxxxx            +xxx
+                            xxxxxxxxxxxxxXxxxxxxxxxxxxx       ;;;;;;;;;;
+                            xxxxxxxxxxxxxxxxxxxxxxxxxxx      ;;;;;.   ;;;;
+                             xxxxxxxxxxxXxxxxxxxxxxxxxx.    ;;;;;      ;;;;
+                                 xxxxxxXxxxxxxxxxxxxxxxx   ;;;;;;   &&  ;;;;
+                                      Xxxxxxxxxxx;;;;;;;;;;;;;;;;;;      ;;;
+                                     Xxxxxxxxxx;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    Xxxxxxxxx;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;x
+                                   XXxxxxxxx;;;;;;;;;;;;;+++++++++  :;;.
+                                   Xxxxxxxxx;;;;;;;;;;+++++++++++++++.
+                                   Xxxxxxxxx;;;;;;;;;+++++++++++++++++++++
+                                   Xxxxxxxxx;;;;;;;;+++++++++++ +++++
+                                   xxxxxxxxx;;;;;;;++++++++++++
+                                    Xxxxxxxxx;;;;;+++++++++++++
+                                     Xxxxxxxxx;;;;++++++++++++
+                                       xxxxxxxx;;++++++++++++++
+                                           xxxxxx+++++++++++++++
 			"#;
 
 		let inner_layout = Layout::new(

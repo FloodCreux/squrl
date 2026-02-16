@@ -6,7 +6,7 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph, Tabs};
 use strum::{Display, EnumIter, FromRepr};
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::theme::THEME;
 use crate::models::auth::auth::Auth::{BasicAuth, BearerToken, Digest, JwtToken, NoAuth};
 use crate::models::protocol::http::body::ContentType::*;

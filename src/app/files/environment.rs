@@ -11,7 +11,7 @@ use parking_lot::RwLock;
 use std::sync::LazyLock;
 use tracing::{info, trace, warn};
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::utils::write_via_temp_file;
 use crate::cli::args::ARGS;
 use crate::models::environment::Environment;

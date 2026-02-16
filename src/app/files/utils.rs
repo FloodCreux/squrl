@@ -31,18 +31,20 @@ pub fn expand_tilde(path_buf: PathBuf) -> PathBuf {
 		return path_buf;
 	}
 
-	match UserDirs::new() {
-		Some(user_dirs) => {
-			let mut home_dir = user_dirs.home_dir().to_path_buf();
-			home_dir.push(
-				path_buf
-					.strip_prefix("~/")
-					.expect("path should start with ~/"),
-			);
-			home_dir
-		}
-		None => panic!("No home directory found when trying to expand \"~\""),
+	let Some(user_dirs) = UserDirs::new() else {
+		eprintln!(
+			"Warning: no home directory found, cannot expand \"{}\"",
+			path_buf.display()
+		);
+		return path_buf;
+	};
+
+	let mut home_dir = user_dirs.home_dir().to_path_buf();
+	// Safe: we checked starts_with("~/") above
+	if let Ok(suffix) = path_buf.strip_prefix("~/") {
+		home_dir.push(suffix);
 	}
+	home_dir
 }
 
 #[cfg(test)]

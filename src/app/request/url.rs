@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use thiserror::Error;
 use tracing::info;
 
-use crate::app::app::App;
+use crate::app::App;
 
 #[derive(Error, Debug)]
 pub enum UrlError {

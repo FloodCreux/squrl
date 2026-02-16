@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::constants::FILE_VALUE_PREFIX;
 use crate::app::request::export::ExportError::{
 	CouldNotOpenFile, CouldNotParseUrl, ExportFormatNotSupported,

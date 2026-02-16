@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use tracing::info;
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::cli::commands::request_commands::settings::RequestSettingName;
 use crate::models::settings::Setting;
 

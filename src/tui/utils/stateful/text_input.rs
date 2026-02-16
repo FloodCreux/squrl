@@ -8,10 +8,10 @@ use edtui::actions::insert::PushLine;
 use edtui::actions::motion::MoveToFirstRow;
 use edtui::actions::search::StartSearch;
 use edtui::actions::{
-	Composed, CopySelection, DeleteChar, FindNext, FindPrevious, InsertChar, LineBreak,
-	MoveBackward, MoveDown, MoveForward, MoveToEndOfLine, MoveToStartOfLine, MoveUp,
-	MoveWordBackward, MoveWordForward, OpenSystemEditor, Paste, Redo, RemoveChar,
-	RemoveCharFromSearch, SelectCurrentSearch, StopSearch, SwitchMode, Undo,
+	Composed, CopySelection, DeleteChar, FindNext, FindPrevious, LineBreak, MoveBackward, MoveDown,
+	MoveForward, MoveToEndOfLine, MoveToStartOfLine, MoveUp, MoveWordBackward, MoveWordForward,
+	OpenSystemEditor, Paste, Redo, RemoveChar, RemoveCharFromSearch, SelectCurrentSearch,
+	StopSearch, SwitchMode, Undo,
 };
 use edtui::events::{KeyEventHandler, KeyEventRegister, KeyInput};
 use edtui::{
@@ -304,22 +304,10 @@ impl TextInput {
 		self.state.mode == self.default_mode
 	}
 
-	#[allow(unused)]
-	pub fn delete_char_forward(&mut self) {
-		self.state.execute(RemoveChar(1));
-	}
-
-	#[allow(unused)]
-	pub fn delete_char_backward(&mut self) {
-		self.state.execute(DeleteChar(1));
-	}
-
-	#[allow(unused)]
 	pub fn move_cursor_left(&mut self) {
 		self.state.execute(MoveBackward(1));
 	}
 
-	#[allow(unused)]
 	pub fn move_cursor_right(&mut self) {
 		self.state.execute(MoveForward(1));
 	}
@@ -328,18 +316,8 @@ impl TextInput {
 		self.state.execute(MoveToFirstRow())
 	}
 
-	#[allow(unused)]
-	pub fn move_cursor_line_start(&mut self) {
-		self.state.execute(MoveToStartOfLine())
-	}
-
 	pub fn move_cursor_line_end(&mut self) {
 		self.state.execute(MoveToEndOfLine())
-	}
-
-	#[allow(unused)]
-	pub fn push_char(&mut self, char: char) {
-		self.state.execute(InsertChar(char));
 	}
 
 	pub fn push_str(&mut self, line: &str) {

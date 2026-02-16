@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 
 impl App<'_> {
 	pub fn cli_print_request_url(

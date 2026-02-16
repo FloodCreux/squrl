@@ -1,6 +1,6 @@
 use tracing::info;
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::models::protocol::http::method::Method;
 
 impl App<'_> {

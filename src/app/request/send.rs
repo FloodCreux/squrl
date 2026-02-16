@@ -12,7 +12,7 @@ use reqwest_tracing::{DisableOtelPropagation, OtelName, TracingMiddleware};
 use thiserror::Error;
 use tracing::trace;
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::constants::FILE_VALUE_PREFIX;
 use crate::app::files::environment::save_environment_to_file;
 use crate::app::request::scripts::{execute_post_request_script, execute_pre_request_script};

@@ -2,7 +2,7 @@ use parking_lot::RwLock;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::request::send::RequestResponseError;
 use crate::app::request::send::RequestResponseError::CouldNotDecodeResponse;
 use crate::models::environment::Environment;

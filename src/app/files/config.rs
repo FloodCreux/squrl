@@ -7,7 +7,7 @@ use tracing::{trace, warn};
 
 use anyhow::Context;
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::models::collection::CollectionFileFormat;
 
 pub static SKIP_SAVE_REQUESTS_RESPONSE: OnceLock<bool> = OnceLock::new();

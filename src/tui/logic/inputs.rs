@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::key_bindings::{KEY_BINDINGS, TextAreaMode};
 use edtui::EditorMode;
 

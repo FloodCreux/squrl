@@ -27,15 +27,8 @@ impl StatefulScrollbar {
 		self.state = self.state.content_length(max_scroll as usize);
 	}
 
-	#[allow(unused)]
 	pub fn top(&mut self) {
 		self.scroll = 0;
 		self.state.first()
-	}
-
-	#[allow(unused)]
-	pub fn bottom(&mut self) {
-		self.scroll = self.max_scroll;
-		self.state.last();
 	}
 }

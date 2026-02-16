@@ -48,7 +48,7 @@ syntect = { version = "5.3.0", features = ["default-fancy"] }
 ## Serialize & Deserialize application data into files
 serde = { version = "1.0.228", features = ["derive", "rc"] }
 serde_json = "1.0.149"
-serde_yml = "0.0.12"
+serde_yaml_ng = "0.10"
 serde-versioning = "1.0.228-fix.1"
 ## Pretty print JSON
 jsonxf = "1.1.1"

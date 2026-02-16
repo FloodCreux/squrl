@@ -4,7 +4,7 @@ use ratatui::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui::prelude::Stylize;
 use ratatui::widgets::{Block, Borders};
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::theme::THEME;
 use crate::tui::app_states::AppState::{EditingPostRequestScript, EditingPreRequestScript};
 use crate::tui::utils::stateful::text_input::MultiLineTextInput;

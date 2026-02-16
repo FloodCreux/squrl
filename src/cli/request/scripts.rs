@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::models::scripts::ScriptType;
 
 impl App<'_> {

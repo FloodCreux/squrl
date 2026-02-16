@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::cli::commands::request_commands::new::{AuthArgs, BodyArgs, NewRequestCommand};
 use crate::models::auth::auth::Auth;
 use crate::models::auth::basic::BasicAuth;

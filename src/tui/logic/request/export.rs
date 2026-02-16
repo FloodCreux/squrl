@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::tui::utils::syntax_highlighting::highlight;
 use ratatui::prelude::Line;
 use rayon::prelude::*;

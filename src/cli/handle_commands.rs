@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::cli::args::Command;
 use crate::cli::args::Command::*;
 use crate::cli::commands::import::ImportType;

@@ -39,7 +39,7 @@ impl<S: Subscriber> Layer<S> for LogCounterLayer {
 	}
 }
 
-pub struct StringVisitor<'a>(&'a mut String);
+struct StringVisitor<'a>(&'a mut String);
 
 impl<'a> Visit for StringVisitor<'a> {
 	fn record_debug(&mut self, _: &Field, value: &dyn Debug) {

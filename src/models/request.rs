@@ -10,7 +10,7 @@ use tokio_util::sync::CancellationToken;
 use tracing::trace;
 use tui_tree_widget::TreeItem;
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::config::SKIP_SAVE_REQUESTS_RESPONSE;
 use crate::app::files::theme::THEME;
 use crate::models::auth::auth::Auth;

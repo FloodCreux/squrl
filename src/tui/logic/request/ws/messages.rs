@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::models::protocol::ws::message_type::{MessageType, next_message_type};
 use crate::models::protocol::ws::ws::{Message, Sender};
 use chrono::Local;

@@ -6,7 +6,7 @@ use ratatui::prelude::CrosstermBackend;
 use std::io::Stdout;
 use tracing::debug;
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::key_bindings::KEY_BINDINGS;
 use crate::tui::app_states::AVAILABLE_EVENTS;
 use crate::tui::events::AppEvent;

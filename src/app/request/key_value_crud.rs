@@ -1,6 +1,6 @@
 use tracing::info;
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::key_value::find_key;
 use crate::models::request::{KeyValue, Request};
 

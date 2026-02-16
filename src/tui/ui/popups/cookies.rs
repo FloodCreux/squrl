@@ -5,7 +5,7 @@ use ratatui::prelude::{Line, Modifier, Style};
 use ratatui::style::Stylize;
 use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Paragraph};
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::theme::THEME;
 use crate::tui::app_states::AppState;
 use crate::tui::utils::centered_rect::centered_rect;

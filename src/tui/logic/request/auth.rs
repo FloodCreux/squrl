@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::models::auth::auth::Auth::{BasicAuth, BearerToken, Digest, JwtToken, NoAuth};
 use crate::models::auth::auth::next_auth;
 use crate::models::auth::digest::{

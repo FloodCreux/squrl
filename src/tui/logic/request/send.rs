@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::request::http::send::send_http_request;
 use crate::app::request::ws::send::send_ws_request;
 use crate::models::auth::auth::Auth;

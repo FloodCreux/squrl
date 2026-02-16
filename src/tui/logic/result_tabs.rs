@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::theme::THEME;
 use crate::models::protocol::http::body::find_file_format_in_content_type;
 use crate::models::protocol::protocol::Protocol;

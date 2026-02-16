@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::cli::commands::key::KeyCommand;
 use crate::cli::commands::key_value::KeyValueCommand;
 use crate::cli::commands::request_commands::auth::AuthCommand;

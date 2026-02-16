@@ -2,7 +2,7 @@ use arboard::ImageData;
 use image::EncodableLayout;
 use rayon::prelude::*;
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::models::response::ResponseContent;
 use crate::tui::ui::result_tabs::RequestResultTabs;
 

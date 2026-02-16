@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::log::{LOGS, SHOULD_RECORD_LOGS};
 use crate::models::export::ExportFormat;
 use crate::models::protocol::http::body::ContentType;

@@ -6,7 +6,7 @@ use ratatui::style::{Color, Stylize};
 use ratatui::text::Line;
 use std::sync::LazyLock;
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::theme::THEME;
 use crate::tui::app_states::AppState::*;
 use crate::tui::events::AppEvent;

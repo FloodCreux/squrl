@@ -6,6 +6,6 @@ pub fn panic_error<T>(message: T) -> !
 where
 	T: Display,
 {
-	println!("{error}:\n\t{message}", error = "Error".red().bold());
+	eprintln!("{error}:\n\t{message}", error = "Error".red().bold());
 	exit(1);
 }

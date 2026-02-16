@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::constants::{WS_CONNECTION_TIMEOUT, WS_POLL_INTERVAL};
 use crate::app::request::send::RequestResponseError;
 use crate::models::environment::Environment;

@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::cli::commands::env::{EnvCommand, EnvSubCommand};
 use crate::cli::commands::key::KeyCommand;
 

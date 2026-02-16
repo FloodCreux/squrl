@@ -5,8 +5,8 @@ use ratatui::backend::CrosstermBackend;
 use ratatui::crossterm::ExecutableCommand;
 use ratatui::crossterm::terminal::{LeaveAlternateScreen, disable_raw_mode};
 
-use squrl::app::app::App;
-use squrl::app::startup::startup::AppMode;
+use squrl::app::App;
+use squrl::app::startup::AppMode;
 
 extern crate core;
 

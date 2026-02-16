@@ -1,7 +1,7 @@
 use reqwest::header::CONTENT_TYPE;
 use tracing::info;
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::models::protocol::http::body::{ContentType, next_content_type};
 
 impl App<'_> {

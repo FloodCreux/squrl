@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::errors::panic_error;
 use ratatui::crossterm::ExecutableCommand;
 use ratatui::crossterm::terminal::{EnterAlternateScreen, enable_raw_mode};

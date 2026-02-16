@@ -4,7 +4,7 @@ use ratatui::layout::{Constraint, Layout};
 use ratatui::style::Stylize;
 use ratatui::widgets::{Block, Borders, Clear, Paragraph};
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::theme::THEME;
 use crate::tui::utils::centered_rect::centered_rect;
 

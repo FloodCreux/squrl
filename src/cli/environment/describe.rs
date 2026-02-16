@@ -1,4 +1,4 @@
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::environment::OS_ENV_VARS;
 
 impl App<'_> {

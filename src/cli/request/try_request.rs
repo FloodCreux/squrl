@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use parking_lot::RwLock;
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::cli::commands::request_commands::new::NewRequestCommand;
 use crate::cli::commands::request_commands::send::SendCommand;
 use crate::cli::request::new::create_request_from_new_request_command;

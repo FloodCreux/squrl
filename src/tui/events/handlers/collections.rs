@@ -1,6 +1,6 @@
 use crokey::KeyCombination;
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::tui::events::AppEvent;
 
 impl App<'_> {

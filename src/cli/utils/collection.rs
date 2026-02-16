@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use thiserror::Error;
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::cli::utils::collection::FindElementError::{CollectionNotFound, RequestNotFound};
 
 #[derive(Error, Debug)]

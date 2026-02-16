@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use std::sync::LazyLock;
 use tracing::{trace, warn};
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::utils::expand_tilde;
 use crate::cli::args::ARGS;
 

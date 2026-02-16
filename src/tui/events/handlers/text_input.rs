@@ -3,7 +3,7 @@ use ratatui::Terminal;
 use ratatui::prelude::CrosstermBackend;
 use std::io::Stdout;
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::tui::events::AppEvent;
 
 impl App<'_> {

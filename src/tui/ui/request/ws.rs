@@ -5,7 +5,7 @@ use ratatui::style::{Modifier, Stylize};
 use ratatui::symbols::border;
 use ratatui::widgets::{Block, Borders, Padding, Paragraph};
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::files::theme::THEME;
 use crate::models::request::Request;
 use crate::tui::app_states::AppState;

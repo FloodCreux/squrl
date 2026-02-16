@@ -2,7 +2,7 @@ use reqwest::header::CONTENT_TYPE;
 use thiserror::Error;
 use tracing::info;
 
-use crate::app::app::App;
+use crate::app::App;
 use crate::app::key_value::find_key;
 use crate::models::protocol::http::body::ContentType;
 use crate::models::request::KeyValue;
