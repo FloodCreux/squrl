@@ -32,10 +32,9 @@ impl<S: Subscriber> Layer<S> for LogCounterLayer {
 
 		let mut logs = LOGS.lock();
 		logs.push((now, level, target, message));
-		// Prevents keeping too much logs
+		// Prevents keeping too many logs — remove the oldest entry
 		if logs.len() > 1000 {
-			logs.pop()
-				.expect("logs should not be empty when over capacity");
+			logs.remove(0);
 		}
 	}
 }
