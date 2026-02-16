@@ -298,7 +298,7 @@ impl App<'_> {
 			}
 		};
 
-		if request.settings.use_config_proxy.as_bool()
+		if request.settings.use_config_proxy.as_bool().unwrap_or(true)
 			&& let Some(proxy) = &self.core.config.get_proxy()
 		{
 			let mut proxy_output = String::from("--proxy ");
@@ -350,7 +350,7 @@ impl App<'_> {
 
 		/* Proxy */
 
-		if request.settings.use_config_proxy.as_bool()
+		if request.settings.use_config_proxy.as_bool().unwrap_or(true)
 			&& let Some(proxy) = &self.core.config.get_proxy()
 		{
 			let mut proxy_output = String::from("\n    'proxy' => [");
@@ -591,7 +591,7 @@ impl App<'_> {
 		};
 
 		/* Proxy */
-		if request.settings.use_config_proxy.as_bool()
+		if request.settings.use_config_proxy.as_bool().unwrap_or(true)
 			&& let Some(proxy) = &self.core.config.get_proxy()
 		{
 			output += ",\n  proxy: {";
@@ -923,7 +923,7 @@ impl App<'_> {
 				output += "    let status = response.status();\n";
 				output += "    let body = response.text().await?;\n\n";
 
-				if request.settings.use_config_proxy.as_bool()
+				if request.settings.use_config_proxy.as_bool().unwrap_or(true)
 					&& self.core.config.get_proxy().is_some()
 				{
 					output += "    // Use reqwest::ClientBuilder with reqwest::Proxy\n";

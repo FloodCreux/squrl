@@ -26,8 +26,12 @@ pub async fn send_http_request(
 		let mut request = local_request.write();
 		request.is_pending = true;
 		let cancellation_token = request.cancellation_token.clone();
-		let timeout_ms = request.settings.timeout.as_u32() as u64;
-		let pretty_print = request.settings.pretty_print_response_content.as_bool();
+		let timeout_ms = request.settings.timeout.as_u32().unwrap_or(30000) as u64;
+		let pretty_print = request
+			.settings
+			.pretty_print_response_content
+			.as_bool()
+			.unwrap_or(true);
 		(cancellation_token, timeout_ms, pretty_print)
 	};
 	// Write guard is dropped here — safe to await

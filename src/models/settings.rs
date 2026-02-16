@@ -21,17 +21,17 @@ pub enum Setting {
 }
 
 impl Setting {
-	pub fn as_bool(&self) -> bool {
+	pub fn as_bool(&self) -> Option<bool> {
 		match self {
-			Setting::Bool(bool) => *bool,
-			Setting::U32(_) => unreachable!(),
+			Setting::Bool(b) => Some(*b),
+			_ => None,
 		}
 	}
 
-	pub fn as_u32(&self) -> u32 {
+	pub fn as_u32(&self) -> Option<u32> {
 		match self {
-			Setting::Bool(_) => unreachable!(),
-			Setting::U32(u32) => *u32,
+			Setting::U32(n) => Some(*n),
+			_ => None,
 		}
 	}
 }
@@ -130,46 +130,44 @@ mod tests {
 	use super::*;
 
 	#[test]
-	fn as_bool_returns_true() {
-		assert!(Setting::Bool(true).as_bool());
+	fn as_bool_returns_some_true() {
+		assert_eq!(Setting::Bool(true).as_bool(), Some(true));
 	}
 
 	#[test]
-	fn as_bool_returns_false() {
-		assert!(!Setting::Bool(false).as_bool());
+	fn as_bool_returns_some_false() {
+		assert_eq!(Setting::Bool(false).as_bool(), Some(false));
 	}
 
 	#[test]
-	fn as_u32_returns_value() {
-		assert_eq!(Setting::U32(1000).as_u32(), 1000);
+	fn as_bool_returns_none_for_u32_variant() {
+		assert_eq!(Setting::U32(42).as_bool(), None);
 	}
 
 	#[test]
-	fn as_u32_returns_zero() {
-		assert_eq!(Setting::U32(0).as_u32(), 0);
+	fn as_u32_returns_some_value() {
+		assert_eq!(Setting::U32(1000).as_u32(), Some(1000));
 	}
 
 	#[test]
-	#[should_panic]
-	fn as_bool_panics_on_u32_variant() {
-		Setting::U32(42).as_bool();
+	fn as_u32_returns_some_zero() {
+		assert_eq!(Setting::U32(0).as_u32(), Some(0));
 	}
 
 	#[test]
-	#[should_panic]
-	fn as_u32_panics_on_bool_variant() {
-		Setting::Bool(true).as_u32();
+	fn as_u32_returns_none_for_bool_variant() {
+		assert_eq!(Setting::Bool(true).as_u32(), None);
 	}
 
 	#[test]
 	fn default_request_settings_has_30s_timeout() {
 		let settings = RequestSettings::default();
-		assert_eq!(settings.timeout.as_u32(), 30000);
+		assert_eq!(settings.timeout.as_u32(), Some(30000));
 	}
 
 	#[test]
 	fn default_request_settings_has_pretty_print_enabled() {
 		let settings = RequestSettings::default();
-		assert!(settings.pretty_print_response_content.as_bool());
+		assert_eq!(settings.pretty_print_response_content.as_bool(), Some(true));
 	}
 }

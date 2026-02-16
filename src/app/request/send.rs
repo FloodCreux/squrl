@@ -86,19 +86,23 @@ impl App<'_> {
 
 		/* REDIRECTS */
 
-		if !request.settings.allow_redirects.as_bool() {
+		if !request.settings.allow_redirects.as_bool().unwrap_or(true) {
 			client_builder = client_builder.redirect(Policy::none());
 		}
 
 		/* STORE COOKIES */
 
-		let should_store_cookies = request.settings.store_received_cookies.as_bool();
+		let should_store_cookies = request
+			.settings
+			.store_received_cookies
+			.as_bool()
+			.unwrap_or(true);
 
 		client_builder = client_builder.cookie_store(should_store_cookies);
 
 		/* PROXY */
 
-		if request.settings.use_config_proxy.as_bool()
+		if request.settings.use_config_proxy.as_bool().unwrap_or(true)
 			&& let Some(proxy) = &self.core.config.get_proxy()
 		{
 			if let Some(http_proxy_str) = &proxy.http_proxy {
@@ -123,13 +127,23 @@ impl App<'_> {
 
 		/* INVALID CERTS */
 
-		if request.settings.accept_invalid_certs.as_bool() {
+		if request
+			.settings
+			.accept_invalid_certs
+			.as_bool()
+			.unwrap_or(false)
+		{
 			client_builder = client_builder.danger_accept_invalid_certs(true);
 		}
 
 		/* INVALID HOSTNAMES */
 
-		if request.settings.accept_invalid_hostnames.as_bool() {
+		if request
+			.settings
+			.accept_invalid_hostnames
+			.as_bool()
+			.unwrap_or(false)
+		{
 			client_builder = client_builder.danger_accept_invalid_hostnames(true);
 		}
 
