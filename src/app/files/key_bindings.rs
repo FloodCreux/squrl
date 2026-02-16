@@ -3,6 +3,7 @@ use std::fs::OpenOptions;
 use std::io::Read;
 use std::path::PathBuf;
 
+use anyhow::Context;
 use crokey::{KeyCombination, key};
 use nestify::nest;
 use parking_lot::RwLock;
@@ -14,7 +15,6 @@ use tracing::{trace, warn};
 use crate::app::app::App;
 use crate::app::files::utils::expand_tilde;
 use crate::cli::args::ARGS;
-use crate::errors::panic_error;
 
 #[derive(Default, Copy, Clone, Deserialize)]
 #[serde(default)]
@@ -356,24 +356,33 @@ impl App<'_> {
 
 		trace!("Parsing key bindings file \"{}\"", path.display());
 
-		let mut key_bindings_file = match OpenOptions::new().read(true).open(path) {
-			Ok(key_bindings_file) => key_bindings_file,
-			Err(e) => panic_error(format!("Could not open key bindings file\n\t{e}")),
-		};
+		if let Err(e) = self.parse_key_bindings_file_inner(&path) {
+			warn!(
+				"Failed to parse key bindings file \"{}\": {e:#}",
+				path.display()
+			);
+			warn!("Using default key bindings");
+		}
+	}
+
+	fn parse_key_bindings_file_inner(&mut self, path: &PathBuf) -> anyhow::Result<()> {
+		let mut key_bindings_file = OpenOptions::new()
+			.read(true)
+			.open(path)
+			.with_context(|| format!("Could not open key bindings file \"{}\"", path.display()))?;
 
 		let mut file_content = String::new();
 		key_bindings_file
 			.read_to_string(&mut file_content)
-			.expect("\tCould not read key bindings file");
+			.with_context(|| format!("Could not read key bindings file \"{}\"", path.display()))?;
 
-		let config: KeyBindingsConfig = match toml::from_str(&file_content) {
-			Ok(config) => config,
-			Err(e) => panic_error(format!("Could not parse key bindings file\n\t{e}")),
-		};
+		let config: KeyBindingsConfig = toml::from_str(&file_content)
+			.with_context(|| format!("Could not parse key bindings file \"{}\"", path.display()))?;
 
 		*KEY_BINDINGS.write() = config.keybindings;
 
 		trace!("Key bindings file parsed!");
+		Ok(())
 	}
 }
 

@@ -49,20 +49,21 @@ impl App<'_> {
 		// Guard is dropped here — safe to await
 
 		if let Some(tx) = ws_disconnect {
-			tx.lock()
+			if let Err(e) = tx
+				.lock()
 				.await
 				.send(reqwest_websocket::Message::Close {
 					code: CloseCode::Normal,
 					reason: String::new(),
 				})
 				.await
-				.expect("WebSocket send close frame should succeed");
+			{
+				tracing::warn!("Failed to send WebSocket close frame: {e}");
+			}
 
-			tx.lock()
-				.await
-				.close()
-				.await
-				.expect("WebSocket close should succeed");
+			if let Err(e) = tx.lock().await.close().await {
+				tracing::warn!("Failed to close WebSocket connection: {e}");
+			}
 			return;
 		}
 

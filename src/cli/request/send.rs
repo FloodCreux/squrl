@@ -21,7 +21,7 @@ use std::io::stdout;
 use std::sync::Arc;
 use tokio::io;
 use tokio::io::{AsyncBufReadExt, BufReader};
-use tracing::info;
+use tracing::{info, warn};
 
 impl App<'_> {
 	pub async fn cli_send_request(
@@ -124,28 +124,22 @@ impl App<'_> {
 
 		let request = local_request.read();
 
-		if send_command.status_code {
-			println!(
-				"{}",
-				response
-					.status_code
-					.as_ref()
-					.expect("response should have a status code")
-			);
+		if send_command.status_code
+			&& let Some(status_code) = response.status_code.as_ref()
+		{
+			println!("{}", status_code);
 		}
 
-		if send_command.duration {
-			println!(
-				"{}",
-				response.duration.expect("response should have a duration")
-			);
+		if send_command.duration
+			&& let Some(duration) = &response.duration
+		{
+			println!("{}", duration);
 		}
 
-		if send_command.cookies {
-			println!(
-				"{}",
-				response.cookies.expect("response should have cookies")
-			);
+		if send_command.cookies
+			&& let Some(cookies) = &response.cookies
+		{
+			println!("{}", cookies);
 		}
 
 		if send_command.headers {
@@ -245,9 +239,10 @@ impl App<'_> {
 
 							let tx_and_connected = {
 								let request = local_local_request.read();
-								let ws_request = request
-									.get_ws_request()
-									.expect("request should be WebSocket");
+								let ws_request = match request.get_ws_request() {
+									Ok(ws) => ws,
+									Err(_) => continue,
+								};
 								if ws_request.is_connected {
 									ws_request.websocket.as_ref().map(|ws| Arc::clone(&ws.tx))
 								} else {
@@ -258,16 +253,20 @@ impl App<'_> {
 							if let Some(tx) = tx_and_connected {
 								info!("Sending message");
 
-								tx.lock()
+								if let Err(e) = tx
+									.lock()
 									.await
 									.send(reqwest_websocket::Message::Text(text.clone()))
 									.await
-									.expect("sending WebSocket message should succeed");
+								{
+									warn!("Failed to send WebSocket message: {e}");
+									continue;
+								}
 
 								let mut request = local_local_request.write();
-								let ws_request = request
-									.get_ws_request_mut()
-									.expect("request should be WebSocket");
+								let Ok(ws_request) = request.get_ws_request_mut() else {
+									continue;
+								};
 								ws_request.messages.push(Message {
 									timestamp: Local::now(),
 									sender: Sender::You,

@@ -92,14 +92,16 @@ pub async fn send_http_request(
 					.join("\n");
 
 				let response_content = match is_image {
-					true => {
-						let content = response.bytes().await.expect("response bytes should be readable");
-						let image = image::load_from_memory(content.as_ref());
+					true => match response.bytes().await {
+						Ok(content) => {
+							let image = image::load_from_memory(content.as_ref());
 
-						ResponseContent::Image(ImageResponse {
-							data: content.to_vec(),
-							image: image.ok(),
-						})
+							ResponseContent::Image(ImageResponse {
+								data: content.to_vec(),
+								image: image.ok(),
+							})
+						}
+						Err(_) => return Err(CouldNotDecodeResponse)
 					},
 					false => match response.bytes().await {
 						Ok(bytes) => match String::from_utf8(bytes.to_vec()) {

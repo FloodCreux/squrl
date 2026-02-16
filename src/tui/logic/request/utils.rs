@@ -23,9 +23,9 @@ impl App<'_> {
 						let Some(clipboard) = self.clipboard.as_mut() else {
 							return;
 						};
-						clipboard
-							.set_text(body)
-							.expect("Could not copy response content to clipboard");
+						if let Err(e) = clipboard.set_text(body) {
+							tracing::warn!("Could not copy to clipboard: {e}");
+						}
 					}
 					ResponseContent::Image(image_response) => match &image_response.image {
 						None => {}
@@ -35,13 +35,13 @@ impl App<'_> {
 							let Some(clipboard) = self.clipboard.as_mut() else {
 								return;
 							};
-							clipboard
-								.set_image(ImageData {
-									width: rgba_image.width() as usize,
-									height: rgba_image.height() as usize,
-									bytes: rgba_image.as_bytes().into(),
-								})
-								.expect("Could not copy response image to clipboard");
+							if let Err(e) = clipboard.set_image(ImageData {
+								width: rgba_image.width() as usize,
+								height: rgba_image.height() as usize,
+								bytes: rgba_image.as_bytes().into(),
+							}) {
+								tracing::warn!("Could not copy image to clipboard: {e}");
+							}
 						}
 					},
 				},
@@ -69,9 +69,9 @@ impl App<'_> {
 					let Some(clipboard) = self.clipboard.as_mut() else {
 						return;
 					};
-					clipboard
-						.set_text(text)
-						.expect("Could not copy messages content to clipboard");
+					if let Err(e) = clipboard.set_text(text) {
+						tracing::warn!("Could not copy to clipboard: {e}");
+					}
 				}
 			}
 			RequestResultTabs::Cookies => match &selected_request.response.cookies {
@@ -80,9 +80,9 @@ impl App<'_> {
 					let Some(clipboard) = self.clipboard.as_mut() else {
 						return;
 					};
-					clipboard
-						.set_text(cookies)
-						.expect("Could not copy cookies to clipboard");
+					if let Err(e) = clipboard.set_text(cookies) {
+						tracing::warn!("Could not copy to clipboard: {e}");
+					}
 				}
 			},
 			RequestResultTabs::Headers => {
@@ -97,9 +97,9 @@ impl App<'_> {
 					let Some(clipboard) = self.clipboard.as_mut() else {
 						return;
 					};
-					clipboard
-						.set_text(headers_string)
-						.expect("Could not copy headers to clipboard");
+					if let Err(e) = clipboard.set_text(headers_string) {
+						tracing::warn!("Could not copy to clipboard: {e}");
+					}
 				}
 			}
 			RequestResultTabs::Console => {
@@ -122,9 +122,9 @@ impl App<'_> {
 					let Some(clipboard) = self.clipboard.as_mut() else {
 						return;
 					};
-					clipboard
-						.set_text(text)
-						.expect("Could not copy console output to clipboard");
+					if let Err(e) = clipboard.set_text(text) {
+						tracing::warn!("Could not copy to clipboard: {e}");
+					}
 				}
 			}
 		}

@@ -5,8 +5,9 @@ use std::path::Path;
 use std::sync::OnceLock;
 use tracing::{trace, warn};
 
+use anyhow::Context;
+
 use crate::app::app::App;
-use crate::errors::panic_error;
 use crate::models::collection::CollectionFileFormat;
 
 pub static SKIP_SAVE_REQUESTS_RESPONSE: OnceLock<bool> = OnceLock::new();
@@ -96,7 +97,7 @@ impl Config {
 }
 
 impl App<'_> {
-	pub fn parse_config_file(&mut self, path_buf: &Path) {
+	pub fn parse_config_file(&mut self, path_buf: &Path) -> anyhow::Result<()> {
 		let mut file_content = String::new();
 
 		trace!("Trying to open \"squrl.toml\" config file");
@@ -105,25 +106,24 @@ impl App<'_> {
 			.read(true)
 			.write(true)
 			.open(path_buf)
-			.expect("\tCould not open config file");
+			.with_context(|| format!("Could not open config file \"{}\"", path_buf.display()))?;
 
 		config_file
 			.read_to_string(&mut file_content)
-			.expect("\tCould not read config file");
+			.with_context(|| format!("Could not read config file \"{}\"", path_buf.display()))?;
 
-		let config: Config = match toml::from_str(&file_content) {
-			Ok(config) => config,
-			Err(e) => panic_error(format!("Could not parse config file\n\t{e}")),
-		};
+		let config: Config = toml::from_str(&file_content)
+			.with_context(|| format!("Could not parse config file \"{}\"", path_buf.display()))?;
 
 		config.set_should_skip_requests_response();
 
 		self.core.config = config;
 
 		trace!("Config file parsed!");
+		Ok(())
 	}
 
-	pub fn parse_global_config_file(&mut self, path_buf: &Path) {
+	pub fn parse_global_config_file(&mut self, path_buf: &Path) -> anyhow::Result<()> {
 		let mut file_content = String::new();
 
 		trace!(
@@ -131,19 +131,32 @@ impl App<'_> {
 			path_buf.display()
 		);
 
-		let mut global_config_file = OpenOptions::new()
-			.read(true)
-			.open(path_buf)
-			.expect("\tCould not open global config file");
+		let mut global_config_file =
+			OpenOptions::new()
+				.read(true)
+				.open(path_buf)
+				.with_context(|| {
+					format!(
+						"Could not open global config file \"{}\"",
+						path_buf.display()
+					)
+				})?;
 
 		global_config_file
 			.read_to_string(&mut file_content)
-			.expect("\tCould not read global config file");
+			.with_context(|| {
+				format!(
+					"Could not read global config file \"{}\"",
+					path_buf.display()
+				)
+			})?;
 
-		let global_config: Config = match toml::from_str(&file_content) {
-			Ok(config) => config,
-			Err(e) => panic_error(format!("Could not parse config file\n\t{e}")),
-		};
+		let global_config: Config = toml::from_str(&file_content).with_context(|| {
+			format!(
+				"Could not parse global config file \"{}\"",
+				path_buf.display()
+			)
+		})?;
 
 		// Replace an attribute if it is not set
 
@@ -184,6 +197,7 @@ impl App<'_> {
 		self.core.config.set_should_skip_requests_response();
 
 		trace!("Global config file parsed!");
+		Ok(())
 	}
 
 	/// Save theme selection to global config file

@@ -6,6 +6,7 @@ use crate::cli::import::http_file;
 use crate::errors::panic_error;
 use crate::models::collection::{Collection, CollectionFileFormat};
 use crate::models::folder::Folder;
+use anyhow::Context;
 use clap_verbosity_flag::log::LevelFilter;
 use std::collections::BTreeMap;
 use std::fs::{File, OpenOptions};
@@ -43,7 +44,10 @@ impl<'a> App<'a> {
 				};
 
 				// Using a separate file allows to redirect the output and avoid printing to screen
-				let log_file = self.create_log_file();
+				let log_file = match self.create_log_file() {
+					Ok(file) => file,
+					Err(e) => panic_error(format!("{e:#}")),
+				};
 
 				tracing_subscriber::fmt()
 					.with_max_level(verbosity.as_trace())
@@ -57,8 +61,10 @@ impl<'a> App<'a> {
 			}
 		};
 
-		if ARGS.should_parse_directory {
-			self.parse_app_directory();
+		if ARGS.should_parse_directory
+			&& let Err(e) = self.parse_app_directory()
+		{
+			panic_error(format!("{e:#}"));
 		}
 
 		if let Some(command) = &ARGS.command {
@@ -72,43 +78,46 @@ impl<'a> App<'a> {
 		}
 	}
 
-	fn parse_app_directory(&mut self) {
-		let paths = match ARGS
+	fn parse_app_directory(&mut self) -> anyhow::Result<()> {
+		let directory = ARGS
 			.directory
 			.as_ref()
-			.expect("--directory argument is required")
+			.context("--directory argument is required")?;
+
+		let paths = directory
 			.read_dir()
-		{
-			Ok(paths) => paths,
-			Err(e) => panic_error(format!(
-				"Directory \"{}\" not found\n\t{e}",
-				ARGS.directory
-					.as_ref()
-					.expect("--directory argument is required")
-					.display()
-			)),
-		};
+			.with_context(|| format!("Directory \"{}\" not found", directory.display()))?;
 
 		for path in paths {
-			let path = path.expect("directory entry should be readable").path();
+			let path = path
+				.with_context(|| {
+					format!(
+						"Could not read directory entry in \"{}\"",
+						directory.display()
+					)
+				})?
+				.path();
 
 			if path.is_dir() {
 				continue;
 			}
 
-			let file_name = path
-				.file_name()
-				.expect("path should have a file name")
-				.to_str()
-				.expect("file name should be valid UTF-8");
+			let file_name = path.file_name().and_then(|n| n.to_str()).with_context(|| {
+				format!("Could not extract file name from \"{}\"", path.display())
+			})?;
 
 			trace!("Checking file \"{}\"", path.display());
 
 			if file_name.starts_with(".env.") {
-				self.add_environment_from_file(&path);
+				if let Err(e) = self.add_environment_from_file(&path) {
+					warn!(
+						"Could not load environment file \"{}\": {e:#}",
+						path.display()
+					);
+				}
 				continue;
 			} else if file_name == "squrl.toml" {
-				self.parse_config_file(&path);
+				self.parse_config_file(&path)?;
 				continue;
 			} else if file_name == "squrl.log" {
 				trace!("Log file is not parsable");
@@ -122,10 +131,16 @@ impl<'a> App<'a> {
 				continue;
 			}
 
-			if file_name.ends_with(".json") {
-				self.set_collections_from_file(path, CollectionFileFormat::Json);
-			} else if file_name.ends_with(".yaml") {
-				self.set_collections_from_file(path, CollectionFileFormat::Yaml);
+			if file_name.ends_with(".json")
+				&& let Err(e) =
+					self.set_collections_from_file(path.clone(), CollectionFileFormat::Json)
+			{
+				warn!("Could not load collection \"{}\": {e:#}", path.display());
+			} else if file_name.ends_with(".yaml")
+				&& let Err(e) =
+					self.set_collections_from_file(path.clone(), CollectionFileFormat::Yaml)
+			{
+				warn!("Could not load collection \"{}\": {e:#}", path.display());
 			}
 		}
 
@@ -133,8 +148,10 @@ impl<'a> App<'a> {
 		if let Some(config_directory) = &ARGS.config_directory {
 			let global_config_file_path = config_directory.join("global.toml");
 
-			if global_config_file_path.exists() {
-				self.parse_global_config_file(&global_config_file_path);
+			if global_config_file_path.exists()
+				&& let Err(e) = self.parse_global_config_file(&global_config_file_path)
+			{
+				warn!("Could not parse global config: {e:#}");
 			}
 		}
 
@@ -142,8 +159,10 @@ impl<'a> App<'a> {
 			&& ARGS.config_directory.as_ref() != Some(user_config_dir)
 		{
 			let user_global_config_path = user_config_dir.join("global.toml");
-			if user_global_config_path.exists() {
-				self.parse_global_config_file(&user_global_config_path);
+			if user_global_config_path.exists()
+				&& let Err(e) = self.parse_global_config_file(&user_global_config_path)
+			{
+				warn!("Could not parse user global config: {e:#}");
 			}
 		}
 
@@ -212,10 +231,10 @@ impl<'a> App<'a> {
 					};
 
 					if components.len() == 1 {
-						// File directly in requests/ → root-level requests
+						// File directly in requests/ -> root-level requests
 						root_requests.extend(parsed_requests);
 					} else {
-						// File in a subdirectory → folder named after the first path component
+						// File in a subdirectory -> folder named after the first path component
 						let folder_name = components[0]
 							.as_os_str()
 							.to_str()
@@ -249,7 +268,7 @@ impl<'a> App<'a> {
 						last_position: None,
 						folders,
 						requests: root_requests,
-						path: PathBuf::new(), // Ephemeral — no file path
+						path: PathBuf::new(), // Ephemeral -- no file path
 						file_format: CollectionFileFormat::default(),
 					};
 
@@ -257,23 +276,22 @@ impl<'a> App<'a> {
 				}
 			}
 		}
+
+		Ok(())
 	}
 
-	fn create_log_file(&mut self) -> File {
+	fn create_log_file(&mut self) -> anyhow::Result<File> {
 		let path = ARGS
 			.directory
 			.as_ref()
-			.expect("--directory argument is required")
+			.context("--directory argument is required")?
 			.join("squrl.log");
 
-		match OpenOptions::new()
+		OpenOptions::new()
 			.write(true)
 			.create(true)
 			.truncate(true)
-			.open(path)
-		{
-			Ok(log_file) => log_file,
-			Err(e) => panic_error(format!("Could not open log file\n\t{e}")),
-		}
+			.open(&path)
+			.with_context(|| format!("Could not open log file \"{}\"", path.display()))
 	}
 }

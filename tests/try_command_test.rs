@@ -41,9 +41,9 @@ fn test_try_with_method() {
 
 #[test]
 fn test_try_with_status_code_flag_on_connection_error_panics() {
-	// Known issue: using --status-code when the request fails (e.g., connection refused)
-	// causes a panic because the response has no status code.
-	// This test documents the current behavior.
+	// Previously this was a known issue: using --status-code when the request fails
+	// (e.g., connection refused) caused a panic because the response has no status code.
+	// Now it gracefully handles the missing status code and succeeds.
 	squrl()
 		.args([
 			"try",
@@ -55,7 +55,7 @@ fn test_try_with_status_code_flag_on_connection_error_panics() {
 		])
 		.timeout(std::time::Duration::from_secs(10))
 		.assert()
-		.failure();
+		.success();
 }
 
 #[test]

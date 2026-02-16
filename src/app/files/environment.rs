@@ -5,6 +5,7 @@ use std::path::Path;
 use std::str::from_utf8;
 use std::sync::Arc;
 
+use anyhow::Context;
 use indexmap::IndexMap;
 use parking_lot::RwLock;
 use std::sync::LazyLock;
@@ -13,7 +14,6 @@ use tracing::{info, trace, warn};
 use crate::app::app::App;
 use crate::app::files::utils::write_via_temp_file;
 use crate::cli::args::ARGS;
-use crate::errors::panic_error;
 use crate::models::environment::Environment;
 
 pub static OS_ENV_VARS: LazyLock<IndexMap<String, String>> =
@@ -21,21 +21,24 @@ pub static OS_ENV_VARS: LazyLock<IndexMap<String, String>> =
 
 impl App<'_> {
 	/// Add the environment file to the app environments
-	pub fn add_environment_from_file(&mut self, path_buf: &Path) {
+	pub fn add_environment_from_file(&mut self, path_buf: &Path) -> anyhow::Result<()> {
 		let file_name = path_buf
 			.file_name()
-			.expect("path should have a file name")
-			.to_str()
-			.expect("file name should be valid UTF-8")
+			.and_then(|n| n.to_str())
+			.with_context(|| {
+				format!(
+					"Could not extract file name from path \"{}\"",
+					path_buf.display()
+				)
+			})?
 			.to_string()
 			.replace(".env.", "");
 
 		trace!("Trying to open \"{}\" env file", path_buf.display());
 
-		let env_file: File = match File::open(path_buf) {
-			Ok(env_file) => env_file,
-			Err(e) => panic_error(format!("Could not open environment file\n\t{e}")),
-		};
+		let env_file: File = File::open(path_buf).with_context(|| {
+			format!("Could not open environment file \"{}\"", path_buf.display())
+		})?;
 
 		let environment = Environment {
 			name: file_name,
@@ -48,6 +51,7 @@ impl App<'_> {
 			.push(Arc::new(RwLock::new(environment)));
 
 		trace!("Environment file parsed!");
+		Ok(())
 	}
 
 	pub fn save_environment_to_file(&mut self, env_index: usize) {
@@ -133,7 +137,8 @@ fn unquote_env_value(s: &str) -> String {
 	s.to_string()
 }
 
-/// Save app environment in a file through a temporary file
+/// Save app environment in a file through a temporary file.
+/// Logs a warning on failure rather than panicking.
 pub fn save_environment_to_file(environment: &Environment) {
 	if !ARGS.should_save {
 		warn!("Dry-run, not saving the environment");
@@ -151,8 +156,10 @@ pub fn save_environment_to_file(environment: &Environment) {
 	// Remove trailing \n
 	data.pop();
 
-	write_via_temp_file(&environment.path, data.as_bytes())
-		.expect("Could not save environment file");
+	if let Err(e) = write_via_temp_file(&environment.path, data.as_bytes()) {
+		warn!("Could not save environment file: {e}");
+		return;
+	}
 
 	trace!("Environment saved")
 }

@@ -1,6 +1,5 @@
 use crate::app::app::App;
 use crate::cli::commands::request_commands::new::{AuthArgs, BodyArgs, NewRequestCommand};
-use crate::errors::panic_error;
 use crate::models::auth::auth::Auth;
 use crate::models::auth::basic::BasicAuth;
 use crate::models::auth::bearer_token::BearerToken;
@@ -159,7 +158,7 @@ fn get_auth_from_auth_args(auth_args: AuthArgs) -> anyhow::Result<Auth> {
 					nc: 0,
 				}))
 			}
-			Err(error) => panic_error(error),
+			Err(error) => Err(anyhow!(error)),
 		}
 	} else {
 		Ok(Auth::NoAuth)

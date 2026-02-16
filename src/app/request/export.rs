@@ -80,9 +80,9 @@ impl App<'_> {
 	pub fn copy_request_export_to_clipboard(&mut self) {
 		if let Some(clipboard) = &mut self.clipboard {
 			let content = &self.display_request_export.content;
-			clipboard
-				.set_text(content)
-				.expect("Could not copy request export to clipboard")
+			if let Err(e) = clipboard.set_text(content) {
+				tracing::warn!("Could not copy request export to clipboard: {e}");
+			}
 		}
 	}
 
@@ -647,9 +647,13 @@ impl App<'_> {
 				let secret = self.replace_env_keys_by_value(secret);
 				let payload = self.replace_env_keys_by_value(payload);
 
-				let token = jwt_do_jaat(algorithm, secret_type, secret, payload)
-					.expect("JWT token generation should succeed");
-				format!("\nAuthorization: Bearer {}", token)
+				match jwt_do_jaat(algorithm, secret_type, secret, payload) {
+					Ok(token) => format!("\nAuthorization: Bearer {}", token),
+					Err(e) => {
+						tracing::warn!("JWT token generation failed: {e}");
+						String::new()
+					}
+				}
 			}
 			Auth::Digest(Digest {
 				username,

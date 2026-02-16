@@ -17,7 +17,6 @@ use crate::app::constants::FILE_VALUE_PREFIX;
 use crate::app::files::environment::save_environment_to_file;
 use crate::app::request::scripts::{execute_post_request_script, execute_pre_request_script};
 use crate::app::request::send::RequestResponseError::PostRequestScript;
-use crate::errors::panic_error;
 use crate::models::auth::auth::Auth;
 use crate::models::auth::basic::BasicAuth;
 use crate::models::auth::bearer_token::BearerToken;
@@ -30,6 +29,7 @@ use crate::models::protocol::http::body::ContentType::{
 use crate::models::protocol::protocol::Protocol;
 use crate::models::request::Request;
 use crate::models::response::RequestResponse;
+use anyhow::Context;
 
 #[derive(Error, Debug)]
 pub enum PrepareRequestError {
@@ -41,6 +41,8 @@ pub enum PrepareRequestError {
 	CouldNotOpenFile,
 	#[error("{0}")]
 	JwtError(#[from] JwtError),
+	#[error("{0}")]
+	Other(#[from] anyhow::Error),
 }
 
 /// Result of the synchronous `prepare_request` phase.
@@ -96,34 +98,17 @@ impl App<'_> {
 
 		/* PROXY */
 
-		if request.settings.use_config_proxy.as_bool() {
-			match &self.core.config.get_proxy() {
-				None => {}
-				Some(proxy) => {
-					match &proxy.http_proxy {
-						None => {}
-						Some(http_proxy_str) => {
-							let proxy = match Proxy::http(http_proxy_str) {
-								Ok(proxy) => proxy,
-								Err(e) => panic_error(format!("Could not parse HTTP proxy\n\t{e}")),
-							};
-							client_builder = client_builder.proxy(proxy);
-						}
-					}
+		if request.settings.use_config_proxy.as_bool()
+			&& let Some(proxy) = &self.core.config.get_proxy()
+		{
+			if let Some(http_proxy_str) = &proxy.http_proxy {
+				let proxy = Proxy::http(http_proxy_str).context("Could not parse HTTP proxy")?;
+				client_builder = client_builder.proxy(proxy);
+			}
 
-					match &proxy.https_proxy {
-						None => {}
-						Some(https_proxy_str) => {
-							let proxy = match Proxy::https(https_proxy_str) {
-								Ok(proxy) => proxy,
-								Err(e) => {
-									panic_error(format!("Could not parse HTTPS proxy\n\t{e}"))
-								}
-							};
-							client_builder = client_builder.proxy(proxy);
-						}
-					}
-				}
+			if let Some(https_proxy_str) = &proxy.https_proxy {
+				let proxy = Proxy::https(https_proxy_str).context("Could not parse HTTPS proxy")?;
+				client_builder = client_builder.proxy(proxy);
 			}
 		}
 
@@ -150,7 +135,9 @@ impl App<'_> {
 
 		/* CLIENT */
 
-		let untraced_client = client_builder.build().expect("Could not build HTTP client");
+		let untraced_client = client_builder
+			.build()
+			.context("Could not build HTTP client")?;
 		let client = reqwest_middleware::ClientBuilder::new(untraced_client)
 			.with(TracingMiddleware::default())
 			.with_init(Extension(OtelName(modified_request.name.into())))
@@ -441,9 +428,9 @@ pub fn get_file_content_with_name(path: PathBuf) -> std::io::Result<(Vec<u8>, St
 
 	let file_name = path
 		.file_name()
-		.expect("path should have a file name")
-		.to_str()
-		.expect("file name should be valid UTF-8");
+		.and_then(|n| n.to_str())
+		.unwrap_or("file")
+		.to_string();
 
-	Ok((buffer, file_name.to_string()))
+	Ok((buffer, file_name))
 }

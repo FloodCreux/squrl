@@ -3,12 +3,12 @@ use std::fs::OpenOptions;
 use std::io::Read;
 use std::path::PathBuf;
 
+use anyhow::{Context, anyhow};
 use tracing::{info, trace, warn};
 
 use crate::app::app::App;
 use crate::app::files::utils::write_via_temp_file;
 use crate::cli::args::ARGS;
-use crate::errors::panic_error;
 use crate::models::collection::CollectionFileFormat::{Json, Yaml};
 use crate::models::collection::{Collection, CollectionFileFormat};
 
@@ -18,7 +18,7 @@ impl App<'_> {
 		&mut self,
 		path_buf: PathBuf,
 		file_format: CollectionFileFormat,
-	) {
+	) -> anyhow::Result<()> {
 		let mut file_content = String::new();
 
 		trace!("Trying to open \"{}\" collection", path_buf.display());
@@ -29,28 +29,23 @@ impl App<'_> {
 			.create(true)
 			.truncate(false)
 			.open(path_buf.clone())
-			.expect("\tCould not open collection file");
+			.with_context(|| {
+				format!("Could not open collection file \"{}\"", path_buf.display())
+			})?;
 
 		collection_file
 			.read_to_string(&mut file_content)
-			.expect("\tCould not read collection file");
+			.with_context(|| {
+				format!("Could not read collection file \"{}\"", path_buf.display())
+			})?;
 
 		let mut collection: Collection = match file_format {
-			Json => match serde_json::from_str(&file_content) {
-				Ok(collection) => collection,
-				Err(e) => panic_error(format!(
-					"Could not parse JSON collection \"{}\"\n\t{e}",
-					path_buf.display()
-				)),
-			},
-			Yaml => match serde_yml::from_str(&file_content) {
-				Ok(collection) => collection,
-				Err(e) => panic_error(format!(
-					"Could not parse YAML collection \"{}\"\n\t{}",
-					path_buf.display(),
-					e
-				)),
-			},
+			Json => serde_json::from_str(&file_content).with_context(|| {
+				format!("Could not parse JSON collection \"{}\"", path_buf.display())
+			})?,
+			Yaml => serde_yml::from_str(&file_content).with_context(|| {
+				format!("Could not parse YAML collection \"{}\"", path_buf.display())
+			})?,
 		};
 
 		collection.path = path_buf;
@@ -59,15 +54,24 @@ impl App<'_> {
 		self.core.collections.push(collection);
 
 		trace!("Collection file parsed!");
+		Ok(())
 	}
 
-	/// Save app collection in the collection file through a temporary file
+	/// Save app collection in the collection file through a temporary file.
+	/// Logs a warning on failure rather than panicking, since saves happen
+	/// frequently from TUI event handlers where error propagation is impractical.
 	pub fn save_collection_to_file(&mut self, collection_index: usize) {
 		if !ARGS.should_save {
 			warn!("Dry-run, not saving the collection");
 			return;
 		}
 
+		if let Err(e) = self.save_collection_to_file_inner(collection_index) {
+			warn!("Failed to save collection: {e:#}");
+		}
+	}
+
+	fn save_collection_to_file_inner(&mut self, collection_index: usize) -> anyhow::Result<()> {
 		// Auto-assign a file path for ephemeral collections on first save
 		if self.core.collections[collection_index]
 			.path
@@ -79,7 +83,7 @@ impl App<'_> {
 			let path = ARGS
 				.directory
 				.as_ref()
-				.expect("directory argument should be set")
+				.ok_or_else(|| anyhow!("--directory argument is required"))?
 				.join(format!("{}.{file_format}", collection.name));
 
 			info!(
@@ -98,24 +102,30 @@ impl App<'_> {
 
 		let collection_stringed = match collection.file_format {
 			Json => serde_json::to_string_pretty(collection)
-				.expect("Could not serialize collection to JSON"),
-			Yaml => {
-				serde_yml::to_string(collection).expect("Could not serialize collection to YAML")
-			}
+				.context("Could not serialize collection to JSON")?,
+			Yaml => serde_yml::to_string(collection)
+				.context("Could not serialize collection to YAML")?,
 		};
 
 		write_via_temp_file(&collection.path, collection_stringed.as_bytes())
-			.expect("Could not save collection file");
+			.context("Could not save collection file")?;
 
 		trace!("Collection saved");
+		Ok(())
 	}
 
-	/// Delete collection file
+	/// Delete collection file.
+	/// Logs a warning on failure rather than panicking.
 	pub fn delete_collection_file(&mut self, collection: Collection) {
 		if !ARGS.should_save {
 			return;
 		}
 
-		fs::remove_file(&collection.path).expect("Could not delete collection file");
+		if let Err(e) = fs::remove_file(&collection.path) {
+			warn!(
+				"Could not delete collection file \"{}\": {e}",
+				collection.path.display()
+			);
+		}
 	}
 }

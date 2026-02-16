@@ -53,9 +53,15 @@ pub fn execute_pre_request_script(
 	// Instantiate the execution context
 	let mut context = Context::default();
 
-	let request_json = serde_json::to_string(request).expect("request should serialize to JSON");
+	let request_json = match serde_json::to_string(request) {
+		Ok(json) => json,
+		Err(e) => return (None, env, format!("Failed to serialize request: {e}")),
+	};
 	let env_json = match &env {
-		Some(env) => serde_json::to_string(env).expect("environment should serialize to JSON"),
+		Some(env) => match serde_json::to_string(env) {
+			Ok(json) => json,
+			Err(e) => return (None, None, format!("Failed to serialize environment: {e}")),
+		},
 		None => String::from("undefined"),
 	};
 
@@ -84,10 +90,10 @@ pub fn execute_pre_request_script(
 		Err(error) => return (None, env, error.to_string()),
 	};
 
-	let stringed_result = result
-		.as_string()
-		.expect("script result should be a string")
-		.to_std_string_escaped();
+	let stringed_result = match result.as_string() {
+		Some(s) => s.to_std_string_escaped(),
+		None => return (None, env, "Script result was not a string".to_string()),
+	};
 
 	let (result_request, result_env_values, console_output) =
 		match serde_json::from_str::<(Request, Option<IndexMap<String, String>>, String)>(
@@ -114,9 +120,15 @@ pub fn execute_post_request_script(
 	// Instantiate the execution context
 	let mut context = Context::default();
 
-	let response_json = serde_json::to_string(response).expect("response should serialize to JSON");
+	let response_json = match serde_json::to_string(response) {
+		Ok(json) => json,
+		Err(e) => return (None, env, format!("Failed to serialize response: {e}")),
+	};
 	let env_json = match &env {
-		Some(env) => serde_json::to_string(env).expect("environment should serialize to JSON"),
+		Some(env) => match serde_json::to_string(env) {
+			Ok(json) => json,
+			Err(e) => return (None, None, format!("Failed to serialize environment: {e}")),
+		},
 		None => String::from("undefined"),
 	};
 
@@ -145,10 +157,10 @@ pub fn execute_post_request_script(
 		Err(error) => return (None, env, error.to_string()),
 	};
 
-	let stringed_result = result
-		.as_string()
-		.expect("script result should be a string")
-		.to_std_string_escaped();
+	let stringed_result = match result.as_string() {
+		Some(s) => s.to_std_string_escaped(),
+		None => return (None, env, "Script result was not a string".to_string()),
+	};
 
 	let (response_result, result_env_values, console_output) =
 		match serde_json::from_str::<(RequestResponse, Option<IndexMap<String, String>>, String)>(

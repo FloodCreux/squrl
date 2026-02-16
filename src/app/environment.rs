@@ -62,7 +62,7 @@ impl App<'_> {
 	pub fn get_env_value(&mut self, env_index: usize, key: &str) -> anyhow::Result<()> {
 		let local_env = self
 			.get_env_as_local_from_index(env_index)
-			.expect("environment index should be valid");
+			.ok_or_else(|| anyhow!(EnvironmentNotFound))?;
 
 		{
 			let env = local_env.read();
@@ -86,7 +86,7 @@ impl App<'_> {
 	) -> anyhow::Result<()> {
 		let local_env = self
 			.get_env_as_local_from_index(env_index)
-			.expect("environment index should be valid");
+			.ok_or_else(|| anyhow!(EnvironmentNotFound))?;
 
 		{
 			let mut env = local_env.write();
@@ -113,7 +113,7 @@ impl App<'_> {
 	) -> anyhow::Result<()> {
 		let local_env = self
 			.get_env_as_local_from_index(env_index)
-			.expect("environment index should be valid");
+			.ok_or_else(|| anyhow!(EnvironmentNotFound))?;
 
 		{
 			let mut env = local_env.write();
@@ -140,7 +140,7 @@ impl App<'_> {
 	) -> anyhow::Result<()> {
 		let local_env = self
 			.get_env_as_local_from_index(env_index)
-			.expect("environment index should be valid");
+			.ok_or_else(|| anyhow!(EnvironmentNotFound))?;
 
 		{
 			let mut env = local_env.write();
@@ -163,7 +163,7 @@ impl App<'_> {
 	pub fn delete_env_key(&mut self, env_index: usize, key: &str) -> anyhow::Result<()> {
 		let local_env = self
 			.get_env_as_local_from_index(env_index)
-			.expect("environment index should be valid");
+			.ok_or_else(|| anyhow!(EnvironmentNotFound))?;
 
 		{
 			let mut env = local_env.write();
@@ -181,7 +181,7 @@ impl App<'_> {
 	pub fn delete_env_index(&mut self, env_index: usize, index: usize) -> anyhow::Result<()> {
 		let local_env = self
 			.get_env_as_local_from_index(env_index)
-			.expect("environment index should be valid");
+			.ok_or_else(|| anyhow!(EnvironmentNotFound))?;
 
 		{
 			let mut env = local_env.write();
@@ -204,7 +204,7 @@ impl App<'_> {
 	) -> anyhow::Result<()> {
 		let local_env = self
 			.get_env_as_local_from_index(env_index)
-			.expect("environment index should be valid");
+			.ok_or_else(|| anyhow!(EnvironmentNotFound))?;
 
 		{
 			let mut env = local_env.write();
@@ -221,7 +221,7 @@ impl App<'_> {
 			let (key, _) = env
 				.values
 				.get_index_mut2(old_index)
-				.expect("key index should be valid");
+				.ok_or_else(|| anyhow!(KeyNotFound))?;
 			*key = new_key.to_string();
 
 			info!("Environment key \"{key}\" renamed to \"{new_key}\"");
@@ -239,7 +239,7 @@ impl App<'_> {
 	) -> anyhow::Result<()> {
 		let local_env = self
 			.get_env_as_local_from_index(env_index)
-			.expect("environment index should be valid");
+			.ok_or_else(|| anyhow!(EnvironmentNotFound))?;
 
 		{
 			let mut env = local_env.write();
@@ -251,7 +251,7 @@ impl App<'_> {
 			let (key, _) = env
 				.values
 				.get_index_mut2(key_index)
-				.expect("key index should be valid");
+				.ok_or_else(|| anyhow!(KeyNotFound))?;
 			let old_key = key.clone();
 			*key = new_key.clone();
 
