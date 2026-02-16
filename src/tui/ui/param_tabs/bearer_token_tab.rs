@@ -15,12 +15,12 @@ impl App<'_> {
 
 		let should_display_cursor = matches!(&self.state, EditingRequestAuthBearerToken);
 
-		self.auth_bearer_token_text_input.highlight_text = true;
-		self.auth_bearer_token_text_input.highlight_block = true;
-		self.auth_bearer_token_text_input.display_cursor = should_display_cursor;
+		self.request_editor.auth.bearer_token.highlight_text = true;
+		self.request_editor.auth.bearer_token.highlight_block = true;
+		self.request_editor.auth.bearer_token.display_cursor = should_display_cursor;
 
 		frame.render_widget(
-			SingleLineTextInput(&mut self.auth_bearer_token_text_input),
+			SingleLineTextInput(&mut self.request_editor.auth.bearer_token),
 			bearer_token_auth_layout[0],
 		);
 	}

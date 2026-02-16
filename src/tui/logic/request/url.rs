@@ -3,7 +3,7 @@ use tracing::info;
 
 impl App<'_> {
 	pub fn tui_modify_request_url(&mut self) {
-		let input_text = self.url_text_input.to_string();
+		let input_text = self.request_editor.url_input.to_string();
 
 		if input_text.trim().is_empty() {
 			return;

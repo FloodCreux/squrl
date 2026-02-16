@@ -9,8 +9,11 @@ impl App<'_> {
 		let selected_request = local_selected_request.read();
 
 		match selected_request.headers.is_empty() {
-			false => self.headers_table.update_selection(Some((0, 0))),
-			true => self.headers_table.update_selection(None),
+			false => self
+				.request_editor
+				.headers_table
+				.update_selection(Some((0, 0))),
+			true => self.request_editor.headers_table.update_selection(None),
 		}
 	}
 
@@ -19,10 +22,14 @@ impl App<'_> {
 			return;
 		};
 
-		let Some(selection) = self.headers_table.selection else {
+		let Some(selection) = self.request_editor.headers_table.selection else {
 			return;
 		};
-		let input_text = self.headers_table.selection_text_input.to_string();
+		let input_text = self
+			.request_editor
+			.headers_table
+			.selection_text_input
+			.to_string();
 
 		match self.modify_request_header(
 			selected.collection_index(),
@@ -58,11 +65,13 @@ impl App<'_> {
 	}
 
 	pub fn tui_delete_header(&mut self) {
-		if self.headers_table.rows.is_empty() || self.headers_table.selection.is_none() {
+		if self.request_editor.headers_table.rows.is_empty()
+			|| self.request_editor.headers_table.selection.is_none()
+		{
 			return;
 		}
 
-		let Some(selection) = self.headers_table.selection else {
+		let Some(selection) = self.request_editor.headers_table.selection else {
 			return;
 		};
 		let Some(selected) = self.collections_tree.selected else {
@@ -83,11 +92,13 @@ impl App<'_> {
 	}
 
 	pub fn tui_toggle_header(&mut self) {
-		if self.headers_table.rows.is_empty() || self.headers_table.selection.is_none() {
+		if self.request_editor.headers_table.rows.is_empty()
+			|| self.request_editor.headers_table.selection.is_none()
+		{
 			return;
 		}
 
-		let Some(selection) = self.headers_table.selection else {
+		let Some(selection) = self.request_editor.headers_table.selection else {
 			return;
 		};
 		let row = selection.0;
@@ -109,11 +120,13 @@ impl App<'_> {
 	}
 
 	pub fn tui_duplicate_header(&mut self) {
-		if self.headers_table.rows.is_empty() || self.headers_table.selection.is_none() {
+		if self.request_editor.headers_table.rows.is_empty()
+			|| self.request_editor.headers_table.selection.is_none()
+		{
 			return;
 		}
 
-		let Some(selection) = self.headers_table.selection else {
+		let Some(selection) = self.request_editor.headers_table.selection else {
 			return;
 		};
 		let row = selection.0;

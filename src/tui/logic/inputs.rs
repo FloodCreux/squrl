@@ -9,87 +9,87 @@ macro_rules! for_all_inputs {
 			$body;
 		}
 		{
-			let $input = &mut $self.new_collection_input;
+			let $input = &mut $self.collection_popups.new_collection_input;
 			$body;
 		}
 		{
-			let $input = &mut $self.new_request_popup.text_input;
+			let $input = &mut $self.collection_popups.new_request_popup.text_input;
 			$body;
 		}
 		{
-			let $input = &mut $self.rename_collection_input;
+			let $input = &mut $self.collection_popups.rename_collection_input;
 			$body;
 		}
 		{
-			let $input = &mut $self.rename_request_input;
+			let $input = &mut $self.collection_popups.rename_request_input;
 			$body;
 		}
 		{
-			let $input = &mut $self.url_text_input;
+			let $input = &mut $self.request_editor.url_input;
 			$body;
 		}
 		{
-			let $input = &mut $self.query_params_table.selection_text_input;
+			let $input = &mut $self.request_editor.query_params_table.selection_text_input;
 			$body;
 		}
 		{
-			let $input = &mut $self.auth_basic_username_text_input;
+			let $input = &mut $self.request_editor.auth.basic_username;
 			$body;
 		}
 		{
-			let $input = &mut $self.auth_basic_password_text_input;
+			let $input = &mut $self.request_editor.auth.basic_password;
 			$body;
 		}
 		{
-			let $input = &mut $self.auth_bearer_token_text_input;
+			let $input = &mut $self.request_editor.auth.bearer_token;
 			$body;
 		}
 		{
-			let $input = &mut $self.auth_jwt_secret_text_input;
+			let $input = &mut $self.request_editor.auth.jwt_secret;
 			$body;
 		}
 		{
-			let $input = &mut $self.auth_jwt_payload_text_area;
+			let $input = &mut $self.request_editor.auth.jwt_payload;
 			$body;
 		}
 		{
-			let $input = &mut $self.auth_digest_username_text_input;
+			let $input = &mut $self.request_editor.auth.digest_username;
 			$body;
 		}
 		{
-			let $input = &mut $self.auth_digest_password_text_input;
+			let $input = &mut $self.request_editor.auth.digest_password;
 			$body;
 		}
 		{
-			let $input = &mut $self.auth_digest_domains_text_input;
+			let $input = &mut $self.request_editor.auth.digest_domains;
 			$body;
 		}
 		{
-			let $input = &mut $self.auth_digest_realm_text_input;
+			let $input = &mut $self.request_editor.auth.digest_realm;
 			$body;
 		}
 		{
-			let $input = &mut $self.auth_digest_nonce_text_input;
+			let $input = &mut $self.request_editor.auth.digest_nonce;
 			$body;
 		}
 		{
-			let $input = &mut $self.auth_digest_opaque_text_input;
+			let $input = &mut $self.request_editor.auth.digest_opaque;
 			$body;
 		}
 		{
-			let $input = &mut $self.headers_table.selection_text_input;
+			let $input = &mut $self.request_editor.headers_table.selection_text_input;
 			$body;
 		}
 		{
-			let $input = &mut $self.body_text_area;
+			let $input = &mut $self.request_editor.body_text_area;
 			$body;
 		}
 		{
-			let $input = &mut $self.body_form_table.selection_text_input;
+			let $input = &mut $self.request_editor.body_form_table.selection_text_input;
 			$body;
 		}
 		{
-			let $input = &mut $self.body_file_text_input;
+			let $input = &mut $self.request_editor.body_file_input;
 			$body;
 		}
 		{
@@ -139,24 +139,40 @@ impl App<'_> {
 
 		// Override default_mode for table inputs (always Insert mode)
 		self.env_editor_table.selection_text_input.default_mode = EditorMode::Insert;
-		self.query_params_table.selection_text_input.default_mode = EditorMode::Insert;
-		self.headers_table.selection_text_input.default_mode = EditorMode::Insert;
-		self.body_form_table.selection_text_input.default_mode = EditorMode::Insert;
+		self.request_editor
+			.query_params_table
+			.selection_text_input
+			.default_mode = EditorMode::Insert;
+		self.request_editor
+			.headers_table
+			.selection_text_input
+			.default_mode = EditorMode::Insert;
+		self.request_editor
+			.body_form_table
+			.selection_text_input
+			.default_mode = EditorMode::Insert;
 
 		// Override is_single_line for multi-line inputs
-		self.auth_jwt_payload_text_area.is_single_line = false;
-		self.body_text_area.is_single_line = false;
+		self.request_editor.auth.jwt_payload.is_single_line = false;
+		self.request_editor.body_text_area.is_single_line = false;
 		self.message_text_area.is_single_line = false;
 		self.script_console.pre_request_text_area.is_single_line = false;
 		self.script_console.post_request_text_area.is_single_line = false;
 
 		// Set insert_mode_only for table inputs
 		self.env_editor_table.selection_text_input.insert_mode_only = true;
-		self.query_params_table
+		self.request_editor
+			.query_params_table
 			.selection_text_input
 			.insert_mode_only = true;
-		self.headers_table.selection_text_input.insert_mode_only = true;
-		self.body_form_table.selection_text_input.insert_mode_only = true;
+		self.request_editor
+			.headers_table
+			.selection_text_input
+			.insert_mode_only = true;
+		self.request_editor
+			.body_form_table
+			.selection_text_input
+			.insert_mode_only = true;
 
 		self.reset_inputs_mode();
 	}

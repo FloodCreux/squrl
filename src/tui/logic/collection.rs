@@ -21,13 +21,14 @@ impl App<'_> {
 		};
 		let selected_request = local_selected_request.read();
 
-		self.url_text_input
+		self.request_editor
+			.url_input
 			.push_str(&selected_request.url_with_params_to_string());
-		self.query_params_table.rows = selected_request.params.clone();
-		self.headers_table.rows = selected_request.headers.clone();
+		self.request_editor.query_params_table.rows = selected_request.params.clone();
+		self.request_editor.headers_table.rows = selected_request.headers.clone();
 
 		if !selected_request.params.is_empty() {
-			let Some(selection) = self.query_params_table.selection else {
+			let Some(selection) = self.request_editor.query_params_table.selection else {
 				return;
 			};
 
@@ -37,39 +38,40 @@ impl App<'_> {
 				_ => unreachable!(),
 			};
 
-			self.query_params_table
+			self.request_editor
+				.query_params_table
 				.selection_text_input
 				.push_str(&param_text);
 		}
 
 		match &selected_request.auth {
 			Auth::NoAuth => {
-				self.auth_text_input_selection.max_selection = 0;
-				self.auth_text_input_selection.usable = false;
+				self.request_editor.auth.text_input_selection.max_selection = 0;
+				self.request_editor.auth.text_input_selection.usable = false;
 			}
 			Auth::BasicAuth(BasicAuth { username, password }) => {
-				self.auth_text_input_selection.max_selection = 2;
-				self.auth_text_input_selection.usable = true;
+				self.request_editor.auth.text_input_selection.max_selection = 2;
+				self.request_editor.auth.text_input_selection.usable = true;
 
-				self.auth_basic_username_text_input.push_str(username);
-				self.auth_basic_password_text_input.push_str(password);
+				self.request_editor.auth.basic_username.push_str(username);
+				self.request_editor.auth.basic_password.push_str(password);
 			}
 			Auth::BearerToken(BearerToken {
 				token: bearer_token,
 			}) => {
-				self.auth_text_input_selection.max_selection = 1;
-				self.auth_text_input_selection.usable = true;
+				self.request_editor.auth.text_input_selection.max_selection = 1;
+				self.request_editor.auth.text_input_selection.usable = true;
 
-				self.auth_bearer_token_text_input.push_str(bearer_token);
+				self.request_editor.auth.bearer_token.push_str(bearer_token);
 			}
 			Auth::JwtToken(JwtToken {
 				secret, payload, ..
 			}) => {
-				self.auth_text_input_selection.max_selection = 4;
-				self.auth_text_input_selection.usable = true;
+				self.request_editor.auth.text_input_selection.max_selection = 4;
+				self.request_editor.auth.text_input_selection.usable = true;
 
-				self.auth_jwt_secret_text_input.push_str(secret);
-				self.auth_jwt_payload_text_area.push_str(payload);
+				self.request_editor.auth.jwt_secret.push_str(secret);
+				self.request_editor.auth.jwt_payload.push_str(payload);
 			}
 			Auth::Digest(Digest {
 				username,
@@ -80,20 +82,20 @@ impl App<'_> {
 				opaque,
 				..
 			}) => {
-				self.auth_text_input_selection.max_selection = 11;
-				self.auth_text_input_selection.usable = true;
+				self.request_editor.auth.text_input_selection.max_selection = 11;
+				self.request_editor.auth.text_input_selection.usable = true;
 
-				self.auth_digest_username_text_input.push_str(username);
-				self.auth_digest_password_text_input.push_str(password);
-				self.auth_digest_domains_text_input.push_str(domains);
-				self.auth_digest_realm_text_input.push_str(realm);
-				self.auth_digest_nonce_text_input.push_str(nonce);
-				self.auth_digest_opaque_text_input.push_str(opaque);
+				self.request_editor.auth.digest_username.push_str(username);
+				self.request_editor.auth.digest_password.push_str(password);
+				self.request_editor.auth.digest_domains.push_str(domains);
+				self.request_editor.auth.digest_realm.push_str(realm);
+				self.request_editor.auth.digest_nonce.push_str(nonce);
+				self.request_editor.auth.digest_opaque.push_str(opaque);
 			}
 		}
 
 		if !selected_request.headers.is_empty() {
-			let Some(selection) = self.headers_table.selection else {
+			let Some(selection) = self.request_editor.headers_table.selection else {
 				return;
 			};
 
@@ -103,7 +105,8 @@ impl App<'_> {
 				_ => unreachable!(),
 			};
 
-			self.headers_table
+			self.request_editor
+				.headers_table
 				.selection_text_input
 				.push_str(&header_text);
 		}
@@ -111,14 +114,14 @@ impl App<'_> {
 		match &selected_request.protocol {
 			Protocol::HttpRequest(http_request) => match &http_request.body {
 				ContentType::NoBody => {
-					self.body_form_table.rows = Vec::new();
-					self.body_text_area.clear();
+					self.request_editor.body_form_table.rows = Vec::new();
+					self.request_editor.body_text_area.clear();
 				}
 				ContentType::Multipart(form) | ContentType::Form(form) => {
-					self.body_form_table.rows = form.clone();
+					self.request_editor.body_form_table.rows = form.clone();
 
 					if !form.is_empty() {
-						let Some(selection) = self.body_form_table.selection else {
+						let Some(selection) = self.request_editor.body_form_table.selection else {
 							return;
 						};
 
@@ -128,24 +131,25 @@ impl App<'_> {
 							_ => unreachable!(),
 						};
 
-						self.body_form_table
+						self.request_editor
+							.body_form_table
 							.selection_text_input
 							.push_str(&form_text);
 					}
 
-					self.body_text_area.clear();
+					self.request_editor.body_text_area.clear();
 				}
 				ContentType::File(file_path) => {
-					self.body_file_text_input.push_str(file_path);
+					self.request_editor.body_file_input.push_str(file_path);
 				}
 				ContentType::Raw(body)
 				| ContentType::Json(body)
 				| ContentType::Xml(body)
 				| ContentType::Html(body)
 				| ContentType::Javascript(body) => {
-					self.body_form_table.rows = Vec::new();
+					self.request_editor.body_form_table.rows = Vec::new();
 
-					self.body_text_area.push_str(body);
+					self.request_editor.body_text_area.push_str(body);
 				}
 			},
 			Protocol::WsRequest(ws_request) => {
@@ -271,7 +275,7 @@ impl App<'_> {
 	}
 
 	pub fn new_element(&mut self) {
-		match self.creation_popup.selection {
+		match self.collection_popups.creation_popup.selection {
 			0 => self.create_new_collection_state(),
 			1 => self.create_new_request_state(),
 			2 => self.create_new_folder_state(),
@@ -280,7 +284,7 @@ impl App<'_> {
 	}
 
 	pub fn tui_new_collection(&mut self) {
-		let new_collection_name = self.new_collection_input.to_string();
+		let new_collection_name = self.collection_popups.new_collection_input.to_string();
 
 		match self.new_collection(new_collection_name) {
 			Ok(_) => {}
@@ -291,7 +295,7 @@ impl App<'_> {
 	}
 
 	pub fn tui_new_folder(&mut self) {
-		let new_folder_name = self.new_collection_input.to_string();
+		let new_folder_name = self.collection_popups.new_collection_input.to_string();
 
 		// Determine which collection to add the folder to
 		let selected = self.collections_tree.state.selected();
@@ -307,15 +311,17 @@ impl App<'_> {
 
 	pub fn tui_new_request(&mut self) {
 		let new_request_name = self
+			.collection_popups
 			.new_request_popup
 			.text_input
 			.to_string()
 			.trim()
 			.to_owned();
 
-		let selected_collection_index = self.new_request_popup.selected_collection;
-		let selected_folder = self.new_request_popup.selected_folder;
-		let protocol = self.new_request_popup.protocol.clone();
+		let selected_collection_index =
+			self.collection_popups.new_request_popup.selected_collection;
+		let selected_folder = self.collection_popups.new_request_popup.selected_folder;
+		let protocol = self.collection_popups.new_request_popup.protocol.clone();
 
 		let new_request = Request {
 			name: new_request_name,
@@ -441,7 +447,7 @@ impl App<'_> {
 	}
 
 	pub fn tui_rename_collection(&mut self) {
-		let new_collection_name = self.rename_collection_input.to_string();
+		let new_collection_name = self.collection_popups.rename_collection_input.to_string();
 		let selected_request_index = self.collections_tree.state.selected();
 
 		match self.rename_collection(selected_request_index[0], new_collection_name) {
@@ -453,7 +459,7 @@ impl App<'_> {
 	}
 
 	pub fn tui_rename_request(&mut self) {
-		let new_request_name = self.rename_request_input.to_string();
+		let new_request_name = self.collection_popups.rename_request_input.to_string();
 		let selected = self.collections_tree.state.selected();
 
 		match selected.len() {
@@ -490,7 +496,7 @@ impl App<'_> {
 	}
 
 	pub fn tui_rename_folder(&mut self) {
-		let new_folder_name = self.rename_collection_input.to_string();
+		let new_folder_name = self.collection_popups.rename_collection_input.to_string();
 		let selected = self.collections_tree.state.selected();
 
 		if selected.len() == 2 {

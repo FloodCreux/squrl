@@ -67,7 +67,7 @@ impl App<'_> {
 	}
 
 	pub fn tui_load_request_auth_param_tab(&mut self) {
-		self.auth_text_input_selection.selected = 0;
+		self.request_editor.auth.text_input_selection.selected = 0;
 
 		self.request_param_tab = RequestParamsTabs::Auth;
 		self.update_inputs();

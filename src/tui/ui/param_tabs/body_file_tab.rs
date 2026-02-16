@@ -15,12 +15,12 @@ impl App<'_> {
 
 		let should_display_cursor = matches!(&self.state, EditingRequestBodyFile);
 
-		self.body_file_text_input.highlight_text = true;
-		self.body_file_text_input.highlight_block = true;
-		self.body_file_text_input.display_cursor = should_display_cursor;
+		self.request_editor.body_file_input.highlight_text = true;
+		self.request_editor.body_file_input.highlight_block = true;
+		self.request_editor.body_file_input.display_cursor = should_display_cursor;
 
 		frame.render_widget(
-			SingleLineTextInput(&mut self.body_file_text_input),
+			SingleLineTextInput(&mut self.request_editor.body_file_input),
 			file_body_layout[0],
 		);
 	}

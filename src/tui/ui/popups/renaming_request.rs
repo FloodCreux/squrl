@@ -21,10 +21,10 @@ impl App<'_> {
 		frame.render_widget(Clear, area);
 		frame.render_widget(popup_block, area);
 
-		self.rename_request_input.display_cursor = true;
+		self.collection_popups.rename_request_input.display_cursor = true;
 
 		frame.render_widget(
-			SingleLineTextInput(&mut self.rename_request_input),
+			SingleLineTextInput(&mut self.collection_popups.rename_request_input),
 			renaming_request_area,
 		);
 	}

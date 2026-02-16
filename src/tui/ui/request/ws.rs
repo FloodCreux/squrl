@@ -92,9 +92,10 @@ impl App<'_> {
 
 		// REQUEST URL
 
-		self.url_text_input.display_cursor = matches!(self.state, AppState::EditingRequestUrl);
+		self.request_editor.url_input.display_cursor =
+			matches!(self.state, AppState::EditingRequestUrl);
 		frame.render_widget(
-			SingleLineTextInput(&mut self.url_text_input),
+			SingleLineTextInput(&mut self.request_editor.url_input),
 			request_header_layout[1],
 		);
 

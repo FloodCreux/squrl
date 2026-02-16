@@ -182,7 +182,7 @@ impl App<'_> {
 	}
 
 	pub fn choose_element_to_create_state(&mut self) {
-		self.creation_popup.selection = 0;
+		self.collection_popups.creation_popup.selection = 0;
 
 		if self.core.collections.is_empty() {
 			self.create_new_collection_state();
@@ -212,43 +212,46 @@ impl App<'_> {
 			0
 		};
 
-		self.new_request_popup.selected_collection = popup_selected_collection_index;
-		self.new_request_popup.max_collection_selection = collections_length;
+		self.collection_popups.new_request_popup.selected_collection =
+			popup_selected_collection_index;
+		self.collection_popups
+			.new_request_popup
+			.max_collection_selection = collections_length;
 
 		// Pre-populate folder selection based on current tree position
 		let collection = &self.core.collections[popup_selected_collection_index];
-		self.new_request_popup.folder_count = collection.folders.len();
+		self.collection_popups.new_request_popup.folder_count = collection.folders.len();
 
 		// If the user is currently inside a folder, pre-select that folder
 		if let Some(selected) = &self.collections_tree.selected {
 			if let Some(folder_index) = selected.folder_index() {
-				self.new_request_popup.selected_folder = Some(folder_index);
+				self.collection_popups.new_request_popup.selected_folder = Some(folder_index);
 			} else {
-				self.new_request_popup.selected_folder = None;
+				self.collection_popups.new_request_popup.selected_folder = None;
 			}
 		} else if selected_collection.len() == 2 {
 			// User might be on a folder node (not a request) - check if it's a folder
 			let child_index = selected_collection[1];
 			let folder_count = collection.folders.len();
 			if child_index < folder_count {
-				self.new_request_popup.selected_folder = Some(child_index);
+				self.collection_popups.new_request_popup.selected_folder = Some(child_index);
 			} else {
-				self.new_request_popup.selected_folder = None;
+				self.collection_popups.new_request_popup.selected_folder = None;
 			}
 		} else {
-			self.new_request_popup.selected_folder = None;
+			self.collection_popups.new_request_popup.selected_folder = None;
 		}
 
 		self.set_app_state(AppState::CreatingNewRequest);
 	}
 
 	pub fn delete_collection_state(&mut self) {
-		self.delete_collection_popup.state = false;
+		self.collection_popups.delete_collection_popup.state = false;
 		self.set_app_state(AppState::DeletingCollection);
 	}
 
 	pub fn delete_request_state(&mut self) {
-		self.delete_request_popup.state = false;
+		self.collection_popups.delete_request_popup.state = false;
 		self.set_app_state(AppState::DeletingRequest);
 	}
 
@@ -256,9 +259,12 @@ impl App<'_> {
 		let selected_request_index = self.collections_tree.state.selected();
 
 		let collection_name = &self.core.collections[selected_request_index[0]].name;
-		self.rename_collection_input.clear();
-		self.rename_collection_input.push_str(collection_name);
-		self.rename_collection_input
+		self.collection_popups.rename_collection_input.clear();
+		self.collection_popups
+			.rename_collection_input
+			.push_str(collection_name);
+		self.collection_popups
+			.rename_collection_input
 			.state
 			.execute(MoveToEndOfLine());
 
@@ -292,9 +298,14 @@ impl App<'_> {
 			_ => return,
 		};
 
-		self.rename_request_input.clear();
-		self.rename_request_input.push_str(&request_name);
-		self.rename_request_input.state.execute(MoveToEndOfLine());
+		self.collection_popups.rename_request_input.clear();
+		self.collection_popups
+			.rename_request_input
+			.push_str(&request_name);
+		self.collection_popups
+			.rename_request_input
+			.state
+			.execute(MoveToEndOfLine());
 
 		self.set_app_state(AppState::RenamingRequest);
 	}
@@ -307,12 +318,12 @@ impl App<'_> {
 			return;
 		}
 
-		self.new_collection_input.clear();
+		self.collection_popups.new_collection_input.clear();
 		self.set_app_state(AppState::CreatingNewFolder);
 	}
 
 	pub fn delete_folder_state(&mut self) {
-		self.delete_collection_popup.state = false;
+		self.collection_popups.delete_collection_popup.state = false;
 		self.set_app_state(AppState::DeletingFolder);
 	}
 
@@ -324,9 +335,12 @@ impl App<'_> {
 			let folder_index = selected[1];
 
 			let folder_name = &self.core.collections[collection_index].folders[folder_index].name;
-			self.rename_collection_input.clear();
-			self.rename_collection_input.push_str(folder_name);
-			self.rename_collection_input
+			self.collection_popups.rename_collection_input.clear();
+			self.collection_popups
+				.rename_collection_input
+				.push_str(folder_name);
+			self.collection_popups
+				.rename_collection_input
 				.state
 				.execute(MoveToEndOfLine());
 
@@ -353,7 +367,7 @@ impl App<'_> {
 
 			match &selected_http_request.body {
 				ContentType::Multipart(form) | ContentType::Form(form) => {
-					self.body_form_table.rows = form.clone();
+					self.request_editor.body_form_table.rows = form.clone();
 				}
 				_ => {
 					return;
@@ -415,14 +429,14 @@ impl App<'_> {
 	}
 
 	pub fn edit_request_settings_state(&mut self) {
-		self.request_settings_popup.selection = 0;
+		self.request_editor.settings_popup.selection = 0;
 
 		let Some(local_selected_request) = self.get_selected_request_as_local() else {
 			return;
 		};
 		let selected_request = local_selected_request.read();
 
-		self.request_settings_popup.settings = selected_request.settings.to_vec();
+		self.request_editor.settings_popup.settings = selected_request.settings.to_vec();
 
 		self.set_app_state(AppState::EditingRequestSettings);
 	}
@@ -473,11 +487,11 @@ impl App<'_> {
 			if let ResponseContent::Body(body) = content {
 				debug!("Response body length: {}", body.len());
 				// Sync the response body to the text area
-				self.response_body_text_area.clear();
-				self.response_body_text_area.push_str(body);
-				self.response_body_text_area.move_cursor_start();
-				self.response_body_text_area.reset_mode();
-				self.response_body_text_area.update_handler();
+				self.response_view.body_text_area.clear();
+				self.response_view.body_text_area.push_str(body);
+				self.response_view.body_text_area.move_cursor_start();
+				self.response_view.body_text_area.reset_mode();
+				self.response_view.body_text_area.update_handler();
 
 				debug!("Setting state to SelectingResponseBody");
 				self.set_app_state(AppState::SelectingResponseBody);
@@ -490,7 +504,7 @@ impl App<'_> {
 	}
 
 	pub fn exit_response_body_selection_state(&mut self) {
-		self.response_body_text_area.reset_selection();
+		self.response_view.body_text_area.reset_selection();
 		self.set_app_state(AppState::SelectedRequest);
 	}
 

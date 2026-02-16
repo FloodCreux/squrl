@@ -30,15 +30,17 @@ impl App<'_> {
 		.split(area);
 
 		// Sync folder_count from the actual collection data (needed after collection changes)
-		let collection = &self.core.collections[self.new_request_popup.selected_collection];
-		self.new_request_popup.folder_count = collection.folders.len();
+		let collection =
+			&self.core.collections[self.collection_popups.new_request_popup.selected_collection];
+		self.collection_popups.new_request_popup.folder_count = collection.folders.len();
 
 		// Collection selector (row 0)
 		let selected_collection_name = collection.name.clone();
-		let selection_collection_block_color = match self.new_request_popup.selection == 0 {
-			true => Color::Yellow,
-			false => THEME.read().ui.main_foreground_color,
-		};
+		let selection_collection_block_color =
+			match self.collection_popups.new_request_popup.selection == 0 {
+				true => Color::Yellow,
+				false => THEME.read().ui.main_foreground_color,
+			};
 		let selected_collection_paragraph = Paragraph::new(selected_collection_name)
 			.fg(THEME.read().ui.font_color)
 			.block(
@@ -49,20 +51,23 @@ impl App<'_> {
 			);
 
 		// Folder selector (row 1)
-		let selected_folder_name = match self.new_request_popup.selected_folder {
+		let selected_folder_name = match self.collection_popups.new_request_popup.selected_folder {
 			None => "None (root)".to_string(),
-			Some(folder_index) if folder_index < self.new_request_popup.folder_count => {
-				self.core.collections[self.new_request_popup.selected_collection].folders
-					[folder_index]
+			Some(folder_index)
+				if folder_index < self.collection_popups.new_request_popup.folder_count =>
+			{
+				self.core.collections[self.collection_popups.new_request_popup.selected_collection]
+					.folders[folder_index]
 					.name
 					.clone()
 			}
 			Some(_) => "None (root)".to_string(),
 		};
-		let selection_folder_block_color = match self.new_request_popup.selection == 1 {
-			true => Color::Yellow,
-			false => THEME.read().ui.main_foreground_color,
-		};
+		let selection_folder_block_color =
+			match self.collection_popups.new_request_popup.selection == 1 {
+				true => Color::Yellow,
+				false => THEME.read().ui.main_foreground_color,
+			};
 		let selected_folder_paragraph = Paragraph::new(selected_folder_name)
 			.fg(THEME.read().ui.font_color)
 			.block(
@@ -73,11 +78,16 @@ impl App<'_> {
 			);
 
 		// Protocol selector (row 2)
-		let selected_protocol_name = self.new_request_popup.protocol.to_string();
-		let selected_protocol_block_color = match self.new_request_popup.selection == 2 {
-			true => Color::Yellow,
-			false => THEME.read().ui.main_foreground_color,
-		};
+		let selected_protocol_name = self
+			.collection_popups
+			.new_request_popup
+			.protocol
+			.to_string();
+		let selected_protocol_block_color =
+			match self.collection_popups.new_request_popup.selection == 2 {
+				true => Color::Yellow,
+				false => THEME.read().ui.main_foreground_color,
+			};
 		let selected_protocol_paragraph = Paragraph::new(selected_protocol_name)
 			.fg(THEME.read().ui.font_color)
 			.block(
@@ -88,7 +98,7 @@ impl App<'_> {
 			);
 
 		// Name input (row 3)
-		let highlight_and_display_cursor = self.new_request_popup.selection == 3;
+		let highlight_and_display_cursor = self.collection_popups.new_request_popup.selection == 3;
 
 		frame.render_widget(Clear, area);
 		frame.render_widget(popup_block, area);
@@ -96,12 +106,21 @@ impl App<'_> {
 		frame.render_widget(selected_folder_paragraph, new_request_layout[1]);
 		frame.render_widget(selected_protocol_paragraph, new_request_layout[2]);
 
-		self.new_request_popup.text_input.highlight_text = highlight_and_display_cursor;
-		self.new_request_popup.text_input.highlight_block = highlight_and_display_cursor;
-		self.new_request_popup.text_input.display_cursor = highlight_and_display_cursor;
+		self.collection_popups
+			.new_request_popup
+			.text_input
+			.highlight_text = highlight_and_display_cursor;
+		self.collection_popups
+			.new_request_popup
+			.text_input
+			.highlight_block = highlight_and_display_cursor;
+		self.collection_popups
+			.new_request_popup
+			.text_input
+			.display_cursor = highlight_and_display_cursor;
 
 		frame.render_widget(
-			SingleLineTextInput(&mut self.new_request_popup.text_input),
+			SingleLineTextInput(&mut self.collection_popups.new_request_popup.text_input),
 			new_request_layout[3],
 		);
 	}

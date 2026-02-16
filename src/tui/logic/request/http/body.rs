@@ -18,8 +18,11 @@ impl App<'_> {
 		{
 			if let Ok(form) = selected_http_request.body.get_form() {
 				match form.is_empty() {
-					false => self.body_form_table.update_selection(Some((0, 0))),
-					true => self.body_form_table.update_selection(None),
+					false => self
+						.request_editor
+						.body_form_table
+						.update_selection(Some((0, 0))),
+					true => self.request_editor.body_form_table.update_selection(None),
 				}
 			}
 		}
@@ -30,10 +33,14 @@ impl App<'_> {
 			return;
 		};
 
-		let Some(selection) = self.body_form_table.selection else {
+		let Some(selection) = self.request_editor.body_form_table.selection else {
 			return;
 		};
-		let input_text = self.body_form_table.selection_text_input.to_string();
+		let input_text = self
+			.request_editor
+			.body_form_table
+			.selection_text_input
+			.to_string();
 
 		if self
 			.modify_request_form_data(
@@ -73,11 +80,11 @@ impl App<'_> {
 	}
 
 	pub fn tui_delete_form_data(&mut self) {
-		if self.body_form_table.selection.is_none() {
+		if self.request_editor.body_form_table.selection.is_none() {
 			return;
 		}
 
-		let Some(selection) = self.body_form_table.selection else {
+		let Some(selection) = self.request_editor.body_form_table.selection else {
 			return;
 		};
 		let Some(selected) = self.collections_tree.selected else {
@@ -100,11 +107,11 @@ impl App<'_> {
 	}
 
 	pub fn tui_toggle_form_data(&mut self) {
-		if self.body_form_table.rows.is_empty() {
+		if self.request_editor.body_form_table.rows.is_empty() {
 			return;
 		}
 
-		let Some(selection) = self.body_form_table.selection else {
+		let Some(selection) = self.request_editor.body_form_table.selection else {
 			return;
 		};
 		let Some(selected) = self.collections_tree.selected else {
@@ -127,11 +134,11 @@ impl App<'_> {
 	}
 
 	pub fn tui_duplicate_form_data(&mut self) {
-		if self.body_form_table.rows.is_empty() {
+		if self.request_editor.body_form_table.rows.is_empty() {
 			return;
 		}
 
-		let Some(selection) = self.body_form_table.selection else {
+		let Some(selection) = self.request_editor.body_form_table.selection else {
 			return;
 		};
 		let Some(selected) = self.collections_tree.selected else {
@@ -164,9 +171,9 @@ impl App<'_> {
 				.get_http_request_mut()
 				.expect("request should be HTTP");
 
-			let body_form = &self.body_form_table.rows;
-			let body_file = self.body_file_text_input.to_string();
-			let body_string = self.body_text_area.to_string();
+			let body_form = &self.request_editor.body_form_table.rows;
+			let body_file = self.request_editor.body_file_input.to_string();
+			let body_string = self.request_editor.body_text_area.to_string();
 
 			let new_body = match selected_http_request.body {
 				ContentType::NoBody => ContentType::NoBody,

@@ -71,7 +71,7 @@ impl App<'_> {
 		let mut highlight_payload = false;
 		let mut display_payload_cursor = false;
 
-		let input_selected = self.auth_text_input_selection.selected;
+		let input_selected = self.request_editor.auth.text_input_selection.selected;
 
 		match input_selected {
 			0 if should_color_blocks => {
@@ -99,25 +99,25 @@ impl App<'_> {
 		algorithm_paragraph = algorithm_paragraph.block(algorithm_block);
 		secret_type_paragraph = secret_type_paragraph.block(secret_type_block);
 
-		self.auth_jwt_secret_text_input.block_title =
+		self.request_editor.auth.jwt_secret.block_title =
 			Some(format!("Secret ({})", algorithm.get_helper()));
-		self.auth_jwt_secret_text_input.highlight_text = highlight_secret;
-		self.auth_jwt_secret_text_input.highlight_block = highlight_secret;
-		self.auth_jwt_secret_text_input.display_cursor = display_secret_cursor;
+		self.request_editor.auth.jwt_secret.highlight_text = highlight_secret;
+		self.request_editor.auth.jwt_secret.highlight_block = highlight_secret;
+		self.request_editor.auth.jwt_secret.display_cursor = display_secret_cursor;
 
-		self.auth_jwt_payload_text_area.highlight_text = highlight_payload;
-		self.auth_jwt_payload_text_area.highlight_block = highlight_payload;
-		self.auth_jwt_payload_text_area.display_cursor = display_payload_cursor;
+		self.request_editor.auth.jwt_payload.highlight_text = highlight_payload;
+		self.request_editor.auth.jwt_payload.highlight_block = highlight_payload;
+		self.request_editor.auth.jwt_payload.display_cursor = display_payload_cursor;
 
 		frame.render_widget(algorithm_paragraph, jwt_token_auth_layout[0]);
 		frame.render_widget(secret_type_paragraph, jwt_token_auth_layout[1]);
 		frame.render_widget(
-			SingleLineTextInput(&mut self.auth_jwt_secret_text_input),
+			SingleLineTextInput(&mut self.request_editor.auth.jwt_secret),
 			jwt_token_auth_layout[2],
 		);
 		frame.render_widget(
 			MultiLineTextInput(
-				&mut self.auth_jwt_payload_text_area,
+				&mut self.request_editor.auth.jwt_payload,
 				JSON_SYNTAX_REF.clone(),
 			),
 			jwt_token_auth_layout[3],

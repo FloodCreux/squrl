@@ -20,14 +20,16 @@ impl App<'_> {
 
 			/* Query params */
 			AppEvent::EditRequestQueryParam(_) => {
-				if self.query_params_table.is_selected() {
+				if self.request_editor.query_params_table.is_selected() {
 					self.edit_request_param_state()
 				}
 			}
-			AppEvent::RequestQueryParamsMoveUp(_) => self.query_params_table.up(),
-			AppEvent::RequestQueryParamsMoveDown(_) => self.query_params_table.down(),
+			AppEvent::RequestQueryParamsMoveUp(_) => self.request_editor.query_params_table.up(),
+			AppEvent::RequestQueryParamsMoveDown(_) => {
+				self.request_editor.query_params_table.down()
+			}
 			AppEvent::RequestQueryParamsMoveLeft(_) | AppEvent::RequestQueryParamsMoveRight(_) => {
-				self.query_params_table.change_y()
+				self.request_editor.query_params_table.change_y()
 			}
 			AppEvent::CreateRequestQueryParam(_) => self.tui_create_new_query_param(),
 			AppEvent::DeleteRequestQueryParam(_) => self.tui_delete_query_param(),
@@ -36,18 +38,18 @@ impl App<'_> {
 
 			/* Auth */
 			AppEvent::EditRequestAuth(_) => {
-				if self.auth_text_input_selection.usable {
+				if self.request_editor.auth.text_input_selection.usable {
 					self.tui_select_request_auth_input_text()
 				}
 			}
 			AppEvent::RequestAuthMoveUp(_) => {
-				if self.auth_text_input_selection.usable {
-					self.auth_text_input_selection.previous()
+				if self.request_editor.auth.text_input_selection.usable {
+					self.request_editor.auth.text_input_selection.previous()
 				}
 			}
 			AppEvent::RequestAuthMoveDown(_) => {
-				if self.auth_text_input_selection.usable {
-					self.auth_text_input_selection.next()
+				if self.request_editor.auth.text_input_selection.usable {
+					self.request_editor.auth.text_input_selection.next()
 				}
 			}
 			AppEvent::RequestAuthMoveLeft(_) => self.tui_request_auth_move_left(),
@@ -55,14 +57,14 @@ impl App<'_> {
 
 			/* Headers */
 			AppEvent::EditRequestHeader(_) => {
-				if self.headers_table.is_selected() {
+				if self.request_editor.headers_table.is_selected() {
 					self.edit_request_header_state()
 				}
 			}
-			AppEvent::RequestHeadersMoveUp(_) => self.headers_table.up(),
-			AppEvent::RequestHeadersMoveDown(_) => self.headers_table.down(),
+			AppEvent::RequestHeadersMoveUp(_) => self.request_editor.headers_table.up(),
+			AppEvent::RequestHeadersMoveDown(_) => self.request_editor.headers_table.down(),
 			AppEvent::RequestHeadersMoveLeft(_) | AppEvent::RequestHeadersMoveRight(_) => {
-				self.headers_table.change_y()
+				self.request_editor.headers_table.change_y()
 			}
 			AppEvent::CreateRequestHeader(_) => self.tui_create_new_header(),
 			AppEvent::DeleteRequestHeader(_) => self.tui_delete_header(),
@@ -70,17 +72,18 @@ impl App<'_> {
 			AppEvent::DuplicateRequestHeader(_) => self.tui_duplicate_header(),
 
 			/* Body */
-			AppEvent::EditRequestBody(_) => match self.body_form_table.is_selected() {
+			AppEvent::EditRequestBody(_) => match self.request_editor.body_form_table.is_selected()
+			{
 				true => self.edit_request_body_table_state(),
 				false => self.edit_request_body_file_or_string_state(),
 			},
 
 			AppEvent::EditRequestMessage(_) => self.edit_request_message_state(),
 
-			AppEvent::RequestBodyTableMoveUp(_) => self.body_form_table.up(),
-			AppEvent::RequestBodyTableMoveDown(_) => self.body_form_table.down(),
+			AppEvent::RequestBodyTableMoveUp(_) => self.request_editor.body_form_table.up(),
+			AppEvent::RequestBodyTableMoveDown(_) => self.request_editor.body_form_table.down(),
 			AppEvent::RequestBodyTableMoveLeft(_) | AppEvent::RequestBodyTableMoveRight(_) => {
-				self.body_form_table.change_y()
+				self.request_editor.body_form_table.change_y()
 			}
 			AppEvent::CreateRequestBodyTableElement(_) => self.tui_create_new_form_data(),
 			AppEvent::DeleteRequestBodyTableElement(_) => self.tui_delete_form_data(),

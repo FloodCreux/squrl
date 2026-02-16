@@ -16,14 +16,14 @@ impl App<'_> {
 			.fg(THEME.read().ui.main_foreground_color)
 			.bg(THEME.read().ui.main_background_color);
 
-		let nb_elements = self.creation_popup.choices.len() as u16;
+		let nb_elements = self.collection_popups.creation_popup.choices.len() as u16;
 
 		let area = centered_rect(nb_elements * 15, 3, frame.area());
 
 		let element_percentage = 100 / nb_elements;
 		let mut constraints: Vec<Constraint> = vec![];
 
-		for _ in &self.creation_popup.choices {
+		for _ in &self.collection_popups.creation_popup.choices {
 			constraints.push(Constraint::Percentage(element_percentage));
 		}
 
@@ -35,12 +35,18 @@ impl App<'_> {
 		frame.render_widget(Clear, area);
 		frame.render_widget(popup_block, area);
 
-		for (index, element) in self.creation_popup.choices.iter().enumerate() {
+		for (index, element) in self
+			.collection_popups
+			.creation_popup
+			.choices
+			.iter()
+			.enumerate()
+		{
 			let mut paragraph = Paragraph::new(element.clone())
 				.centered()
 				.fg(THEME.read().ui.font_color);
 
-			if index == self.creation_popup.selection {
+			if index == self.collection_popups.creation_popup.selection {
 				paragraph = paragraph
 					.fg(THEME.read().others.selection_highlight_color)
 					.bold();

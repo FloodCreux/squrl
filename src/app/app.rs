@@ -38,6 +38,65 @@ use crate::tui::utils::syntax_highlighting::SyntaxHighlighting;
 use arboard::Clipboard;
 use ratatui::prelude::{Line, Stylize};
 
+/// Grouped TUI widget state for all authentication text inputs.
+///
+/// Each auth type (Basic, Bearer, JWT, Digest) has one or more text inputs.
+/// The `text_input_selection` tracks which input is currently focused.
+pub struct AuthInputs {
+	pub text_input_selection: TextInputSelection,
+	pub basic_username: TextInput,
+	pub basic_password: TextInput,
+	pub bearer_token: TextInput,
+	pub jwt_secret: TextInput,
+	pub jwt_payload: TextInput,
+	pub digest_username: TextInput,
+	pub digest_password: TextInput,
+	pub digest_domains: TextInput,
+	pub digest_realm: TextInput,
+	pub digest_nonce: TextInput,
+	pub digest_opaque: TextInput,
+}
+
+/// Grouped TUI widget state for editing the currently-selected request.
+///
+/// Contains the URL input, query params table, auth inputs, headers table,
+/// body inputs (file, form, text area), and request settings popup.
+pub struct RequestEditorState<'a> {
+	pub url_input: TextInput,
+	pub query_params_table: StatefulCustomTable<'a>,
+	pub auth: AuthInputs,
+	pub headers_table: StatefulCustomTable<'a>,
+	pub body_file_input: TextInput,
+	pub body_form_table: StatefulCustomTable<'a>,
+	pub body_text_area: TextInput,
+	pub settings_popup: SettingsPopup,
+}
+
+/// Grouped TUI widget state for collection/request/folder management popups.
+///
+/// Contains popups and text inputs for creating, renaming, and deleting
+/// collections, requests, and folders.
+pub struct CollectionPopups {
+	pub creation_popup: ChoicePopup<String>,
+	pub new_collection_input: TextInput,
+	pub rename_collection_input: TextInput,
+	pub new_request_popup: NewRequestPopup,
+	pub rename_request_input: TextInput,
+	pub delete_collection_popup: ValidationPopup,
+	pub delete_request_popup: ValidationPopup,
+}
+
+/// Grouped TUI widget state for displaying response results.
+///
+/// Contains the loading throbber, vertical/horizontal scrollbars for the
+/// result pane, and the text area for response body selection.
+pub struct ResponseViewState {
+	pub throbber_state: ThrobberState,
+	pub vertical_scrollbar: StatefulScrollbar,
+	pub horizontal_scrollbar: StatefulScrollbar,
+	pub body_text_area: TextInput,
+}
+
 /// Core application state shared between TUI and CLI modes.
 ///
 /// This struct holds the data that is needed by both the interactive TUI and
@@ -79,57 +138,16 @@ pub struct App<'a> {
 	pub request_param_tab: RequestParamsTabs,
 	pub request_result_tab: RequestResultTabs,
 
-	pub creation_popup: ChoicePopup<String>,
-	pub new_collection_input: TextInput,
-	pub rename_collection_input: TextInput,
-	pub new_request_popup: NewRequestPopup,
-	pub rename_request_input: TextInput,
+	pub collection_popups: CollectionPopups,
 
-	pub delete_collection_popup: ValidationPopup,
-	pub delete_request_popup: ValidationPopup,
-
-	/* Request */
-	pub url_text_input: TextInput,
-
-	/* Query params */
-	pub query_params_table: StatefulCustomTable<'a>,
-
-	/* Auth */
-	pub auth_text_input_selection: TextInputSelection,
-	pub auth_basic_username_text_input: TextInput,
-	pub auth_basic_password_text_input: TextInput,
-
-	pub auth_bearer_token_text_input: TextInput,
-
-	pub auth_jwt_secret_text_input: TextInput,
-	pub auth_jwt_payload_text_area: TextInput,
-
-	pub auth_digest_username_text_input: TextInput,
-	pub auth_digest_password_text_input: TextInput,
-	pub auth_digest_domains_text_input: TextInput,
-	pub auth_digest_realm_text_input: TextInput,
-	pub auth_digest_nonce_text_input: TextInput,
-	pub auth_digest_opaque_text_input: TextInput,
-
-	/* Headers */
-	pub headers_table: StatefulCustomTable<'a>,
-
-	/* Body */
-	pub body_file_text_input: TextInput,
-	pub body_form_table: StatefulCustomTable<'a>,
-	pub body_text_area: TextInput,
+	/* Request editor (URL, params, auth, headers, body, settings) */
+	pub request_editor: RequestEditorState<'a>,
 
 	/* WS message */
 	pub message_text_area: TextInput,
 
-	/* Settings */
-	pub request_settings_popup: SettingsPopup,
-
 	/* Response */
-	pub result_throbber_state: ThrobberState,
-	pub result_vertical_scrollbar: StatefulScrollbar,
-	pub result_horizontal_scrollbar: StatefulScrollbar,
-	pub response_body_text_area: TextInput,
+	pub response_view: ResponseViewState,
 
 	pub last_messages_area_size: (u16, u16),
 
@@ -194,89 +212,85 @@ impl App<'_> {
 			request_param_tab: RequestParamsTabs::QueryParams,
 			request_result_tab: RequestResultTabs::Body,
 
-			creation_popup: ChoicePopup {
-				choices: vec![
-					String::from("Collection"),
-					String::from("Request"),
-					String::from("Folder"),
-				],
-				selection: 0,
+			collection_popups: CollectionPopups {
+				creation_popup: ChoicePopup {
+					choices: vec![
+						String::from("Collection"),
+						String::from("Request"),
+						String::from("Folder"),
+					],
+					selection: 0,
+				},
+				new_collection_input: TextInput::new(None),
+				rename_collection_input: TextInput::new(None),
+				new_request_popup: NewRequestPopup::default(),
+				rename_request_input: TextInput::new(None),
+				delete_collection_popup: ValidationPopup::default(),
+				delete_request_popup: ValidationPopup::default(),
 			},
-			new_collection_input: TextInput::new(None),
-			rename_collection_input: TextInput::new(None),
-			new_request_popup: NewRequestPopup::default(),
-			rename_request_input: TextInput::new(None),
 
-			delete_collection_popup: ValidationPopup::default(),
-			delete_request_popup: ValidationPopup::default(),
-
-			/* Request */
-			url_text_input: TextInput::new(Some(String::from("URL"))),
-
-			/* Query params */
-			query_params_table: StatefulCustomTable::new(
-				vec![
-					Line::default(),
-					Line::from("No params").fg(THEME.read().ui.font_color),
-					Line::from("(Add one with n or via the URL)")
-						.fg(THEME.read().ui.secondary_foreground_color),
-				],
-				"Param",
-				"Value",
-			),
-
-			/* Auth */
-			auth_text_input_selection: TextInputSelection::default(),
-			auth_basic_username_text_input: TextInput::new(Some(String::from("Username"))),
-			auth_basic_password_text_input: TextInput::new(Some(String::from("Password"))),
-
-			auth_bearer_token_text_input: TextInput::new(Some(String::from("Bearer token"))),
-
-			auth_jwt_secret_text_input: TextInput::new(Some(String::from("Secret"))),
-			auth_jwt_payload_text_area: TextInput::new(Some(String::from("Payload"))),
-
-			auth_digest_username_text_input: TextInput::new(Some(String::from("Username"))),
-			auth_digest_password_text_input: TextInput::new(Some(String::from("Password"))),
-			auth_digest_domains_text_input: TextInput::new(Some(String::from("Domains"))),
-			auth_digest_realm_text_input: TextInput::new(Some(String::from("Realm"))),
-			auth_digest_nonce_text_input: TextInput::new(Some(String::from("Nonce"))),
-			auth_digest_opaque_text_input: TextInput::new(Some(String::from("Opaque"))),
-
-			/* Headers */
-			headers_table: StatefulCustomTable::new(
-				vec![
-					Line::default(),
-					Line::from("Default headers").fg(THEME.read().ui.font_color),
-					Line::from("(Add one with n)").fg(THEME.read().ui.secondary_foreground_color),
-				],
-				"Header",
-				"Value",
-			),
-
-			/* Body */
-			body_file_text_input: TextInput::new(Some(String::from("File path"))),
-			body_form_table: StatefulCustomTable::new(
-				vec![
-					Line::default(),
-					Line::from("No form data").fg(THEME.read().ui.font_color),
-					Line::from("(Add one with n)").fg(THEME.read().ui.secondary_foreground_color),
-				],
-				"Key",
-				"Value",
-			),
-			body_text_area: TextInput::new(None),
+			/* Request editor */
+			request_editor: RequestEditorState {
+				url_input: TextInput::new(Some(String::from("URL"))),
+				query_params_table: StatefulCustomTable::new(
+					vec![
+						Line::default(),
+						Line::from("No params").fg(THEME.read().ui.font_color),
+						Line::from("(Add one with n or via the URL)")
+							.fg(THEME.read().ui.secondary_foreground_color),
+					],
+					"Param",
+					"Value",
+				),
+				auth: AuthInputs {
+					text_input_selection: TextInputSelection::default(),
+					basic_username: TextInput::new(Some(String::from("Username"))),
+					basic_password: TextInput::new(Some(String::from("Password"))),
+					bearer_token: TextInput::new(Some(String::from("Bearer token"))),
+					jwt_secret: TextInput::new(Some(String::from("Secret"))),
+					jwt_payload: TextInput::new(Some(String::from("Payload"))),
+					digest_username: TextInput::new(Some(String::from("Username"))),
+					digest_password: TextInput::new(Some(String::from("Password"))),
+					digest_domains: TextInput::new(Some(String::from("Domains"))),
+					digest_realm: TextInput::new(Some(String::from("Realm"))),
+					digest_nonce: TextInput::new(Some(String::from("Nonce"))),
+					digest_opaque: TextInput::new(Some(String::from("Opaque"))),
+				},
+				headers_table: StatefulCustomTable::new(
+					vec![
+						Line::default(),
+						Line::from("Default headers").fg(THEME.read().ui.font_color),
+						Line::from("(Add one with n)")
+							.fg(THEME.read().ui.secondary_foreground_color),
+					],
+					"Header",
+					"Value",
+				),
+				body_file_input: TextInput::new(Some(String::from("File path"))),
+				body_form_table: StatefulCustomTable::new(
+					vec![
+						Line::default(),
+						Line::from("No form data").fg(THEME.read().ui.font_color),
+						Line::from("(Add one with n)")
+							.fg(THEME.read().ui.secondary_foreground_color),
+					],
+					"Key",
+					"Value",
+				),
+				body_text_area: TextInput::new(None),
+				settings_popup: SettingsPopup::default(),
+			},
 
 			/* WS message */
 			message_text_area: TextInput::new(None),
 
-			/* Settings */
-			request_settings_popup: SettingsPopup::default(),
-
 			/* Response */
-			result_throbber_state: ThrobberState::default(),
-			result_vertical_scrollbar: StatefulScrollbar::default(),
-			result_horizontal_scrollbar: StatefulScrollbar::default(),
-			response_body_text_area: TextInput::new_multiline(),
+			response_view: ResponseViewState {
+				throbber_state: ThrobberState::default(),
+				vertical_scrollbar: StatefulScrollbar::default(),
+				horizontal_scrollbar: StatefulScrollbar::default(),
+				body_text_area: TextInput::new_multiline(),
+			},
 
 			last_messages_area_size: (0, 0),
 			script_console: ScriptConsole {

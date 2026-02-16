@@ -232,8 +232,11 @@ impl App<'_> {
 			}
 		}
 
-		self.result_vertical_scrollbar.set_max_scroll(vertical_max);
-		self.result_horizontal_scrollbar
+		self.response_view
+			.vertical_scrollbar
+			.set_max_scroll(vertical_max);
+		self.response_view
+			.horizontal_scrollbar
 			.set_max_scroll(horizontal_max);
 	}
 

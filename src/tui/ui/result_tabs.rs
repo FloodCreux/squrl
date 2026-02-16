@@ -140,7 +140,7 @@ impl App<'_> {
 		if request.is_pending {
 			let area = centered_rect(9, 1, request_result_layout[2]);
 
-			self.result_throbber_state.calc_next();
+			self.response_view.throbber_state.calc_next();
 
 			let throbber = Throbber::default()
 				.label("Pending")
@@ -148,7 +148,7 @@ impl App<'_> {
 				.throbber_set(BRAILLE_DOUBLE)
 				.use_type(WhichUse::Spin);
 
-			frame.render_stateful_widget(throbber, area, &mut self.result_throbber_state);
+			frame.render_stateful_widget(throbber, area, &mut self.response_view.throbber_state);
 		}
 		// If the selected request is not pending
 		else {
@@ -210,7 +210,10 @@ impl App<'_> {
 							if self.state == AppState::SelectingResponseBody {
 								let syntax = SYNTAX_SET.find_syntax_plain_text().clone();
 								frame.render_widget(
-									MultiLineTextInput(&mut self.response_body_text_area, syntax),
+									MultiLineTextInput(
+										&mut self.response_view.body_text_area,
+										syntax,
+									),
 									request_result_layout[2],
 								);
 							} else {
@@ -231,11 +234,11 @@ impl App<'_> {
 								if self.core.config.should_wrap_body() {
 									body_paragraph = body_paragraph
 										.wrap(Wrap::default())
-										.scroll((self.result_vertical_scrollbar.scroll, 0));
+										.scroll((self.response_view.vertical_scrollbar.scroll, 0));
 								} else {
 									body_paragraph = body_paragraph.scroll((
-										self.result_vertical_scrollbar.scroll,
-										self.result_horizontal_scrollbar.scroll,
+										self.response_view.vertical_scrollbar.scroll,
+										self.response_view.horizontal_scrollbar.scroll,
 									));
 								}
 
@@ -367,8 +370,8 @@ impl App<'_> {
 					}
 
 					let messages_paragraph = Paragraph::new(messages).scroll((
-						self.result_vertical_scrollbar.scroll,
-						self.result_horizontal_scrollbar.scroll,
+						self.response_view.vertical_scrollbar.scroll,
+						self.response_view.horizontal_scrollbar.scroll,
 					));
 
 					let inner_area = Rect {
@@ -389,8 +392,8 @@ impl App<'_> {
 					let cookies_paragraph = Paragraph::new(result_cookies)
 						.fg(THEME.read().ui.font_color)
 						.scroll((
-							self.result_vertical_scrollbar.scroll,
-							self.result_horizontal_scrollbar.scroll,
+							self.response_view.vertical_scrollbar.scroll,
+							self.response_view.horizontal_scrollbar.scroll,
 						));
 
 					frame.render_widget(cookies_paragraph, request_result_layout[2]);
@@ -412,8 +415,8 @@ impl App<'_> {
 						.collect();
 
 					let headers_paragraph = Paragraph::new(result_headers).scroll((
-						self.result_vertical_scrollbar.scroll,
-						self.result_horizontal_scrollbar.scroll,
+						self.response_view.vertical_scrollbar.scroll,
+						self.response_view.horizontal_scrollbar.scroll,
 					));
 
 					frame.render_widget(headers_paragraph, request_result_layout[2]);
@@ -422,8 +425,8 @@ impl App<'_> {
 					let console_paragraph =
 						Paragraph::new(self.syntax_highlighting.highlighted_console_output.clone())
 							.scroll((
-								self.result_vertical_scrollbar.scroll,
-								self.result_horizontal_scrollbar.scroll,
+								self.response_view.vertical_scrollbar.scroll,
+								self.response_view.horizontal_scrollbar.scroll,
 							));
 
 					frame.render_widget(console_paragraph, request_result_layout[2]);
@@ -444,7 +447,7 @@ impl App<'_> {
 				vertical: 1,
 				horizontal: 0,
 			}),
-			&mut self.result_vertical_scrollbar.state,
+			&mut self.response_view.vertical_scrollbar.state,
 		);
 
 		if !(self.core.config.should_wrap_body()
@@ -457,7 +460,7 @@ impl App<'_> {
 					vertical: 0,
 					horizontal: 1,
 				}),
-				&mut self.result_horizontal_scrollbar.state,
+				&mut self.response_view.horizontal_scrollbar.state,
 			);
 		}
 

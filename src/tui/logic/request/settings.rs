@@ -12,7 +12,7 @@ impl App<'_> {
 
 			selected_request
 				.settings
-				.update_from_vec(&self.request_settings_popup.settings)
+				.update_from_vec(&self.request_editor.settings_popup.settings)
 		}
 
 		self.save_collection_to_file(selected.collection_index());

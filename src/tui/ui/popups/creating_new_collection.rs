@@ -21,10 +21,10 @@ impl App<'_> {
 		frame.render_widget(Clear, area);
 		frame.render_widget(popup_block, area);
 
-		self.new_collection_input.display_cursor = true;
+		self.collection_popups.new_collection_input.display_cursor = true;
 
 		frame.render_widget(
-			SingleLineTextInput(&mut self.new_collection_input),
+			SingleLineTextInput(&mut self.collection_popups.new_collection_input),
 			new_collection_area,
 		);
 	}

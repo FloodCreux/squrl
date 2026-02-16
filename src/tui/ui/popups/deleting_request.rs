@@ -29,7 +29,7 @@ impl App<'_> {
 		let mut no_paragraph = Paragraph::new("no").centered();
 		let mut yes_paragraph = Paragraph::new("yes").centered();
 
-		match self.delete_request_popup.state {
+		match self.collection_popups.delete_request_popup.state {
 			false => {
 				no_paragraph = no_paragraph
 					.fg(THEME.read().others.selection_highlight_color)

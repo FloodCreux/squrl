@@ -15,313 +15,402 @@ impl App<'_> {
 	) {
 		match event {
 			/* Url */
-			AppEvent::ModifyRequestUrl(_) => match self.url_text_input.is_in_default_mode() {
-				true => self.tui_modify_request_url(),
-				false => self.url_text_input.key_event(key, None),
-			},
-			AppEvent::CancelEditRequestUrl(_) => match self.url_text_input.is_in_default_mode() {
-				true => self.select_request_state(),
-				false => self.url_text_input.key_event(key, None),
-			},
-			AppEvent::KeyEventEditRequestUrl(_) => self.url_text_input.key_event(key, None),
+			AppEvent::ModifyRequestUrl(_) => {
+				match self.request_editor.url_input.is_in_default_mode() {
+					true => self.tui_modify_request_url(),
+					false => self.request_editor.url_input.key_event(key, None),
+				}
+			}
+			AppEvent::CancelEditRequestUrl(_) => {
+				match self.request_editor.url_input.is_in_default_mode() {
+					true => self.select_request_state(),
+					false => self.request_editor.url_input.key_event(key, None),
+				}
+			}
+			AppEvent::KeyEventEditRequestUrl(_) => {
+				self.request_editor.url_input.key_event(key, None)
+			}
 
 			/* Query params */
 			AppEvent::ModifyRequestQueryParam(_) => match self
+				.request_editor
 				.query_params_table
 				.selection_text_input
 				.is_in_default_mode()
 			{
 				true => self.tui_modify_request_query_param(),
 				false => self
+					.request_editor
 					.query_params_table
 					.selection_text_input
 					.key_event(key, None),
 			},
 			AppEvent::CancelEditRequestQueryParam(_) => match self
+				.request_editor
 				.query_params_table
 				.selection_text_input
 				.is_in_default_mode()
 			{
 				true => self.select_request_state(),
 				false => self
+					.request_editor
 					.query_params_table
 					.selection_text_input
 					.key_event(key, None),
 			},
 			AppEvent::KeyEventEditRequestQueryParam(_) => self
+				.request_editor
 				.query_params_table
 				.selection_text_input
 				.key_event(key, None),
 
 			/* Auth - Basic Username */
 			AppEvent::ModifyRequestAuthBasicUsername(_) => {
-				match self.auth_basic_username_text_input.is_in_default_mode() {
+				match self.request_editor.auth.basic_username.is_in_default_mode() {
 					true => self.tui_modify_request_auth_basic_username(),
-					false => self.auth_basic_username_text_input.key_event(key, None),
+					false => self.request_editor.auth.basic_username.key_event(key, None),
 				}
 			}
 			AppEvent::CancelEditRequestAuthBasicUsername(_) => {
-				match self.auth_basic_password_text_input.is_in_default_mode() {
+				match self.request_editor.auth.basic_password.is_in_default_mode() {
 					true => self.select_request_state(),
-					false => self.auth_basic_password_text_input.key_event(key, None),
+					false => self.request_editor.auth.basic_password.key_event(key, None),
 				}
 			}
 			AppEvent::KeyEventEditRequestAuthBasicUsername(_) => {
-				self.auth_basic_password_text_input.key_event(key, None)
+				self.request_editor.auth.basic_password.key_event(key, None)
 			}
 
 			/* Auth - Basic Password */
 			AppEvent::ModifyRequestAuthBasicPassword(_) => {
-				match self.auth_basic_password_text_input.is_in_default_mode() {
+				match self.request_editor.auth.basic_password.is_in_default_mode() {
 					true => self.tui_modify_request_auth_basic_password(),
-					false => self.auth_basic_password_text_input.key_event(key, None),
+					false => self.request_editor.auth.basic_password.key_event(key, None),
 				}
 			}
 			AppEvent::CancelEditRequestAuthBasicPassword(_) => {
-				match self.auth_basic_password_text_input.is_in_default_mode() {
+				match self.request_editor.auth.basic_password.is_in_default_mode() {
 					true => self.select_request_state(),
-					false => self.auth_basic_password_text_input.key_event(key, None),
+					false => self.request_editor.auth.basic_password.key_event(key, None),
 				}
 			}
 			AppEvent::KeyEventEditRequestAuthBasicPassword(_) => {
-				self.auth_digest_nonce_text_input.key_event(key, None)
+				self.request_editor.auth.digest_nonce.key_event(key, None)
 			}
 
 			/* Auth - Bearer Token */
 			AppEvent::ModifyRequestAuthBearerToken(_) => {
-				match self.auth_bearer_token_text_input.is_in_default_mode() {
+				match self.request_editor.auth.bearer_token.is_in_default_mode() {
 					true => self.tui_modify_request_auth_bearer_token(),
-					false => self.auth_bearer_token_text_input.key_event(key, None),
+					false => self.request_editor.auth.bearer_token.key_event(key, None),
 				}
 			}
 			AppEvent::CancelEditRequestAuthBearerToken(_) => {
-				match self.auth_bearer_token_text_input.is_in_default_mode() {
+				match self.request_editor.auth.bearer_token.is_in_default_mode() {
 					true => self.select_request_state(),
-					false => self.auth_bearer_token_text_input.key_event(key, None),
+					false => self.request_editor.auth.bearer_token.key_event(key, None),
 				}
 			}
 			AppEvent::KeyEventEditRequestAuthBearerToken(_) => {
-				self.auth_bearer_token_text_input.key_event(key, None)
+				self.request_editor.auth.bearer_token.key_event(key, None)
 			}
 
 			/* Auth - JWT Secret */
 			AppEvent::ModifyRequestAuthJwtSecret(_) => {
-				match self.auth_jwt_secret_text_input.is_in_default_mode() {
+				match self.request_editor.auth.jwt_secret.is_in_default_mode() {
 					true => self.tui_modify_request_auth_jwt_secret(),
-					false => self.auth_jwt_secret_text_input.key_event(key, None),
+					false => self.request_editor.auth.jwt_secret.key_event(key, None),
 				}
 			}
 			AppEvent::CancelEditRequestAuthJwtSecret(_) => {
-				match self.auth_jwt_secret_text_input.is_in_default_mode() {
+				match self.request_editor.auth.jwt_secret.is_in_default_mode() {
 					true => self.select_request_state(),
-					false => self.auth_jwt_secret_text_input.key_event(key, None),
+					false => self.request_editor.auth.jwt_secret.key_event(key, None),
 				}
 			}
 			AppEvent::KeyEventEditRequestAuthJwtSecret(_) => {
-				self.auth_jwt_secret_text_input.key_event(key, None)
+				self.request_editor.auth.jwt_secret.key_event(key, None)
 			}
 
 			/* Auth - JWT Payload */
 			AppEvent::ModifyRequestAuthJwtPayload(_) => {
-				match self.auth_jwt_payload_text_area.is_in_default_mode() {
+				match self.request_editor.auth.jwt_payload.is_in_default_mode() {
 					true => self.tui_modify_request_auth_jwt_payload(),
 					false => self
-						.auth_jwt_payload_text_area
+						.request_editor
+						.auth
+						.jwt_payload
 						.key_event(key, Some(terminal)),
 				}
 			}
 			AppEvent::CancelEditRequestAuthJwtPayload(_) => {
-				match self.auth_jwt_payload_text_area.is_in_default_mode() {
+				match self.request_editor.auth.jwt_payload.is_in_default_mode() {
 					true => self.select_request_state(),
 					false => self
-						.auth_jwt_payload_text_area
+						.request_editor
+						.auth
+						.jwt_payload
 						.key_event(key, Some(terminal)),
 				}
 			}
 			AppEvent::KeyEventEditRequestAuthJwtPayload(_) => self
-				.auth_jwt_payload_text_area
+				.request_editor
+				.auth
+				.jwt_payload
 				.key_event(key, Some(terminal)),
 
 			/* Auth - Digest Username */
 			AppEvent::ModifyRequestAuthDigestUsername(_) => {
-				match self.auth_digest_username_text_input.is_in_default_mode() {
+				match self
+					.request_editor
+					.auth
+					.digest_username
+					.is_in_default_mode()
+				{
 					true => self.tui_modify_request_auth_digest_username(),
-					false => self.auth_digest_username_text_input.key_event(key, None),
+					false => self
+						.request_editor
+						.auth
+						.digest_username
+						.key_event(key, None),
 				}
 			}
 			AppEvent::CancelEditRequestAuthDigestUsername(_) => {
-				match self.auth_digest_username_text_input.is_in_default_mode() {
+				match self
+					.request_editor
+					.auth
+					.digest_username
+					.is_in_default_mode()
+				{
 					true => self.select_request_state(),
-					false => self.auth_digest_username_text_input.key_event(key, None),
+					false => self
+						.request_editor
+						.auth
+						.digest_username
+						.key_event(key, None),
 				}
 			}
-			AppEvent::KeyEventEditRequestAuthDigestUsername(_) => {
-				self.auth_digest_username_text_input.key_event(key, None)
-			}
+			AppEvent::KeyEventEditRequestAuthDigestUsername(_) => self
+				.request_editor
+				.auth
+				.digest_username
+				.key_event(key, None),
 
 			/* Auth - Digest Password */
 			AppEvent::ModifyRequestAuthDigestPassword(_) => {
-				match self.auth_digest_password_text_input.is_in_default_mode() {
+				match self
+					.request_editor
+					.auth
+					.digest_password
+					.is_in_default_mode()
+				{
 					true => self.tui_modify_request_auth_digest_password(),
-					false => self.auth_digest_password_text_input.key_event(key, None),
+					false => self
+						.request_editor
+						.auth
+						.digest_password
+						.key_event(key, None),
 				}
 			}
 			AppEvent::CancelEditRequestAuthDigestPassword(_) => {
-				match self.auth_digest_password_text_input.is_in_default_mode() {
+				match self
+					.request_editor
+					.auth
+					.digest_password
+					.is_in_default_mode()
+				{
 					true => self.select_request_state(),
-					false => self.auth_digest_password_text_input.key_event(key, None),
+					false => self
+						.request_editor
+						.auth
+						.digest_password
+						.key_event(key, None),
 				}
 			}
-			AppEvent::KeyEventEditRequestAuthDigestPassword(_) => {
-				self.auth_digest_password_text_input.key_event(key, None)
-			}
+			AppEvent::KeyEventEditRequestAuthDigestPassword(_) => self
+				.request_editor
+				.auth
+				.digest_password
+				.key_event(key, None),
 
 			/* Auth - Digest Domains */
 			AppEvent::ModifyRequestAuthDigestDomains(_) => {
-				match self.auth_digest_domains_text_input.is_in_default_mode() {
+				match self.request_editor.auth.digest_domains.is_in_default_mode() {
 					true => self.tui_modify_request_auth_digest_domains(),
-					false => self.auth_digest_domains_text_input.key_event(key, None),
+					false => self.request_editor.auth.digest_domains.key_event(key, None),
 				}
 			}
 			AppEvent::CancelEditRequestAuthDigestDomains(_) => {
-				match self.auth_digest_domains_text_input.is_in_default_mode() {
+				match self.request_editor.auth.digest_domains.is_in_default_mode() {
 					true => self.select_request_state(),
-					false => self.auth_digest_domains_text_input.key_event(key, None),
+					false => self.request_editor.auth.digest_domains.key_event(key, None),
 				}
 			}
 			AppEvent::KeyEventEditRequestAuthDigestDomains(_) => {
-				self.auth_digest_domains_text_input.key_event(key, None)
+				self.request_editor.auth.digest_domains.key_event(key, None)
 			}
 
 			/* Auth - Digest Realm */
 			AppEvent::ModifyRequestAuthDigestRealm(_) => {
-				match self.auth_digest_realm_text_input.is_in_default_mode() {
+				match self.request_editor.auth.digest_realm.is_in_default_mode() {
 					true => self.tui_modify_request_auth_digest_realm(),
-					false => self.auth_digest_realm_text_input.key_event(key, None),
+					false => self.request_editor.auth.digest_realm.key_event(key, None),
 				}
 			}
 			AppEvent::CancelEditRequestAuthDigestRealm(_) => {
-				match self.auth_digest_realm_text_input.is_in_default_mode() {
+				match self.request_editor.auth.digest_realm.is_in_default_mode() {
 					true => self.select_request_state(),
-					false => self.auth_digest_realm_text_input.key_event(key, None),
+					false => self.request_editor.auth.digest_realm.key_event(key, None),
 				}
 			}
 			AppEvent::KeyEventEditRequestAuthDigestRealm(_) => {
-				self.auth_digest_realm_text_input.key_event(key, None)
+				self.request_editor.auth.digest_realm.key_event(key, None)
 			}
 
 			/* Auth - Digest Nonce */
 			AppEvent::ModifyRequestAuthDigestNonce(_) => {
-				match self.auth_digest_nonce_text_input.is_in_default_mode() {
+				match self.request_editor.auth.digest_nonce.is_in_default_mode() {
 					true => self.tui_modify_request_auth_digest_nonce(),
-					false => self.auth_digest_nonce_text_input.key_event(key, None),
+					false => self.request_editor.auth.digest_nonce.key_event(key, None),
 				}
 			}
 			AppEvent::CancelEditRequestAuthDigestNonce(_) => {
-				match self.auth_digest_nonce_text_input.is_in_default_mode() {
+				match self.request_editor.auth.digest_nonce.is_in_default_mode() {
 					true => self.select_request_state(),
-					false => self.auth_digest_nonce_text_input.key_event(key, None),
+					false => self.request_editor.auth.digest_nonce.key_event(key, None),
 				}
 			}
 			AppEvent::KeyEventEditRequestAuthDigestNonce(_) => {
-				self.auth_digest_nonce_text_input.key_event(key, None)
+				self.request_editor.auth.digest_nonce.key_event(key, None)
 			}
 
 			/* Auth - Digest Opaque */
 			AppEvent::ModifyRequestAuthDigestOpaque(_) => {
-				match self.auth_digest_opaque_text_input.is_in_default_mode() {
+				match self.request_editor.auth.digest_opaque.is_in_default_mode() {
 					true => self.tui_modify_request_auth_digest_opaque(),
-					false => self.auth_digest_opaque_text_input.key_event(key, None),
+					false => self.request_editor.auth.digest_opaque.key_event(key, None),
 				}
 			}
 			AppEvent::CancelEditRequestAuthDigestOpaque(_) => {
-				match self.auth_digest_opaque_text_input.is_in_default_mode() {
+				match self.request_editor.auth.digest_opaque.is_in_default_mode() {
 					true => self.select_request_state(),
-					false => self.auth_digest_opaque_text_input.key_event(key, None),
+					false => self.request_editor.auth.digest_opaque.key_event(key, None),
 				}
 			}
 			AppEvent::KeyEventEditRequestAuthDigestOpaque(_) => {
-				self.auth_digest_opaque_text_input.key_event(key, None)
+				self.request_editor.auth.digest_opaque.key_event(key, None)
 			}
 
 			/* Header */
 			AppEvent::ModifyRequestHeader(_) => {
-				match self.headers_table.selection_text_input.is_in_default_mode() {
+				match self
+					.request_editor
+					.headers_table
+					.selection_text_input
+					.is_in_default_mode()
+				{
 					true => self.tui_modify_request_header(),
-					false => self.headers_table.selection_text_input.key_event(key, None),
+					false => self
+						.request_editor
+						.headers_table
+						.selection_text_input
+						.key_event(key, None),
 				}
 			}
 			AppEvent::CancelEditRequestHeader(_) => {
-				match self.headers_table.selection_text_input.is_in_default_mode() {
+				match self
+					.request_editor
+					.headers_table
+					.selection_text_input
+					.is_in_default_mode()
+				{
 					true => self.select_request_state(),
-					false => self.headers_table.selection_text_input.key_event(key, None),
+					false => self
+						.request_editor
+						.headers_table
+						.selection_text_input
+						.key_event(key, None),
 				}
 			}
-			AppEvent::KeyEventEditRequestHeader(_) => {
-				self.headers_table.selection_text_input.key_event(key, None)
-			}
+			AppEvent::KeyEventEditRequestHeader(_) => self
+				.request_editor
+				.headers_table
+				.selection_text_input
+				.key_event(key, None),
 
 			/* Body - Table */
 			AppEvent::ModifyRequestBodyTable(_) => match self
+				.request_editor
 				.body_form_table
 				.selection_text_input
 				.is_in_default_mode()
 			{
 				true => self.tui_modify_request_form_data(),
 				false => self
+					.request_editor
 					.body_form_table
 					.selection_text_input
 					.key_event(key, None),
 			},
 			AppEvent::CancelEditRequestBodyTable(_) => match self
+				.request_editor
 				.body_form_table
 				.selection_text_input
 				.is_in_default_mode()
 			{
 				true => self.select_request_state(),
 				false => self
+					.request_editor
 					.body_form_table
 					.selection_text_input
 					.key_event(key, None),
 			},
 			AppEvent::KeyEventEditRequestBodyTable(_) => self
+				.request_editor
 				.body_form_table
 				.selection_text_input
 				.key_event(key, None),
 
 			/* Body - File */
 			AppEvent::ModifyRequestBodyFile(_) => {
-				match self.body_file_text_input.is_in_default_mode() {
+				match self.request_editor.body_file_input.is_in_default_mode() {
 					true => self.tui_modify_request_body(),
-					false => self.body_file_text_input.key_event(key, None),
+					false => self.request_editor.body_file_input.key_event(key, None),
 				}
 			}
 			AppEvent::CancelEditRequestBodyFile(_) => {
-				match self.body_file_text_input.is_in_default_mode() {
+				match self.request_editor.body_file_input.is_in_default_mode() {
 					true => self.select_request_state(),
-					false => self.body_file_text_input.key_event(key, None),
+					false => self.request_editor.body_file_input.key_event(key, None),
 				}
 			}
 			AppEvent::KeyEventEditRequestBodyFile(_) => {
-				self.body_file_text_input.key_event(key, None)
+				self.request_editor.body_file_input.key_event(key, None)
 			}
 
 			/* Body - String */
 			AppEvent::ModifyRequestBodyString(_) => {
-				match self.body_text_area.is_in_default_mode() {
+				match self.request_editor.body_text_area.is_in_default_mode() {
 					true => self.tui_modify_request_body(),
-					false => self.body_text_area.key_event(key, Some(terminal)),
+					false => self
+						.request_editor
+						.body_text_area
+						.key_event(key, Some(terminal)),
 				}
 			}
 			AppEvent::CancelEditRequestBodyString(_) => {
-				match self.body_text_area.is_in_default_mode() {
+				match self.request_editor.body_text_area.is_in_default_mode() {
 					true => self.select_request_state(),
-					false => self.body_text_area.key_event(key, Some(terminal)),
+					false => self
+						.request_editor
+						.body_text_area
+						.key_event(key, Some(terminal)),
 				}
 			}
-			AppEvent::KeyEventEditRequestBodyString(_) => {
-				self.body_text_area.key_event(key, Some(terminal))
-			}
+			AppEvent::KeyEventEditRequestBodyString(_) => self
+				.request_editor
+				.body_text_area
+				.key_event(key, Some(terminal)),
 
 			/* Websocket Message */
 			AppEvent::ModifyRequestMessage(_) => {

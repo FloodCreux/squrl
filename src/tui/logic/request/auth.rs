@@ -18,7 +18,7 @@ macro_rules! define_auth_modify_handlers {
 		$(
 			pub fn $fn_name(&mut self) {
 				let Some(idx) = self.collections_tree.selected else { return };
-				let input_text = self.$input_field.to_string();
+				let input_text = self.request_editor.auth.$input_field.to_string();
 				self.$modifier(idx.collection_index(), idx.request_index(), input_text);
 				self.select_request_state();
 			}
@@ -28,17 +28,17 @@ macro_rules! define_auth_modify_handlers {
 
 impl App<'_> {
 	define_auth_modify_handlers! {
-		tui_modify_request_auth_basic_username, auth_basic_username_text_input, modify_request_auth_basic_username;
-		tui_modify_request_auth_basic_password, auth_basic_password_text_input, modify_request_auth_basic_password;
-		tui_modify_request_auth_bearer_token, auth_bearer_token_text_input, modify_request_auth_bearer_token;
-		tui_modify_request_auth_jwt_secret, auth_jwt_secret_text_input, modify_request_auth_jwt_secret;
-		tui_modify_request_auth_jwt_payload, auth_jwt_payload_text_area, modify_request_auth_jwt_payload;
-		tui_modify_request_auth_digest_username, auth_digest_username_text_input, modify_request_auth_digest_username;
-		tui_modify_request_auth_digest_password, auth_digest_password_text_input, modify_request_auth_digest_password;
-		tui_modify_request_auth_digest_domains, auth_digest_domains_text_input, modify_request_auth_digest_domains;
-		tui_modify_request_auth_digest_realm, auth_digest_realm_text_input, modify_request_auth_digest_realm;
-		tui_modify_request_auth_digest_nonce, auth_digest_nonce_text_input, modify_request_auth_digest_nonce;
-		tui_modify_request_auth_digest_opaque, auth_digest_opaque_text_input, modify_request_auth_digest_opaque;
+		tui_modify_request_auth_basic_username, basic_username, modify_request_auth_basic_username;
+		tui_modify_request_auth_basic_password, basic_password, modify_request_auth_basic_password;
+		tui_modify_request_auth_bearer_token, bearer_token, modify_request_auth_bearer_token;
+		tui_modify_request_auth_jwt_secret, jwt_secret, modify_request_auth_jwt_secret;
+		tui_modify_request_auth_jwt_payload, jwt_payload, modify_request_auth_jwt_payload;
+		tui_modify_request_auth_digest_username, digest_username, modify_request_auth_digest_username;
+		tui_modify_request_auth_digest_password, digest_password, modify_request_auth_digest_password;
+		tui_modify_request_auth_digest_domains, digest_domains, modify_request_auth_digest_domains;
+		tui_modify_request_auth_digest_realm, digest_realm, modify_request_auth_digest_realm;
+		tui_modify_request_auth_digest_nonce, digest_nonce, modify_request_auth_digest_nonce;
+		tui_modify_request_auth_digest_opaque, digest_opaque, modify_request_auth_digest_opaque;
 	}
 
 	pub fn tui_next_request_auth(&mut self) {
@@ -65,24 +65,24 @@ impl App<'_> {
 
 		match selected_request.auth {
 			NoAuth => {}
-			BasicAuth(_) => match self.auth_text_input_selection.selected {
+			BasicAuth(_) => match self.request_editor.auth.text_input_selection.selected {
 				0 => self.edit_request_auth_username_state(),
 				1 => self.edit_request_auth_password_state(),
 				_ => {}
 			},
 			BearerToken(_) => {
-				if self.auth_text_input_selection.selected == 0 {
+				if self.request_editor.auth.text_input_selection.selected == 0 {
 					self.edit_request_auth_bearer_token_state()
 				}
 			}
-			JwtToken(_) => match self.auth_text_input_selection.selected {
+			JwtToken(_) => match self.request_editor.auth.text_input_selection.selected {
 				0 => {}
 				1 => {}
 				2 => self.edit_request_auth_jwt_secret_state(),
 				3 => self.edit_request_auth_jwt_payload_state(),
 				_ => {}
 			},
-			Digest(_) => match self.auth_text_input_selection.selected {
+			Digest(_) => match self.request_editor.auth.text_input_selection.selected {
 				0 => self.edit_request_auth_digest_username_state(),
 				1 => self.edit_request_auth_digest_password_state(),
 				2 => self.edit_request_auth_digest_domains_state(),
@@ -111,12 +111,12 @@ impl App<'_> {
 			NoAuth => {}
 			BasicAuth(_) => {}
 			BearerToken(_) => {}
-			JwtToken(_) => match self.auth_text_input_selection.selected {
+			JwtToken(_) => match self.request_editor.auth.text_input_selection.selected {
 				0 => self.tui_request_auth_previous_jwt_algorithm(),
 				1 => self.tui_request_auth_previous_jwt_secret_type(),
 				_ => {}
 			},
-			Digest(_) => match self.auth_text_input_selection.selected {
+			Digest(_) => match self.request_editor.auth.text_input_selection.selected {
 				6 => self.tui_request_auth_toggle_digest_stale(),
 				7 => self.tui_request_auth_previous_digest_algorithm(),
 				8 => self.tui_request_auth_previous_digest_qop(),
@@ -144,12 +144,12 @@ impl App<'_> {
 			NoAuth => {}
 			BasicAuth(_) => {}
 			BearerToken(_) => {}
-			JwtToken(_) => match self.auth_text_input_selection.selected {
+			JwtToken(_) => match self.request_editor.auth.text_input_selection.selected {
 				0 => self.tui_request_auth_next_jwt_algorithm(),
 				1 => self.tui_request_auth_next_jwt_secret_type(),
 				_ => {}
 			},
-			Digest(_) => match self.auth_text_input_selection.selected {
+			Digest(_) => match self.request_editor.auth.text_input_selection.selected {
 				6 => self.tui_request_auth_toggle_digest_stale(),
 				7 => self.tui_request_auth_next_digest_algorithm(),
 				8 => self.tui_request_auth_next_digest_qop(),

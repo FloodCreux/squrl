@@ -36,7 +36,7 @@ impl App<'_> {
 		let mut highlight_password = false;
 		let mut display_password_cursor = false;
 
-		let input_selected = self.auth_text_input_selection.selected;
+		let input_selected = self.request_editor.auth.text_input_selection.selected;
 
 		match input_selected {
 			0 if should_color_blocks => {
@@ -50,19 +50,19 @@ impl App<'_> {
 			_ => {}
 		};
 
-		self.auth_basic_username_text_input.highlight_text = highlight_username;
-		self.auth_basic_username_text_input.highlight_block = highlight_username;
-		self.auth_basic_username_text_input.display_cursor = display_username_cursor;
-		self.auth_basic_password_text_input.highlight_text = highlight_password;
-		self.auth_basic_password_text_input.highlight_block = highlight_password;
-		self.auth_basic_password_text_input.display_cursor = display_password_cursor;
+		self.request_editor.auth.basic_username.highlight_text = highlight_username;
+		self.request_editor.auth.basic_username.highlight_block = highlight_username;
+		self.request_editor.auth.basic_username.display_cursor = display_username_cursor;
+		self.request_editor.auth.basic_password.highlight_text = highlight_password;
+		self.request_editor.auth.basic_password.highlight_block = highlight_password;
+		self.request_editor.auth.basic_password.display_cursor = display_password_cursor;
 
 		frame.render_widget(
-			SingleLineTextInput(&mut self.auth_basic_username_text_input),
+			SingleLineTextInput(&mut self.request_editor.auth.basic_username),
 			basic_auth_layout[0],
 		);
 		frame.render_widget(
-			SingleLineTextInput(&mut self.auth_basic_password_text_input),
+			SingleLineTextInput(&mut self.request_editor.auth.basic_password),
 			basic_auth_layout[1],
 		);
 	}

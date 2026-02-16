@@ -116,7 +116,7 @@ impl App<'_> {
 		let mut charset_paragraph =
 			Paragraph::new(digest_auth.charset.to_string()).fg(THEME.read().ui.font_color);
 
-		let input_selected = self.auth_text_input_selection.selected;
+		let input_selected = self.request_editor.auth.text_input_selection.selected;
 
 		match input_selected {
 			0 if should_color_blocks => {
@@ -169,24 +169,24 @@ impl App<'_> {
 			_ => {}
 		}
 
-		self.auth_digest_username_text_input.highlight_text = highlight_username;
-		self.auth_digest_username_text_input.highlight_block = highlight_username;
-		self.auth_digest_username_text_input.display_cursor = display_username_cursor;
-		self.auth_digest_password_text_input.highlight_text = highlight_password;
-		self.auth_digest_password_text_input.highlight_block = highlight_password;
-		self.auth_digest_password_text_input.display_cursor = display_password_cursor;
-		self.auth_digest_domains_text_input.highlight_text = highlight_domains;
-		self.auth_digest_domains_text_input.highlight_block = highlight_domains;
-		self.auth_digest_domains_text_input.display_cursor = display_domains_cursor;
-		self.auth_digest_realm_text_input.highlight_text = highlight_realm;
-		self.auth_digest_realm_text_input.highlight_block = highlight_realm;
-		self.auth_digest_realm_text_input.display_cursor = display_realm_cursor;
-		self.auth_digest_nonce_text_input.highlight_text = highlight_nonce;
-		self.auth_digest_nonce_text_input.highlight_block = highlight_nonce;
-		self.auth_digest_nonce_text_input.display_cursor = display_nonce_cursor;
-		self.auth_digest_opaque_text_input.highlight_text = highlight_opaque;
-		self.auth_digest_opaque_text_input.highlight_block = highlight_opaque;
-		self.auth_digest_opaque_text_input.display_cursor = display_opaque_cursor;
+		self.request_editor.auth.digest_username.highlight_text = highlight_username;
+		self.request_editor.auth.digest_username.highlight_block = highlight_username;
+		self.request_editor.auth.digest_username.display_cursor = display_username_cursor;
+		self.request_editor.auth.digest_password.highlight_text = highlight_password;
+		self.request_editor.auth.digest_password.highlight_block = highlight_password;
+		self.request_editor.auth.digest_password.display_cursor = display_password_cursor;
+		self.request_editor.auth.digest_domains.highlight_text = highlight_domains;
+		self.request_editor.auth.digest_domains.highlight_block = highlight_domains;
+		self.request_editor.auth.digest_domains.display_cursor = display_domains_cursor;
+		self.request_editor.auth.digest_realm.highlight_text = highlight_realm;
+		self.request_editor.auth.digest_realm.highlight_block = highlight_realm;
+		self.request_editor.auth.digest_realm.display_cursor = display_realm_cursor;
+		self.request_editor.auth.digest_nonce.highlight_text = highlight_nonce;
+		self.request_editor.auth.digest_nonce.highlight_block = highlight_nonce;
+		self.request_editor.auth.digest_nonce.display_cursor = display_nonce_cursor;
+		self.request_editor.auth.digest_opaque.highlight_text = highlight_opaque;
+		self.request_editor.auth.digest_opaque.highlight_block = highlight_opaque;
+		self.request_editor.auth.digest_opaque.display_cursor = display_opaque_cursor;
 		stale_paragraph = stale_paragraph.block(stale_block);
 		algorithm_paragraph = algorithm_paragraph.block(algorithm_block);
 		qop_paragraph = qop_paragraph.block(qop_block);
@@ -194,27 +194,27 @@ impl App<'_> {
 		charset_paragraph = charset_paragraph.block(charset_block);
 
 		digest_auth_scroll_view.render_widget(
-			SingleLineTextInput(&mut self.auth_digest_username_text_input),
+			SingleLineTextInput(&mut self.request_editor.auth.digest_username),
 			digest_auth_layout[0],
 		);
 		digest_auth_scroll_view.render_widget(
-			SingleLineTextInput(&mut self.auth_digest_password_text_input),
+			SingleLineTextInput(&mut self.request_editor.auth.digest_password),
 			digest_auth_layout[1],
 		);
 		digest_auth_scroll_view.render_widget(
-			SingleLineTextInput(&mut self.auth_digest_domains_text_input),
+			SingleLineTextInput(&mut self.request_editor.auth.digest_domains),
 			digest_auth_layout[2],
 		);
 		digest_auth_scroll_view.render_widget(
-			SingleLineTextInput(&mut self.auth_digest_realm_text_input),
+			SingleLineTextInput(&mut self.request_editor.auth.digest_realm),
 			digest_auth_layout[3],
 		);
 		digest_auth_scroll_view.render_widget(
-			SingleLineTextInput(&mut self.auth_digest_nonce_text_input),
+			SingleLineTextInput(&mut self.request_editor.auth.digest_nonce),
 			digest_auth_layout[4],
 		);
 		digest_auth_scroll_view.render_widget(
-			SingleLineTextInput(&mut self.auth_digest_opaque_text_input),
+			SingleLineTextInput(&mut self.request_editor.auth.digest_opaque),
 			digest_auth_layout[5],
 		);
 		digest_auth_scroll_view.render_widget(stale_paragraph, digest_auth_layout[6]);

@@ -169,15 +169,16 @@ impl App<'_> {
 
 		match self.request_param_tab {
 			RequestParamsTabs::QueryParams => {
-				self.query_params_table.is_editing = matches!(&self.state, EditingRequestParam);
+				self.request_editor.query_params_table.is_editing =
+					matches!(&self.state, EditingRequestParam);
 
 				let mut rows = key_value_vec_to_items_list(
 					&self.get_selected_env_as_local(),
-					&self.query_params_table.rows,
+					&self.request_editor.query_params_table.rows,
 				);
 
 				frame.render_stateful_widget(
-					&mut self.query_params_table,
+					&mut self.request_editor.query_params_table,
 					request_params_layout[1],
 					&mut rows,
 				);
@@ -201,15 +202,16 @@ impl App<'_> {
 				Digest(_) => self.render_digest_tab(frame, request_params_layout[1]),
 			},
 			RequestParamsTabs::Headers => {
-				self.headers_table.is_editing = matches!(self.state, EditingRequestHeader);
+				self.request_editor.headers_table.is_editing =
+					matches!(self.state, EditingRequestHeader);
 
 				let mut rows = key_value_vec_to_items_list(
 					&self.get_selected_env_as_local(),
-					&self.headers_table.rows,
+					&self.request_editor.headers_table.rows,
 				);
 
 				frame.render_stateful_widget(
-					&mut self.headers_table,
+					&mut self.request_editor.headers_table,
 					request_params_layout[1],
 					&mut rows,
 				);
@@ -231,16 +233,16 @@ impl App<'_> {
 						frame.render_widget(body_paragraph, request_params_layout[1]);
 					}
 					Multipart(_) | Form(_) => {
-						self.body_form_table.is_editing =
+						self.request_editor.body_form_table.is_editing =
 							matches!(self.state, EditingRequestBodyTable);
 
 						let mut rows = key_value_vec_to_items_list(
 							&self.get_selected_env_as_local(),
-							&self.body_form_table.rows,
+							&self.request_editor.body_form_table.rows,
 						);
 
 						frame.render_stateful_widget(
-							&mut self.body_form_table,
+							&mut self.request_editor.body_form_table,
 							request_params_layout[1],
 							&mut rows,
 						);
@@ -259,10 +261,13 @@ impl App<'_> {
 							_ => unreachable!(),
 						};
 
-						self.body_text_area.display_cursor = display_cursor;
+						self.request_editor.body_text_area.display_cursor = display_cursor;
 
 						frame.render_widget(
-							MultiLineTextInput(&mut self.body_text_area, syntax_reference),
+							MultiLineTextInput(
+								&mut self.request_editor.body_text_area,
+								syntax_reference,
+							),
 							request_params_layout[1],
 						);
 					}

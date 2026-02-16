@@ -10,13 +10,13 @@ impl App<'_> {
 		_key: KeyCombination,
 	) {
 		match event {
-			AppEvent::RequestSettingsMoveUp(_) => self.request_settings_popup.previous(),
-			AppEvent::RequestSettingsMoveDown(_) => self.request_settings_popup.next(),
+			AppEvent::RequestSettingsMoveUp(_) => self.request_editor.settings_popup.previous(),
+			AppEvent::RequestSettingsMoveDown(_) => self.request_editor.settings_popup.next(),
 			AppEvent::RequestSettingsToggleSettingLeft(_) => {
-				self.request_settings_popup.toggle_setting_left()
+				self.request_editor.settings_popup.toggle_setting_left()
 			}
 			AppEvent::RequestSettingsToggleSettingRight(_) => {
-				self.request_settings_popup.toggle_setting_right()
+				self.request_editor.settings_popup.toggle_setting_right()
 			}
 			AppEvent::ModifyRequestSettings(_) => self.tui_modify_request_settings(),
 

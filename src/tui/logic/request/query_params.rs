@@ -9,18 +9,28 @@ impl App<'_> {
 		let selected_request = local_selected_request.read();
 
 		match selected_request.params.is_empty() {
-			false => self.query_params_table.update_selection(Some((0, 0))),
-			true => self.query_params_table.update_selection(None),
+			false => self
+				.request_editor
+				.query_params_table
+				.update_selection(Some((0, 0))),
+			true => self
+				.request_editor
+				.query_params_table
+				.update_selection(None),
 		}
 	}
 
 	pub fn tui_modify_request_query_param(&mut self) {
-		let input_text = self.query_params_table.selection_text_input.to_string();
+		let input_text = self
+			.request_editor
+			.query_params_table
+			.selection_text_input
+			.to_string();
 		let Some(selected) = self.collections_tree.selected else {
 			return;
 		};
 
-		let Some(selection) = self.query_params_table.selection else {
+		let Some(selection) = self.request_editor.query_params_table.selection else {
 			return;
 		};
 
@@ -58,11 +68,13 @@ impl App<'_> {
 	}
 
 	pub fn tui_delete_query_param(&mut self) {
-		if self.query_params_table.rows.is_empty() || self.query_params_table.selection.is_none() {
+		if self.request_editor.query_params_table.rows.is_empty()
+			|| self.request_editor.query_params_table.selection.is_none()
+		{
 			return;
 		}
 
-		let Some(selection) = self.query_params_table.selection else {
+		let Some(selection) = self.request_editor.query_params_table.selection else {
 			return;
 		};
 		let Some(selected) = self.collections_tree.selected else {
@@ -83,11 +95,13 @@ impl App<'_> {
 	}
 
 	pub fn tui_toggle_query_param(&mut self) {
-		if self.query_params_table.rows.is_empty() || self.query_params_table.selection.is_none() {
+		if self.request_editor.query_params_table.rows.is_empty()
+			|| self.request_editor.query_params_table.selection.is_none()
+		{
 			return;
 		}
 
-		let Some(selection) = self.query_params_table.selection else {
+		let Some(selection) = self.request_editor.query_params_table.selection else {
 			return;
 		};
 		let row = selection.0;
@@ -109,11 +123,13 @@ impl App<'_> {
 	}
 
 	pub fn tui_duplicate_query_param(&mut self) {
-		if self.query_params_table.rows.is_empty() || self.query_params_table.selection.is_none() {
+		if self.request_editor.query_params_table.rows.is_empty()
+			|| self.request_editor.query_params_table.selection.is_none()
+		{
 			return;
 		}
 
-		let Some(selection) = self.query_params_table.selection else {
+		let Some(selection) = self.request_editor.query_params_table.selection else {
 			return;
 		};
 		let row = selection.0;
