@@ -251,4 +251,121 @@ mod tests {
 			))
 		);
 	}
+
+	// ── unquote_env_value ────────────────────────────────────────
+
+	#[test]
+	fn unquote_unquoted_value() {
+		assert_eq!(unquote_env_value("plain"), "plain");
+	}
+
+	#[test]
+	fn unquote_double_quoted_basic() {
+		assert_eq!(unquote_env_value("\"hello world\""), "hello world");
+	}
+
+	#[test]
+	fn unquote_single_quoted_basic() {
+		assert_eq!(unquote_env_value("'hello world'"), "hello world");
+	}
+
+	#[test]
+	fn unquote_double_quoted_escape_newline() {
+		assert_eq!(unquote_env_value("\"line1\\nline2\""), "line1\nline2");
+	}
+
+	#[test]
+	fn unquote_double_quoted_escape_tab() {
+		assert_eq!(unquote_env_value("\"col1\\tcol2\""), "col1\tcol2");
+	}
+
+	#[test]
+	fn unquote_double_quoted_escape_carriage_return() {
+		assert_eq!(unquote_env_value("\"a\\rb\""), "a\rb");
+	}
+
+	#[test]
+	fn unquote_double_quoted_escaped_backslash() {
+		assert_eq!(
+			unquote_env_value("\"path\\\\to\\\\file\""),
+			"path\\to\\file"
+		);
+	}
+
+	#[test]
+	fn unquote_double_quoted_escaped_quote() {
+		assert_eq!(
+			unquote_env_value("\"she said \\\"hi\\\"\""),
+			"she said \"hi\""
+		);
+	}
+
+	#[test]
+	fn unquote_double_quoted_unknown_escape_preserved() {
+		// Unknown escape like \x should keep the backslash
+		assert_eq!(unquote_env_value("\"hello\\xworld\""), "hello\\xworld");
+	}
+
+	#[test]
+	fn unquote_double_quoted_trailing_backslash() {
+		// Trailing backslash with no following char
+		assert_eq!(unquote_env_value("\"trailing\\\""), "trailing\\");
+	}
+
+	#[test]
+	fn unquote_single_quoted_no_escape_processing() {
+		// Single quotes should NOT process escape sequences
+		assert_eq!(unquote_env_value("'no\\nescape'"), "no\\nescape");
+	}
+
+	#[test]
+	fn unquote_empty_string() {
+		assert_eq!(unquote_env_value(""), "");
+	}
+
+	#[test]
+	fn unquote_single_char() {
+		assert_eq!(unquote_env_value("x"), "x");
+	}
+
+	#[test]
+	fn unquote_mismatched_quotes_not_stripped() {
+		// Starts with " but ends with ' — not matching, returned as-is
+		assert_eq!(unquote_env_value("\"mixed'"), "\"mixed'");
+	}
+
+	#[test]
+	fn unquote_just_double_quotes() {
+		assert_eq!(unquote_env_value("\"\""), "");
+	}
+
+	#[test]
+	fn unquote_just_single_quotes() {
+		assert_eq!(unquote_env_value("''"), "");
+	}
+
+	#[test]
+	fn unquote_double_quoted_multiple_escapes() {
+		assert_eq!(unquote_env_value("\"\\n\\t\\r\\\\\""), "\n\t\r\\");
+	}
+
+	// ── parse_line with escape sequences in values ───────────────
+
+	#[test]
+	fn test_parse_line_double_quoted_with_newline() {
+		let result = parse_line(b"MSG=\"hello\\nworld\"");
+		assert_eq!(
+			result,
+			Some(("MSG".to_string(), "hello\nworld".to_string()))
+		);
+	}
+
+	#[test]
+	fn test_parse_line_single_quoted_preserves_backslash() {
+		let result = parse_line(b"MSG='hello\\nworld'");
+		assert_eq!(
+			result,
+			Some(("MSG".to_string(), "hello\\nworld".to_string()))
+		);
+	}
 }

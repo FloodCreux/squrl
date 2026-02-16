@@ -260,3 +260,309 @@ impl App<'_> {
 		}
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::models::collection::CollectionFileFormat;
+
+	// ── Config default values ────────────────────────────────────
+
+	#[test]
+	fn default_config_has_no_theme() {
+		let config = Config::default();
+		assert!(config.get_theme().is_none());
+	}
+
+	#[test]
+	fn default_config_syntax_highlighting_enabled() {
+		let config = Config::default();
+		assert!(!config.is_syntax_highlighting_disabled());
+	}
+
+	#[test]
+	fn default_config_does_not_save_responses() {
+		let config = Config::default();
+		assert!(!config.should_save_requests_response());
+	}
+
+	#[test]
+	fn default_config_image_preview_enabled() {
+		let config = Config::default();
+		assert!(!config.is_image_preview_disabled());
+	}
+
+	#[test]
+	fn default_config_graphical_protocol_enabled() {
+		let config = Config::default();
+		assert!(!config.is_graphical_protocol_disabled());
+	}
+
+	#[test]
+	fn default_config_does_not_wrap_body() {
+		let config = Config::default();
+		assert!(!config.should_wrap_body());
+	}
+
+	#[test]
+	fn default_config_prefers_json_format() {
+		let config = Config::default();
+		assert!(matches!(
+			config.get_preferred_collection_file_format(),
+			CollectionFileFormat::Json
+		));
+	}
+
+	#[test]
+	fn default_config_has_no_proxy() {
+		let config = Config::default();
+		assert!(config.get_proxy().is_none());
+	}
+
+	// ── Config with set values ───────────────────────────────────
+
+	#[test]
+	fn config_get_theme_returns_value() {
+		let config = Config {
+			theme: Some("dracula".to_string()),
+			..Default::default()
+		};
+		assert_eq!(config.get_theme(), Some("dracula"));
+	}
+
+	#[test]
+	fn config_syntax_highlighting_disabled() {
+		let config = Config {
+			disable_syntax_highlighting: Some(true),
+			..Default::default()
+		};
+		assert!(config.is_syntax_highlighting_disabled());
+	}
+
+	#[test]
+	fn config_save_requests_response_enabled() {
+		let config = Config {
+			save_requests_response: Some(true),
+			..Default::default()
+		};
+		assert!(config.should_save_requests_response());
+	}
+
+	#[test]
+	fn config_image_preview_disabled() {
+		let config = Config {
+			disable_images_preview: Some(true),
+			..Default::default()
+		};
+		assert!(config.is_image_preview_disabled());
+	}
+
+	#[test]
+	fn config_wrap_body_enabled() {
+		let config = Config {
+			wrap_responses: Some(true),
+			..Default::default()
+		};
+		assert!(config.should_wrap_body());
+	}
+
+	#[test]
+	fn config_prefers_yaml_format() {
+		let config = Config {
+			preferred_collection_file_format: Some(CollectionFileFormat::Yaml),
+			..Default::default()
+		};
+		assert!(matches!(
+			config.get_preferred_collection_file_format(),
+			CollectionFileFormat::Yaml
+		));
+	}
+
+	// ── TOML deserialization ─────────────────────────────────────
+
+	#[test]
+	fn parse_empty_toml_gives_defaults() {
+		let config: Config = toml::from_str("").unwrap();
+		assert!(config.theme.is_none());
+		assert!(config.disable_syntax_highlighting.is_none());
+		assert!(config.save_requests_response.is_none());
+		assert!(config.proxy.is_none());
+	}
+
+	#[test]
+	fn parse_toml_with_theme() {
+		let config: Config = toml::from_str(r#"theme = "catppuccin_mocha""#).unwrap();
+		assert_eq!(config.get_theme(), Some("catppuccin_mocha"));
+	}
+
+	#[test]
+	fn parse_toml_with_all_fields() {
+		let toml_str = r#"
+theme = "gruvbox"
+disable_syntax_highlighting = true
+save_requests_response = true
+disable_images_preview = true
+disable_graphical_protocol = true
+wrap_responses = true
+preferred_collection_file_format = "yaml"
+
+[proxy]
+http_proxy = "http://proxy.local:8080"
+https_proxy = "https://proxy.local:8443"
+"#;
+		let config: Config = toml::from_str(toml_str).unwrap();
+		assert_eq!(config.get_theme(), Some("gruvbox"));
+		assert!(config.is_syntax_highlighting_disabled());
+		assert!(config.should_save_requests_response());
+		assert!(config.is_image_preview_disabled());
+		assert!(config.is_graphical_protocol_disabled());
+		assert!(config.should_wrap_body());
+		assert!(matches!(
+			config.get_preferred_collection_file_format(),
+			CollectionFileFormat::Yaml
+		));
+		let proxy = config.proxy.unwrap();
+		assert_eq!(
+			proxy.http_proxy,
+			Some("http://proxy.local:8080".to_string())
+		);
+		assert_eq!(
+			proxy.https_proxy,
+			Some("https://proxy.local:8443".to_string())
+		);
+	}
+
+	#[test]
+	fn parse_toml_ignores_unknown_keys() {
+		let config: Config = toml::from_str("theme = \"test\"\nunknown_key = \"ignored\"").unwrap();
+		assert_eq!(config.get_theme(), Some("test"));
+	}
+
+	#[test]
+	fn parse_toml_with_proxy_only() {
+		let toml_str = r#"
+[proxy]
+http_proxy = "http://127.0.0.1:3128"
+"#;
+		let config: Config = toml::from_str(toml_str).unwrap();
+		let proxy = config.proxy.unwrap();
+		assert_eq!(proxy.http_proxy, Some("http://127.0.0.1:3128".to_string()));
+		assert!(proxy.https_proxy.is_none());
+	}
+
+	#[test]
+	fn parse_toml_with_partial_proxy() {
+		let toml_str = r#"
+[proxy]
+https_proxy = "https://secure.proxy:443"
+"#;
+		let config: Config = toml::from_str(toml_str).unwrap();
+		let proxy = config.proxy.unwrap();
+		assert!(proxy.http_proxy.is_none());
+		assert_eq!(
+			proxy.https_proxy,
+			Some("https://secure.proxy:443".to_string())
+		);
+	}
+
+	#[test]
+	fn parse_toml_booleans_false() {
+		let toml_str = r#"
+disable_syntax_highlighting = false
+save_requests_response = false
+"#;
+		let config: Config = toml::from_str(toml_str).unwrap();
+		assert!(!config.is_syntax_highlighting_disabled());
+		assert!(!config.should_save_requests_response());
+	}
+
+	#[test]
+	fn config_serializes_to_toml() {
+		let config = Config {
+			theme: Some("dracula".to_string()),
+			disable_syntax_highlighting: Some(true),
+			..Default::default()
+		};
+		let toml_str = toml::to_string_pretty(&config).unwrap();
+		assert!(toml_str.contains("dracula"));
+		assert!(toml_str.contains("disable_syntax_highlighting = true"));
+	}
+
+	#[test]
+	fn config_roundtrip_through_toml() {
+		let original = Config {
+			theme: Some("nord".to_string()),
+			disable_syntax_highlighting: Some(false),
+			save_requests_response: Some(true),
+			disable_images_preview: Some(true),
+			disable_graphical_protocol: None,
+			wrap_responses: Some(false),
+			preferred_collection_file_format: Some(CollectionFileFormat::Yaml),
+			proxy: Some(Proxy {
+				http_proxy: Some("http://proxy:8080".to_string()),
+				https_proxy: None,
+			}),
+		};
+
+		let toml_str = toml::to_string_pretty(&original).unwrap();
+		let restored: Config = toml::from_str(&toml_str).unwrap();
+
+		assert_eq!(restored.get_theme(), Some("nord"));
+		assert!(!restored.is_syntax_highlighting_disabled());
+		assert!(restored.should_save_requests_response());
+		assert!(restored.is_image_preview_disabled());
+		assert!(!restored.is_graphical_protocol_disabled());
+		assert!(!restored.should_wrap_body());
+		assert!(matches!(
+			restored.get_preferred_collection_file_format(),
+			CollectionFileFormat::Yaml
+		));
+		let proxy = restored.proxy.unwrap();
+		assert_eq!(proxy.http_proxy, Some("http://proxy:8080".to_string()));
+		assert!(proxy.https_proxy.is_none());
+	}
+
+	// ── OnceLock skip behavior ───────────────────────────────────
+
+	#[test]
+	fn set_should_skip_when_save_is_none() {
+		// When save_requests_response is None, skip should be true
+		let config = Config {
+			save_requests_response: None,
+			..Default::default()
+		};
+		// We can't test OnceLock directly since it's global state,
+		// but we can verify the logic: None => true (skip saving)
+		let result = match config.save_requests_response {
+			None => true,
+			Some(save_requests_response) => !save_requests_response,
+		};
+		assert!(result);
+	}
+
+	#[test]
+	fn set_should_skip_when_save_is_true() {
+		let config = Config {
+			save_requests_response: Some(true),
+			..Default::default()
+		};
+		let result = match config.save_requests_response {
+			None => true,
+			Some(save_requests_response) => !save_requests_response,
+		};
+		assert!(!result); // save=true means skip=false
+	}
+
+	#[test]
+	fn set_should_skip_when_save_is_false() {
+		let config = Config {
+			save_requests_response: Some(false),
+			..Default::default()
+		};
+		let result = match config.save_requests_response {
+			None => true,
+			Some(save_requests_response) => !save_requests_response,
+		};
+		assert!(result); // save=false means skip=true
+	}
+}

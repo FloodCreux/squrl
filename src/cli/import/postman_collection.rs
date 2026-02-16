@@ -589,3 +589,1059 @@ pub fn retrieve_settings(item: &Items) -> Option<RequestSettings> {
 
 	Some(settings)
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use parse_postman_collection::v2_1_0::{
+		Auth as PostmanAuth, AuthAttribute, BodyClass, Event, File as PostmanFile, FormParameter,
+		Header, Language, Mode, Options, ProtocolProfileBehavior, QueryParam, Raw, RequestClass,
+		RequestUnion, Script, Url, UrlClass, UrlEncodedParameter,
+	};
+
+	/// Helper to build a minimal Items leaf (request, not folder)
+	fn make_item(name: &str, request_class: RequestClass) -> Items {
+		Items {
+			description: None,
+			event: None,
+			id: None,
+			name: Some(name.to_string()),
+			protocol_profile_behavior: None,
+			request: Some(RequestUnion::RequestClass(request_class)),
+			response: None,
+			variable: None,
+			auth: None,
+			item: None,
+		}
+	}
+
+	/// Helper to build a minimal RequestClass
+	fn make_request_class(method: &str, url: &str) -> RequestClass {
+		RequestClass {
+			auth: None,
+			body: None,
+			certificate: None,
+			description: None,
+			header: None,
+			method: Some(method.to_string()),
+			proxy: None,
+			url: Some(Url::String(url.to_string())),
+		}
+	}
+
+	// ── is_folder ────────────────────────────────────────────────
+
+	#[test]
+	fn is_folder_returns_true_when_item_has_sub_items() {
+		let folder = Items {
+			description: None,
+			event: None,
+			id: None,
+			name: Some("folder".to_string()),
+			protocol_profile_behavior: None,
+			request: None,
+			response: None,
+			variable: None,
+			auth: None,
+			item: Some(vec![]),
+		};
+		assert!(is_folder(&folder));
+	}
+
+	#[test]
+	fn is_folder_returns_false_for_leaf_item() {
+		let item = make_item("request", make_request_class("GET", "https://example.com"));
+		assert!(!is_folder(&item));
+	}
+
+	// ── parse_request ────────────────────────────────────────────
+
+	#[test]
+	fn parse_request_basic_get() {
+		let item = make_item(
+			"Get Users",
+			make_request_class("GET", "https://api.test.com/users"),
+		);
+		let request = parse_request(item).unwrap();
+
+		assert_eq!(request.name, "Get Users");
+		assert_eq!(request.url, "https://api.test.com/users");
+		let http = request.get_http_request().unwrap();
+		assert!(matches!(http.method, Method::GET));
+	}
+
+	#[test]
+	fn parse_request_post_method() {
+		let item = make_item(
+			"Create User",
+			make_request_class("POST", "https://api.test.com/users"),
+		);
+		let request = parse_request(item).unwrap();
+
+		let http = request.get_http_request().unwrap();
+		assert!(matches!(http.method, Method::POST));
+	}
+
+	#[test]
+	fn parse_request_with_url_class() {
+		let rc = RequestClass {
+			auth: None,
+			body: None,
+			certificate: None,
+			description: None,
+			header: None,
+			method: Some("GET".to_string()),
+			proxy: None,
+			url: Some(Url::UrlClass(UrlClass {
+				hash: None,
+				host: None,
+				path: None,
+				port: None,
+				protocol: None,
+				query: None,
+				raw: Some("https://example.com/api".to_string()),
+				variable: None,
+			})),
+		};
+		let item = make_item("URL Class Test", rc);
+		let request = parse_request(item).unwrap();
+
+		assert_eq!(request.url, "https://example.com/api");
+	}
+
+	#[test]
+	fn parse_request_unknown_method_returns_error() {
+		let item = make_item(
+			"Bad Method",
+			make_request_class("FOOBAR", "https://example.com"),
+		);
+		let result = parse_request(item);
+		assert!(result.is_err());
+		assert!(result.unwrap_err().to_string().contains("FOOBAR"));
+	}
+
+	// ── retrieve_query_params ────────────────────────────────────
+
+	#[test]
+	fn retrieve_query_params_from_url_class() {
+		let rc = RequestClass {
+			auth: None,
+			body: None,
+			certificate: None,
+			description: None,
+			header: None,
+			method: Some("GET".to_string()),
+			proxy: None,
+			url: Some(Url::UrlClass(UrlClass {
+				hash: None,
+				host: None,
+				path: None,
+				port: None,
+				protocol: None,
+				query: Some(vec![
+					QueryParam {
+						description: None,
+						disabled: None,
+						key: Some("page".to_string()),
+						value: Some("1".to_string()),
+					},
+					QueryParam {
+						description: None,
+						disabled: Some(true),
+						key: Some("limit".to_string()),
+						value: Some("10".to_string()),
+					},
+				]),
+				raw: Some("https://example.com".to_string()),
+				variable: None,
+			})),
+		};
+
+		let params = retrieve_query_params(&rc).unwrap();
+		assert_eq!(params.len(), 2);
+		assert!(params[0].enabled); // disabled=None defaults to enabled
+		assert_eq!(params[0].data.0, "page");
+		assert_eq!(params[0].data.1, "1");
+		assert!(!params[1].enabled); // disabled=true
+		assert_eq!(params[1].data.0, "limit");
+	}
+
+	#[test]
+	fn retrieve_query_params_from_string_url_returns_none() {
+		let rc = RequestClass {
+			auth: None,
+			body: None,
+			certificate: None,
+			description: None,
+			header: None,
+			method: Some("GET".to_string()),
+			proxy: None,
+			url: Some(Url::String("https://example.com?page=1".to_string())),
+		};
+
+		assert!(retrieve_query_params(&rc).is_none());
+	}
+
+	#[test]
+	fn retrieve_query_params_no_url_returns_none() {
+		let rc = RequestClass {
+			auth: None,
+			body: None,
+			certificate: None,
+			description: None,
+			header: None,
+			method: Some("GET".to_string()),
+			proxy: None,
+			url: None,
+		};
+
+		assert!(retrieve_query_params(&rc).is_none());
+	}
+
+	// ── retrieve_body ────────────────────────────────────────────
+
+	#[test]
+	fn retrieve_body_raw_json() {
+		let rc = RequestClass {
+			auth: None,
+			body: Some(Body::BodyClass(BodyClass {
+				disabled: None,
+				file: None,
+				formdata: None,
+				options: Some(Options {
+					raw: Some(Raw {
+						language: Some(Language::Json),
+					}),
+				}),
+				mode: Some(Mode::Raw),
+				raw: Some(r#"{"key": "value"}"#.to_string()),
+				urlencoded: None,
+			})),
+			certificate: None,
+			description: None,
+			header: None,
+			method: Some("POST".to_string()),
+			proxy: None,
+			url: None,
+		};
+
+		let body = retrieve_body(&rc).unwrap();
+		assert!(matches!(body, ContentType::Json(ref s) if s == r#"{"key": "value"}"#));
+	}
+
+	#[test]
+	fn retrieve_body_raw_xml() {
+		let rc = RequestClass {
+			auth: None,
+			body: Some(Body::BodyClass(BodyClass {
+				disabled: None,
+				file: None,
+				formdata: None,
+				options: Some(Options {
+					raw: Some(Raw {
+						language: Some(Language::Xml),
+					}),
+				}),
+				mode: Some(Mode::Raw),
+				raw: Some("<root/>".to_string()),
+				urlencoded: None,
+			})),
+			certificate: None,
+			description: None,
+			header: None,
+			method: Some("POST".to_string()),
+			proxy: None,
+			url: None,
+		};
+
+		let body = retrieve_body(&rc).unwrap();
+		assert!(matches!(body, ContentType::Xml(ref s) if s == "<root/>"));
+	}
+
+	#[test]
+	fn retrieve_body_raw_html() {
+		let rc = RequestClass {
+			auth: None,
+			body: Some(Body::BodyClass(BodyClass {
+				disabled: None,
+				file: None,
+				formdata: None,
+				options: Some(Options {
+					raw: Some(Raw {
+						language: Some(Language::Html),
+					}),
+				}),
+				mode: Some(Mode::Raw),
+				raw: Some("<html></html>".to_string()),
+				urlencoded: None,
+			})),
+			certificate: None,
+			description: None,
+			header: None,
+			method: Some("POST".to_string()),
+			proxy: None,
+			url: None,
+		};
+
+		let body = retrieve_body(&rc).unwrap();
+		assert!(matches!(body, ContentType::Html(ref s) if s == "<html></html>"));
+	}
+
+	#[test]
+	fn retrieve_body_raw_text() {
+		let rc = RequestClass {
+			auth: None,
+			body: Some(Body::BodyClass(BodyClass {
+				disabled: None,
+				file: None,
+				formdata: None,
+				options: Some(Options {
+					raw: Some(Raw {
+						language: Some(Language::Text),
+					}),
+				}),
+				mode: Some(Mode::Raw),
+				raw: Some("plain text".to_string()),
+				urlencoded: None,
+			})),
+			certificate: None,
+			description: None,
+			header: None,
+			method: Some("POST".to_string()),
+			proxy: None,
+			url: None,
+		};
+
+		let body = retrieve_body(&rc).unwrap();
+		assert!(matches!(body, ContentType::Raw(ref s) if s == "plain text"));
+	}
+
+	#[test]
+	fn retrieve_body_raw_javascript() {
+		let rc = RequestClass {
+			auth: None,
+			body: Some(Body::BodyClass(BodyClass {
+				disabled: None,
+				file: None,
+				formdata: None,
+				options: Some(Options {
+					raw: Some(Raw {
+						language: Some(Language::Javascript),
+					}),
+				}),
+				mode: Some(Mode::Raw),
+				raw: Some("console.log('hi');".to_string()),
+				urlencoded: None,
+			})),
+			certificate: None,
+			description: None,
+			header: None,
+			method: Some("POST".to_string()),
+			proxy: None,
+			url: None,
+		};
+
+		let body = retrieve_body(&rc).unwrap();
+		assert!(matches!(body, ContentType::Javascript(_)));
+	}
+
+	#[test]
+	fn retrieve_body_raw_without_options_defaults_to_raw() {
+		let rc = RequestClass {
+			auth: None,
+			body: Some(Body::BodyClass(BodyClass {
+				disabled: None,
+				file: None,
+				formdata: None,
+				options: None,
+				mode: Some(Mode::Raw),
+				raw: Some("raw content".to_string()),
+				urlencoded: None,
+			})),
+			certificate: None,
+			description: None,
+			header: None,
+			method: Some("POST".to_string()),
+			proxy: None,
+			url: None,
+		};
+
+		let body = retrieve_body(&rc).unwrap();
+		assert!(matches!(body, ContentType::Raw(ref s) if s == "raw content"));
+	}
+
+	#[test]
+	fn retrieve_body_file_mode() {
+		let rc = RequestClass {
+			auth: None,
+			body: Some(Body::BodyClass(BodyClass {
+				disabled: None,
+				file: Some(PostmanFile {
+					content: None,
+					src: Some("/path/to/file.txt".to_string()),
+				}),
+				formdata: None,
+				options: None,
+				mode: Some(Mode::File),
+				raw: None,
+				urlencoded: None,
+			})),
+			certificate: None,
+			description: None,
+			header: None,
+			method: Some("POST".to_string()),
+			proxy: None,
+			url: None,
+		};
+
+		let body = retrieve_body(&rc).unwrap();
+		assert!(matches!(body, ContentType::File(ref s) if s == "/path/to/file.txt"));
+	}
+
+	#[test]
+	fn retrieve_body_urlencoded() {
+		let rc = RequestClass {
+			auth: None,
+			body: Some(Body::BodyClass(BodyClass {
+				disabled: None,
+				file: None,
+				formdata: None,
+				options: None,
+				mode: Some(Mode::Urlencoded),
+				raw: None,
+				urlencoded: Some(vec![
+					UrlEncodedParameter {
+						description: None,
+						disabled: None,
+						key: "username".to_string(),
+						value: Some("admin".to_string()),
+					},
+					UrlEncodedParameter {
+						description: None,
+						disabled: Some(true),
+						key: "debug".to_string(),
+						value: Some("true".to_string()),
+					},
+				]),
+			})),
+			certificate: None,
+			description: None,
+			header: None,
+			method: Some("POST".to_string()),
+			proxy: None,
+			url: None,
+		};
+
+		let body = retrieve_body(&rc).unwrap();
+		match body {
+			ContentType::Form(params) => {
+				assert_eq!(params.len(), 2);
+				assert!(params[0].enabled);
+				assert_eq!(params[0].data.0, "username");
+				assert_eq!(params[0].data.1, "admin");
+				assert!(!params[1].enabled);
+			}
+			_ => panic!("expected Form content type"),
+		}
+	}
+
+	#[test]
+	fn retrieve_body_formdata_text() {
+		let rc = RequestClass {
+			auth: None,
+			body: Some(Body::BodyClass(BodyClass {
+				disabled: None,
+				file: None,
+				formdata: Some(vec![FormParameter {
+					content_type: None,
+					description: None,
+					disabled: None,
+					key: "field".to_string(),
+					form_parameter_type: Some("text".to_string()),
+					value: Some("value".to_string()),
+					src: None,
+				}]),
+				options: None,
+				mode: Some(Mode::Formdata),
+				raw: None,
+				urlencoded: None,
+			})),
+			certificate: None,
+			description: None,
+			header: None,
+			method: Some("POST".to_string()),
+			proxy: None,
+			url: None,
+		};
+
+		let body = retrieve_body(&rc).unwrap();
+		match body {
+			ContentType::Multipart(params) => {
+				assert_eq!(params.len(), 1);
+				assert_eq!(params[0].data.0, "field");
+				assert_eq!(params[0].data.1, "value");
+			}
+			_ => panic!("expected Multipart content type"),
+		}
+	}
+
+	#[test]
+	fn retrieve_body_formdata_file() {
+		let rc = RequestClass {
+			auth: None,
+			body: Some(Body::BodyClass(BodyClass {
+				disabled: None,
+				file: None,
+				formdata: Some(vec![FormParameter {
+					content_type: None,
+					description: None,
+					disabled: None,
+					key: "upload".to_string(),
+					form_parameter_type: Some("file".to_string()),
+					value: None,
+					src: Some(FormParameterSrcUnion::File("/path/to/file.png".to_string())),
+				}]),
+				options: None,
+				mode: Some(Mode::Formdata),
+				raw: None,
+				urlencoded: None,
+			})),
+			certificate: None,
+			description: None,
+			header: None,
+			method: Some("POST".to_string()),
+			proxy: None,
+			url: None,
+		};
+
+		let body = retrieve_body(&rc).unwrap();
+		match body {
+			ContentType::Multipart(params) => {
+				assert_eq!(params.len(), 1);
+				assert_eq!(params[0].data.0, "upload");
+				assert!(params[0].data.1.contains("file.png"));
+			}
+			_ => panic!("expected Multipart content type"),
+		}
+	}
+
+	#[test]
+	fn retrieve_body_string_variant() {
+		let rc = RequestClass {
+			auth: None,
+			body: Some(Body::String("raw body string".to_string())),
+			certificate: None,
+			description: None,
+			header: None,
+			method: Some("POST".to_string()),
+			proxy: None,
+			url: None,
+		};
+
+		let body = retrieve_body(&rc).unwrap();
+		assert!(matches!(body, ContentType::Raw(ref s) if s == "raw body string"));
+	}
+
+	#[test]
+	fn retrieve_body_none_returns_none() {
+		let rc = RequestClass {
+			auth: None,
+			body: None,
+			certificate: None,
+			description: None,
+			header: None,
+			method: Some("GET".to_string()),
+			proxy: None,
+			url: None,
+		};
+
+		assert!(retrieve_body(&rc).is_none());
+	}
+
+	// ── retrieve_auth ────────────────────────────────────────────
+
+	fn make_auth(auth_type: AuthType) -> PostmanAuth {
+		PostmanAuth {
+			awsv4: None,
+			basic: None,
+			bearer: None,
+			jwt: None,
+			digest: None,
+			hawk: None,
+			noauth: None,
+			ntlm: None,
+			oauth1: None,
+			oauth2: None,
+			auth_type,
+		}
+	}
+
+	#[test]
+	fn retrieve_auth_basic() {
+		let mut postman_auth = make_auth(AuthType::Basic);
+		postman_auth.basic = Some(vec![
+			AuthAttribute {
+				key: "username".to_string(),
+				auth_type: None,
+				value: Some(serde_json::Value::String("myuser".to_string())),
+			},
+			AuthAttribute {
+				key: "password".to_string(),
+				auth_type: None,
+				value: Some(serde_json::Value::String("mypass".to_string())),
+			},
+		]);
+
+		let rc = RequestClass {
+			auth: Some(postman_auth),
+			body: None,
+			certificate: None,
+			description: None,
+			header: None,
+			method: None,
+			proxy: None,
+			url: None,
+		};
+
+		let auth = retrieve_auth(&rc).unwrap().unwrap();
+		match auth {
+			Auth::BasicAuth(basic) => {
+				assert_eq!(basic.username, "myuser");
+				assert_eq!(basic.password, "mypass");
+			}
+			_ => panic!("expected BasicAuth"),
+		}
+	}
+
+	#[test]
+	fn retrieve_auth_bearer() {
+		let mut postman_auth = make_auth(AuthType::Bearer);
+		postman_auth.bearer = Some(vec![AuthAttribute {
+			key: "token".to_string(),
+			auth_type: None,
+			value: Some(serde_json::Value::String("my-token-123".to_string())),
+		}]);
+
+		let rc = RequestClass {
+			auth: Some(postman_auth),
+			body: None,
+			certificate: None,
+			description: None,
+			header: None,
+			method: None,
+			proxy: None,
+			url: None,
+		};
+
+		let auth = retrieve_auth(&rc).unwrap().unwrap();
+		match auth {
+			Auth::BearerToken(bt) => assert_eq!(bt.token, "my-token-123"),
+			_ => panic!("expected BearerToken"),
+		}
+	}
+
+	#[test]
+	fn retrieve_auth_noauth() {
+		let postman_auth = make_auth(AuthType::Noauth);
+		let rc = RequestClass {
+			auth: Some(postman_auth),
+			body: None,
+			certificate: None,
+			description: None,
+			header: None,
+			method: None,
+			proxy: None,
+			url: None,
+		};
+
+		let auth = retrieve_auth(&rc).unwrap().unwrap();
+		assert!(matches!(auth, Auth::NoAuth));
+	}
+
+	#[test]
+	fn retrieve_auth_unsupported_types_return_noauth() {
+		for auth_type in [
+			AuthType::Awsv4,
+			AuthType::Hawk,
+			AuthType::Ntlm,
+			AuthType::Oauth1,
+			AuthType::Oauth2,
+		] {
+			let postman_auth = make_auth(auth_type);
+			let rc = RequestClass {
+				auth: Some(postman_auth),
+				body: None,
+				certificate: None,
+				description: None,
+				header: None,
+				method: None,
+				proxy: None,
+				url: None,
+			};
+
+			let auth = retrieve_auth(&rc).unwrap().unwrap();
+			assert!(matches!(auth, Auth::NoAuth));
+		}
+	}
+
+	#[test]
+	fn retrieve_auth_none_returns_none() {
+		let rc = RequestClass {
+			auth: None,
+			body: None,
+			certificate: None,
+			description: None,
+			header: None,
+			method: None,
+			proxy: None,
+			url: None,
+		};
+
+		assert!(retrieve_auth(&rc).is_none());
+	}
+
+	// ── retrieve_headers ─────────────────────────────────────────
+
+	#[test]
+	fn retrieve_headers_array() {
+		let rc = RequestClass {
+			auth: None,
+			body: None,
+			certificate: None,
+			description: None,
+			header: Some(HeaderUnion::HeaderArray(vec![
+				Header {
+					description: None,
+					disabled: None,
+					key: "X-Custom".to_string(),
+					value: "custom-value".to_string(),
+				},
+				Header {
+					description: None,
+					disabled: Some(true),
+					key: "X-Disabled".to_string(),
+					value: "disabled-value".to_string(),
+				},
+			])),
+			method: None,
+			proxy: None,
+			url: None,
+		};
+
+		let headers = retrieve_headers(&rc).unwrap();
+		// Should include DEFAULT_HEADERS + 2 custom headers
+		assert!(headers.len() >= 7); // 5 default + 2 custom
+		let custom = headers.iter().find(|h| h.data.0 == "X-Custom").unwrap();
+		assert!(custom.enabled);
+		assert_eq!(custom.data.1, "custom-value");
+		let disabled = headers.iter().find(|h| h.data.0 == "X-Disabled").unwrap();
+		assert!(!disabled.enabled);
+	}
+
+	#[test]
+	fn retrieve_headers_string_variant_returns_none() {
+		let rc = RequestClass {
+			auth: None,
+			body: None,
+			certificate: None,
+			description: None,
+			header: Some(HeaderUnion::String("Content-Type: text/plain".to_string())),
+			method: None,
+			proxy: None,
+			url: None,
+		};
+
+		assert!(retrieve_headers(&rc).is_none());
+	}
+
+	#[test]
+	fn retrieve_headers_none_returns_none() {
+		let rc = RequestClass {
+			auth: None,
+			body: None,
+			certificate: None,
+			description: None,
+			header: None,
+			method: None,
+			proxy: None,
+			url: None,
+		};
+
+		assert!(retrieve_headers(&rc).is_none());
+	}
+
+	// ── retrieve_request_scripts ─────────────────────────────────
+
+	#[test]
+	fn retrieve_request_scripts_prerequest() {
+		let item = Items {
+			description: None,
+			event: Some(vec![Event {
+				disabled: None,
+				id: None,
+				listen: "prerequest".to_string(),
+				script: Some(Script {
+					exec: Some(Host::StringArray(vec![
+						"pm.environment.set('key', 'value');".to_string(),
+						"pm.console.log('hello');".to_string(),
+					])),
+					id: None,
+					name: None,
+					src: None,
+					script_type: None,
+				}),
+			}]),
+			id: None,
+			name: Some("test".to_string()),
+			protocol_profile_behavior: None,
+			request: None,
+			response: None,
+			variable: None,
+			auth: None,
+			item: None,
+		};
+
+		let script = retrieve_request_scripts(&item).unwrap();
+		// pm. prefix should be stripped
+		assert!(script.contains("environment.set('key', 'value');"));
+		assert!(script.contains("console.log('hello');"));
+		assert!(!script.contains("pm."));
+	}
+
+	#[test]
+	fn retrieve_request_scripts_no_events_returns_none() {
+		let item = Items {
+			description: None,
+			event: None,
+			id: None,
+			name: Some("test".to_string()),
+			protocol_profile_behavior: None,
+			request: None,
+			response: None,
+			variable: None,
+			auth: None,
+			item: None,
+		};
+
+		assert!(retrieve_request_scripts(&item).is_none());
+	}
+
+	#[test]
+	fn retrieve_request_scripts_ignores_test_events() {
+		let item = Items {
+			description: None,
+			event: Some(vec![Event {
+				disabled: None,
+				id: None,
+				listen: "test".to_string(), // not "prerequest"
+				script: Some(Script {
+					exec: Some(Host::StringArray(vec!["pm.test('check');".to_string()])),
+					id: None,
+					name: None,
+					src: None,
+					script_type: None,
+				}),
+			}]),
+			id: None,
+			name: Some("test".to_string()),
+			protocol_profile_behavior: None,
+			request: None,
+			response: None,
+			variable: None,
+			auth: None,
+			item: None,
+		};
+
+		assert!(retrieve_request_scripts(&item).is_none());
+	}
+
+	// ── retrieve_settings ────────────────────────────────────────
+
+	#[test]
+	fn retrieve_settings_follow_redirects_disabled() {
+		let item = Items {
+			description: None,
+			event: None,
+			id: None,
+			name: Some("test".to_string()),
+			protocol_profile_behavior: Some(ProtocolProfileBehavior {
+				disable_body_pruning: None,
+				follow_redirects: Some(false),
+				disable_cookies: None,
+			}),
+			request: None,
+			response: None,
+			variable: None,
+			auth: None,
+			item: None,
+		};
+
+		let settings = retrieve_settings(&item).unwrap();
+		assert_eq!(settings.allow_redirects.as_bool(), Some(false));
+		// cookies should remain default (true)
+		assert_eq!(settings.store_received_cookies.as_bool(), Some(true));
+	}
+
+	#[test]
+	fn retrieve_settings_cookies_disabled() {
+		let item = Items {
+			description: None,
+			event: None,
+			id: None,
+			name: Some("test".to_string()),
+			protocol_profile_behavior: Some(ProtocolProfileBehavior {
+				disable_body_pruning: None,
+				follow_redirects: None,
+				disable_cookies: Some(true),
+			}),
+			request: None,
+			response: None,
+			variable: None,
+			auth: None,
+			item: None,
+		};
+
+		let settings = retrieve_settings(&item).unwrap();
+		// disable_cookies=true => store_received_cookies=false
+		assert_eq!(settings.store_received_cookies.as_bool(), Some(false));
+		// redirects should remain default (true)
+		assert_eq!(settings.allow_redirects.as_bool(), Some(true));
+	}
+
+	#[test]
+	fn retrieve_settings_both_set() {
+		let item = Items {
+			description: None,
+			event: None,
+			id: None,
+			name: Some("test".to_string()),
+			protocol_profile_behavior: Some(ProtocolProfileBehavior {
+				disable_body_pruning: None,
+				follow_redirects: Some(true),
+				disable_cookies: Some(false),
+			}),
+			request: None,
+			response: None,
+			variable: None,
+			auth: None,
+			item: None,
+		};
+
+		let settings = retrieve_settings(&item).unwrap();
+		assert_eq!(settings.allow_redirects.as_bool(), Some(true));
+		assert_eq!(settings.store_received_cookies.as_bool(), Some(true));
+	}
+
+	#[test]
+	fn retrieve_settings_none_returns_none() {
+		let item = Items {
+			description: None,
+			event: None,
+			id: None,
+			name: Some("test".to_string()),
+			protocol_profile_behavior: None,
+			request: None,
+			response: None,
+			variable: None,
+			auth: None,
+			item: None,
+		};
+
+		assert!(retrieve_settings(&item).is_none());
+	}
+
+	// ── recursive_get_requests ───────────────────────────────────
+
+	#[test]
+	fn recursive_get_requests_single_leaf() {
+		let mut item = make_item("Leaf", make_request_class("GET", "https://leaf.com"));
+		let requests = recursive_get_requests(&mut item).unwrap();
+
+		assert_eq!(requests.len(), 1);
+		assert_eq!(requests[0].read().name, "Leaf");
+	}
+
+	#[test]
+	fn recursive_get_requests_nested_folder() {
+		let child1 = make_item("Child1", make_request_class("GET", "https://c1.com"));
+		let child2 = make_item("Child2", make_request_class("POST", "https://c2.com"));
+
+		let mut folder = Items {
+			description: None,
+			event: None,
+			id: None,
+			name: Some("Folder".to_string()),
+			protocol_profile_behavior: None,
+			request: None,
+			response: None,
+			variable: None,
+			auth: None,
+			item: Some(vec![child1, child2]),
+		};
+
+		let requests = recursive_get_requests(&mut folder).unwrap();
+		assert_eq!(requests.len(), 2);
+		assert_eq!(requests[0].read().name, "Child1");
+		assert_eq!(requests[1].read().name, "Child2");
+	}
+
+	// ── parse_request with body sets content-type header ─────────
+
+	#[test]
+	fn parse_request_with_json_body_adds_content_type_header() {
+		let rc = RequestClass {
+			auth: None,
+			body: Some(Body::BodyClass(BodyClass {
+				disabled: None,
+				file: None,
+				formdata: None,
+				options: Some(Options {
+					raw: Some(Raw {
+						language: Some(Language::Json),
+					}),
+				}),
+				mode: Some(Mode::Raw),
+				raw: Some(r#"{"test": true}"#.to_string()),
+				urlencoded: None,
+			})),
+			certificate: None,
+			description: None,
+			header: None,
+			method: Some("POST".to_string()),
+			proxy: None,
+			url: Some(Url::String("https://example.com".to_string())),
+		};
+
+		let item = make_item("JSON Request", rc);
+		let request = parse_request(item).unwrap();
+
+		let ct_header = request
+			.headers
+			.iter()
+			.find(|h| h.data.0 == "content-type")
+			.expect("should have content-type header");
+		assert!(ct_header.data.1.contains("json"));
+	}
+
+	// ── parse_request with settings ──────────────────────────────
+
+	#[test]
+	fn parse_request_with_settings_from_protocol_profile() {
+		let mut item = make_item(
+			"Settings Test",
+			make_request_class("GET", "https://example.com"),
+		);
+		item.protocol_profile_behavior = Some(ProtocolProfileBehavior {
+			disable_body_pruning: None,
+			follow_redirects: Some(false),
+			disable_cookies: Some(true),
+		});
+
+		let request = parse_request(item).unwrap();
+		assert_eq!(request.settings.allow_redirects.as_bool(), Some(false));
+		assert_eq!(
+			request.settings.store_received_cookies.as_bool(),
+			Some(false)
+		);
+	}
+}
