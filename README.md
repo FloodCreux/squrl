@@ -1,5 +1,10 @@
 # squrl
 
+[![CI](https://github.com/FloodCreux/squrl/actions/workflows/ci.yml/badge.svg)](https://github.com/FloodCreux/squrl/actions/workflows/ci.yml)
+[![Release](https://github.com/FloodCreux/squrl/actions/workflows/release.yml/badge.svg)](https://github.com/FloodCreux/squrl/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Rust](https://img.shields.io/badge/Rust-nightly-orange.svg)](https://www.rust-lang.org/)
+
 A terminal-based HTTP and WebSocket client built with Rust. Think Postman or Insomnia, but in your terminal -- no GUI required.
 
 ![squrl homepage](assets/home.png)
