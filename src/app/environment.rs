@@ -270,25 +270,28 @@ impl App<'_> {
 
 		let local_env = self.get_selected_env_as_local();
 
-		let env_values = local_env.map(|local_env| {
-			let env = local_env.read();
-			let mut values = env.values.clone();
-			values.extend(OS_ENV_VARS.clone());
-			values
-		});
-
-		interpolate_env_keys(input, env_values.as_ref())
+		match local_env {
+			Some(local_env) => {
+				let env = local_env.read();
+				interpolate_env_keys(input, &[&env.values, &OS_ENV_VARS])
+			}
+			None => interpolate_env_keys(input, &[]),
+		}
 	}
 }
 
 /// Core interpolation logic: replaces `{{KEY}}` placeholders in `input`
-/// with values from `env_values`, then replaces built-in variables
-/// (`{{NOW}}`, `{{TIMESTAMP}}`, `{{UUIDv4}}`, `{{UUIDv7}}`).
-pub fn interpolate_env_keys(input: &str, env_values: Option<&IndexMap<String, String>>) -> String {
+/// with values from the given environment maps (checked in order), then
+/// replaces built-in variables (`{{NOW}}`, `{{TIMESTAMP}}`, `{{UUIDv4}}`,
+/// `{{UUIDv7}}`).
+///
+/// Accepts a slice of `IndexMap` references so callers can pass multiple
+/// maps (e.g. user env + OS env) without cloning or merging them.
+pub fn interpolate_env_keys(input: &str, env_maps: &[&IndexMap<String, String>]) -> String {
 	let mut tmp_string = input.to_string();
 
-	if let Some(values) = env_values {
-		for (key, value) in values {
+	for map in env_maps {
+		for (key, value) in *map {
 			tmp_string = tmp_string.replace(&format!("{{{{{}}}}}", key), value);
 		}
 	}
@@ -313,7 +316,7 @@ mod tests {
 		let mut env = IndexMap::new();
 		env.insert("API_KEY".to_string(), "secret123".to_string());
 
-		let result = interpolate_env_keys("Bearer {{API_KEY}}", Some(&env));
+		let result = interpolate_env_keys("Bearer {{API_KEY}}", &[&env]);
 		assert_eq!(result, "Bearer secret123");
 	}
 
@@ -323,7 +326,7 @@ mod tests {
 		env.insert("HOST".to_string(), "api.example.com".to_string());
 		env.insert("PORT".to_string(), "8080".to_string());
 
-		let result = interpolate_env_keys("https://{{HOST}}:{{PORT}}/api", Some(&env));
+		let result = interpolate_env_keys("https://{{HOST}}:{{PORT}}/api", &[&env]);
 		assert_eq!(result, "https://api.example.com:8080/api");
 	}
 
@@ -332,7 +335,7 @@ mod tests {
 		let mut env = IndexMap::new();
 		env.insert("TOKEN".to_string(), "abc".to_string());
 
-		let result = interpolate_env_keys("{{TOKEN}}-{{TOKEN}}", Some(&env));
+		let result = interpolate_env_keys("{{TOKEN}}-{{TOKEN}}", &[&env]);
 		assert_eq!(result, "abc-abc");
 	}
 
@@ -340,13 +343,13 @@ mod tests {
 	fn leaves_unknown_keys_as_is() {
 		let env = IndexMap::new();
 
-		let result = interpolate_env_keys("{{UNKNOWN_KEY}}", Some(&env));
+		let result = interpolate_env_keys("{{UNKNOWN_KEY}}", &[&env]);
 		assert_eq!(result, "{{UNKNOWN_KEY}}");
 	}
 
 	#[test]
 	fn no_env_values_leaves_placeholders() {
-		let result = interpolate_env_keys("{{KEY}}", None);
+		let result = interpolate_env_keys("{{KEY}}", &[]);
 		// Only built-in keys are replaced; user keys remain
 		assert_eq!(result, "{{KEY}}");
 	}
@@ -354,7 +357,7 @@ mod tests {
 	#[test]
 	fn empty_input_returns_empty() {
 		let env = IndexMap::new();
-		let result = interpolate_env_keys("", Some(&env));
+		let result = interpolate_env_keys("", &[&env]);
 		assert_eq!(result, "");
 	}
 
@@ -363,7 +366,7 @@ mod tests {
 		let mut env = IndexMap::new();
 		env.insert("KEY".to_string(), "value".to_string());
 
-		let result = interpolate_env_keys("no placeholders here", Some(&env));
+		let result = interpolate_env_keys("no placeholders here", &[&env]);
 		assert_eq!(result, "no placeholders here");
 	}
 
@@ -372,7 +375,7 @@ mod tests {
 		let mut env = IndexMap::new();
 		env.insert("EMPTY".to_string(), String::new());
 
-		let result = interpolate_env_keys("pre-{{EMPTY}}-post", Some(&env));
+		let result = interpolate_env_keys("pre-{{EMPTY}}-post", &[&env]);
 		assert_eq!(result, "pre--post");
 	}
 
@@ -384,7 +387,7 @@ mod tests {
 			"https://example.com/path?q=1&r=2".to_string(),
 		);
 
-		let result = interpolate_env_keys("{{URL}}", Some(&env));
+		let result = interpolate_env_keys("{{URL}}", &[&env]);
 		assert_eq!(result, "https://example.com/path?q=1&r=2");
 	}
 
@@ -392,7 +395,7 @@ mod tests {
 
 	#[test]
 	fn replaces_now_with_datetime() {
-		let result = interpolate_env_keys("time: {{NOW}}", None);
+		let result = interpolate_env_keys("time: {{NOW}}", &[]);
 		assert!(!result.contains("{{NOW}}"), "result was: {result}");
 		assert!(result.starts_with("time: "));
 		// The result should contain a date-like string (at least year)
@@ -401,7 +404,7 @@ mod tests {
 
 	#[test]
 	fn replaces_timestamp_with_number() {
-		let result = interpolate_env_keys("ts: {{TIMESTAMP}}", None);
+		let result = interpolate_env_keys("ts: {{TIMESTAMP}}", &[]);
 		assert!(!result.contains("{{TIMESTAMP}}"), "result was: {result}");
 		// The timestamp part should be numeric
 		let ts_part = result.strip_prefix("ts: ").unwrap();
@@ -410,7 +413,7 @@ mod tests {
 
 	#[test]
 	fn replaces_uuid_v4() {
-		let result = interpolate_env_keys("id: {{UUIDv4}}", None);
+		let result = interpolate_env_keys("id: {{UUIDv4}}", &[]);
 		assert!(!result.contains("{{UUIDv4}}"), "result was: {result}");
 		let uuid_part = result.strip_prefix("id: ").unwrap();
 		// UUIDv4 format: 8-4-4-4-12 hex chars
@@ -420,7 +423,7 @@ mod tests {
 
 	#[test]
 	fn replaces_uuid_v7() {
-		let result = interpolate_env_keys("id: {{UUIDv7}}", None);
+		let result = interpolate_env_keys("id: {{UUIDv7}}", &[]);
 		assert!(!result.contains("{{UUIDv7}}"), "result was: {result}");
 		let uuid_part = result.strip_prefix("id: ").unwrap();
 		assert_eq!(uuid_part.len(), 36, "result was: {result}");
@@ -428,8 +431,8 @@ mod tests {
 
 	#[test]
 	fn each_uuid_call_generates_unique_value() {
-		let result1 = interpolate_env_keys("{{UUIDv4}}", None);
-		let result2 = interpolate_env_keys("{{UUIDv4}}", None);
+		let result1 = interpolate_env_keys("{{UUIDv4}}", &[]);
+		let result2 = interpolate_env_keys("{{UUIDv4}}", &[]);
 		assert_ne!(result1, result2);
 	}
 
@@ -440,7 +443,7 @@ mod tests {
 		let mut env = IndexMap::new();
 		env.insert("HOST".to_string(), "api.test.com".to_string());
 
-		let result = interpolate_env_keys("https://{{HOST}}/{{UUIDv4}}", Some(&env));
+		let result = interpolate_env_keys("https://{{HOST}}/{{UUIDv4}}", &[&env]);
 		assert!(
 			result.starts_with("https://api.test.com/"),
 			"result was: {result}"
@@ -453,7 +456,7 @@ mod tests {
 	#[test]
 	fn single_braces_not_treated_as_placeholder() {
 		let env = IndexMap::new();
-		let result = interpolate_env_keys("{KEY}", Some(&env));
+		let result = interpolate_env_keys("{KEY}", &[&env]);
 		assert_eq!(result, "{KEY}");
 	}
 
@@ -463,7 +466,25 @@ mod tests {
 		env.insert("KEY".to_string(), "val".to_string());
 
 		// {{{KEY}}} => The inner {{KEY}} gets replaced, leaving {val}
-		let result = interpolate_env_keys("{{{KEY}}}", Some(&env));
+		let result = interpolate_env_keys("{{{KEY}}}", &[&env]);
 		assert_eq!(result, "{val}");
+	}
+
+	// ── Multiple maps ───────────────────────────────────────────
+
+	#[test]
+	fn multiple_maps_are_checked_in_order() {
+		let mut user_env = IndexMap::new();
+		user_env.insert("KEY".to_string(), "user_value".to_string());
+
+		let mut os_env = IndexMap::new();
+		os_env.insert("KEY".to_string(), "os_value".to_string());
+		os_env.insert("OS_ONLY".to_string(), "from_os".to_string());
+
+		// User env is checked first, so KEY resolves to user_value.
+		// After user env replaces {{KEY}}, os_env's KEY replacement is a no-op.
+		// OS_ONLY is only in the second map.
+		let result = interpolate_env_keys("{{KEY}} and {{OS_ONLY}}", &[&user_env, &os_env]);
+		assert_eq!(result, "user_value and from_os");
 	}
 }
