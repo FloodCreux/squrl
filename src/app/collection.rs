@@ -403,7 +403,10 @@ impl App<'_> {
 }
 
 fn sanitize_name(name: String) -> String {
-	name.trim().replace("/", "").replace("\"", "")
+	name.trim()
+		.replace("/", "")
+		.replace("\"", "")
+		.replace("\\", "")
 }
 
 #[cfg(test)]
