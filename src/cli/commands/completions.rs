@@ -61,11 +61,10 @@ mod tests {
 
 	#[test]
 	fn completions_parses_output_directory() {
-		let cli = CompletionsCli::try_parse_from(["test", "bash", "/tmp/completions"]).unwrap();
-		assert_eq!(
-			cli.cmd.output_directory.unwrap().to_str().unwrap(),
-			"/tmp/completions"
-		);
+		let dir = std::env::temp_dir().join("completions");
+		let dir_str = dir.to_str().expect("temp dir should be valid UTF-8");
+		let cli = CompletionsCli::try_parse_from(["test", "bash", dir_str]).unwrap();
+		assert_eq!(cli.cmd.output_directory.unwrap(), dir);
 	}
 
 	#[test]

@@ -45,12 +45,16 @@ mod tests {
 		assert_eq!(keys, vec!["third", "first", "second"]);
 	}
 
+	fn test_env_path() -> PathBuf {
+		std::env::temp_dir().join("test.env")
+	}
+
 	#[test]
 	fn environment_serializes_to_json() {
 		let mut env = Environment {
 			name: "test".to_string(),
 			values: IndexMap::new(),
-			path: PathBuf::from("/tmp/test.env"),
+			path: test_env_path(),
 		};
 		env.values
 			.insert("API_KEY".to_string(), "secret".to_string());
@@ -62,14 +66,20 @@ mod tests {
 
 	#[test]
 	fn environment_deserializes_from_json() {
-		let json =
-			r#"{"name":"prod","values":{"HOST":"localhost","PORT":"8080"},"path":"/tmp/prod.env"}"#;
-		let env: Environment = serde_json::from_str(json).unwrap();
+		let path = std::env::temp_dir().join("prod.env");
+		let path_str = path.to_str().expect("temp dir should be valid UTF-8");
+		// Build JSON with a platform-appropriate path
+		let json = format!(
+			r#"{{"name":"prod","values":{{"HOST":"localhost","PORT":"8080"}},"path":"{}"}}"#,
+			path_str.replace('\\', "\\\\")
+		);
+		let env: Environment = serde_json::from_str(&json).unwrap();
 
 		assert_eq!(env.name, "prod");
 		assert_eq!(env.values.len(), 2);
 		assert_eq!(env.values["HOST"], "localhost");
 		assert_eq!(env.values["PORT"], "8080");
+		assert_eq!(env.path, path);
 	}
 
 	#[test]
@@ -77,7 +87,7 @@ mod tests {
 		let mut env = Environment {
 			name: "original".to_string(),
 			values: IndexMap::new(),
-			path: PathBuf::from("/tmp/test.env"),
+			path: test_env_path(),
 		};
 		env.values.insert("key".to_string(), "value".to_string());
 
