@@ -2,7 +2,7 @@
 set -eu
 
 # Remote installer for squrl pre-built binaries.
-# Usage: curl -fsSL https://raw.githubusercontent.com/FloodCreux/squrl/main/curl-install.sh | sh
+# Usage: curl -fsSL https://raw.githubusercontent.com/FloodCreux/squrl/main/scripts/curl-install.sh | sh
 #
 # Environment variables:
 #   VERSION      - version to install (default: latest)

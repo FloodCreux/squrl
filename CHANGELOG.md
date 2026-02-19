@@ -113,7 +113,7 @@ Initial release of squrl.
 - **Integration tests** -- CLI, collection, completions, environment, import, request, HTTP send, theme, and try command tests
 - **Code coverage** -- via cargo-llvm-cov
 - **Security auditing** -- cargo-audit and cargo-deny
-- **Install script** -- remote `curl-install.sh` for pre-built binaries
+- **Install scripts** -- remote `scripts/curl-install.sh` for pre-built binaries and `scripts/curl-install.ps1` for Windows
 
 [Unreleased]: https://github.com/FloodCreux/squrl/compare/v0.1.1...HEAD
 [0.1.1]: https://github.com/FloodCreux/squrl/compare/v0.1.0...v0.1.1

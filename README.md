@@ -52,18 +52,43 @@ brew tap FloodCreux/squrl
 brew install squrl
 ```
 
+### Scoop (Windows)
+
+```powershell
+scoop bucket add squrl https://github.com/FloodCreux/scoop-squrl
+scoop install squrl
+```
+
 ### Pre-built binary
 
+**macOS / Linux:**
+
 ```sh
-curl -fsSL https://raw.githubusercontent.com/FloodCreux/squrl/main/curl-install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/FloodCreux/squrl/main/scripts/curl-install.sh | sh
+```
+
+**Windows (PowerShell):**
+
+```powershell
+irm https://raw.githubusercontent.com/FloodCreux/squrl/main/scripts/curl-install.ps1 | iex
 ```
 
 ### Build from source
 
+**macOS / Linux:**
+
 ```sh
 git clone https://github.com/FloodCreux/squrl.git
 cd squrl
-./install.sh
+./scripts/install.sh
+```
+
+**Windows (PowerShell):**
+
+```powershell
+git clone https://github.com/FloodCreux/squrl.git
+cd squrl
+.\scripts\install.ps1
 ```
 
 ### Using just

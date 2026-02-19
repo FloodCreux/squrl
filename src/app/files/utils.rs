@@ -51,20 +51,26 @@ pub fn expand_tilde(path_buf: PathBuf) -> PathBuf {
 mod tests {
 	use super::*;
 
+	// Tilde expansion is a Unix shell convention — these tests only apply to Unix.
+	#[cfg(not(windows))]
 	#[test]
 	fn test_expand_tilde_with_tilde() {
 		let path = PathBuf::from("~/foo/bar");
 		let expanded = expand_tilde(path);
 
-		// Should expand to home directory + foo/bar
 		let user_dirs = UserDirs::new().expect("Home directory should exist in test environment");
-		let expected = user_dirs.home_dir().join("foo/bar");
+		let expected = user_dirs.home_dir().join("foo").join("bar");
 		assert_eq!(expanded, expected);
 	}
 
 	#[test]
 	fn test_expand_tilde_without_tilde() {
-		let path = PathBuf::from("/absolute/path");
+		// Use a platform-appropriate absolute path
+		let path = if cfg!(windows) {
+			PathBuf::from(r"C:\absolute\path")
+		} else {
+			PathBuf::from("/absolute/path")
+		};
 		let expanded = expand_tilde(path.clone());
 		assert_eq!(expanded, path);
 	}
@@ -84,16 +90,18 @@ mod tests {
 		assert_eq!(expanded, path);
 	}
 
+	#[cfg(not(windows))]
 	#[test]
 	fn test_expand_tilde_nested_path() {
 		let path = PathBuf::from("~/a/b/c/d");
 		let expanded = expand_tilde(path);
 
 		let user_dirs = UserDirs::new().expect("Home directory should exist in test environment");
-		let expected = user_dirs.home_dir().join("a/b/c/d");
+		let expected = user_dirs.home_dir().join("a").join("b").join("c").join("d");
 		assert_eq!(expanded, expected);
 	}
 
+	#[cfg(not(windows))]
 	#[test]
 	fn test_expand_tilde_just_home() {
 		let path = PathBuf::from("~/");

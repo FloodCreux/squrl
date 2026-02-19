@@ -34,6 +34,10 @@ jobs:
             os: macos-latest
           - target: aarch64-apple-darwin
             os: macos-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+          - target: aarch64-pc-windows-msvc
+            os: windows-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -52,6 +56,7 @@ jobs:
         run: cargo install cross --git https://github.com/cross-rs/cross
 
       - name: Build
+        shell: bash
         run: |
           if [ "${{ matrix.cross }}" = "true" ]; then
             cross build --release --target ${{ matrix.target }}
@@ -59,7 +64,9 @@ jobs:
             cargo build --release --target ${{ matrix.target }}
           fi
 
-      - name: Package
+      - name: Package (Unix)
+        if: ${{ !contains(matrix.target, 'windows') }}
+        shell: bash
         run: |
           VERSION="${GITHUB_REF_NAME}"
           ARCHIVE="squrl-${VERSION}-${{ matrix.target }}.tar.gz"
@@ -67,6 +74,15 @@ jobs:
           tar czf "../../../${ARCHIVE}" squrl
           cd ../../..
           echo "ARCHIVE=${ARCHIVE}" >> "$GITHUB_ENV"
+
+      - name: Package (Windows)
+        if: ${{ contains(matrix.target, 'windows') }}
+        shell: pwsh
+        run: |
+          $VERSION = $env:GITHUB_REF_NAME
+          $ARCHIVE = "squrl-${VERSION}-${{ matrix.target }}.zip"
+          Compress-Archive -Path "target/${{ matrix.target }}/release/squrl.exe" -DestinationPath $ARCHIVE
+          "ARCHIVE=$ARCHIVE" | Out-File -Append -FilePath $env:GITHUB_ENV
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -177,5 +193,77 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Formula/squrl.rb
+          git commit -m "Update squrl to ${VERSION}"
+          git push
+
+  update-scoop:
+    name: Update Scoop Bucket
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Generate Scoop manifest
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          # Strip the leading "v" for the manifest version field
+          MANIFEST_VERSION="${VERSION#v}"
+
+          # Compute sha256 for each Windows target
+          SHA_WIN_X86=$(shasum -a 256 artifacts/squrl-${VERSION}-x86_64-pc-windows-msvc.zip | awk '{print $1}')
+          SHA_WIN_ARM=$(shasum -a 256 artifacts/squrl-${VERSION}-aarch64-pc-windows-msvc.zip | awk '{print $1}')
+
+          # Generate the manifest
+          cat > squrl.json << EOF
+          {
+              "version": "${MANIFEST_VERSION}",
+              "description": "Terminal-based HTTP and WebSocket client",
+              "homepage": "https://github.com/FloodCreux/squrl",
+              "license": "MIT",
+              "architecture": {
+                  "64bit": {
+                      "url": "https://github.com/FloodCreux/squrl/releases/download/${VERSION}/squrl-${VERSION}-x86_64-pc-windows-msvc.zip",
+                      "hash": "${SHA_WIN_X86}"
+                  },
+                  "arm64": {
+                      "url": "https://github.com/FloodCreux/squrl/releases/download/${VERSION}/squrl-${VERSION}-aarch64-pc-windows-msvc.zip",
+                      "hash": "${SHA_WIN_ARM}"
+                  }
+              },
+              "bin": "squrl.exe",
+              "checkver": "github",
+              "autoupdate": {
+                  "architecture": {
+                      "64bit": {
+                          "url": "https://github.com/FloodCreux/squrl/releases/download/v\$version/squrl-v\$version-x86_64-pc-windows-msvc.zip"
+                      },
+                      "arm64": {
+                          "url": "https://github.com/FloodCreux/squrl/releases/download/v\$version/squrl-v\$version-aarch64-pc-windows-msvc.zip"
+                      }
+                  }
+              }
+          }
+          EOF
+
+          # Strip leading whitespace from heredoc indentation
+          sed -i 's/^          //' squrl.json
+
+      - name: Push manifest to bucket
+        env:
+          BUCKET_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          git clone https://x-access-token:${BUCKET_TOKEN}@github.com/FloodCreux/scoop-squrl.git bucket
+          mkdir -p bucket/bucket
+          cp squrl.json bucket/bucket/squrl.json
+          cd bucket
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add bucket/squrl.json
           git commit -m "Update squrl to ${VERSION}"
           git push

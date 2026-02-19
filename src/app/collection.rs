@@ -403,7 +403,10 @@ impl App<'_> {
 }
 
 fn sanitize_name(name: String) -> String {
-	name.trim().replace("/", "").replace("\"", "")
+	name.trim()
+		.replace("/", "")
+		.replace("\"", "")
+		.replace("\\", "")
 }
 
 #[cfg(test)]
@@ -434,15 +437,20 @@ mod tests {
 	}
 
 	#[test]
+	fn test_sanitize_name_removes_backslashes() {
+		assert_eq!(sanitize_name("my\\collection".to_string()), "mycollection");
+	}
+
+	#[test]
 	fn test_sanitize_name_removes_all_special() {
 		assert_eq!(
-			sanitize_name("  my/\"collection\"  ".to_string()),
+			sanitize_name("  my/\"col\\lection\"  ".to_string()),
 			"mycollection"
 		);
 	}
 
 	#[test]
 	fn test_sanitize_name_empty_after_sanitization() {
-		assert_eq!(sanitize_name("  /\"  ".to_string()), "");
+		assert_eq!(sanitize_name("  /\"\\  ".to_string()), "");
 	}
 }

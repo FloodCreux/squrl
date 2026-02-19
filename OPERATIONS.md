@@ -13,8 +13,16 @@ just build-release  # Release build
 
 ### Pre-built binary
 
+**macOS / Linux:**
+
 ```sh
-curl -fsSL https://raw.githubusercontent.com/FloodCreux/squrl/main/curl-install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/FloodCreux/squrl/main/scripts/curl-install.sh | sh
+```
+
+**Windows (PowerShell):**
+
+```powershell
+irm https://raw.githubusercontent.com/FloodCreux/squrl/main/scripts/curl-install.ps1 | iex
 ```
 
 ### From source
@@ -77,7 +85,7 @@ Runs on every push to `main` and on pull requests:
 
 - **Format** — `cargo fmt -- --check`
 - **Clippy** — `cargo clippy -- -D warnings`
-- **Test** — `cargo test` on both Ubuntu and macOS
+- **Test** — `cargo test` on Ubuntu, macOS, and Windows
 - **Cargo Deny** — license, advisory, and source checks
 
 Ensure `just lint`, `just fmt-check`, and `just test` pass before pushing.
@@ -87,12 +95,14 @@ Ensure `just lint`, `just fmt-check`, and `just test` pass before pushing.
 Runs when a version tag is pushed (e.g. `git tag v0.1.0 && git push --tags`):
 
 1. Runs the full CI pipeline first
-2. Cross-compiles release binaries for all four targets:
+2. Cross-compiles release binaries for all six targets:
    - `x86_64-unknown-linux-gnu`
    - `aarch64-unknown-linux-gnu`
    - `x86_64-apple-darwin`
    - `aarch64-apple-darwin`
-3. Packages each binary into a tarball (`squrl-v{VERSION}-{TARGET}.tar.gz`)
+   - `x86_64-pc-windows-msvc`
+   - `aarch64-pc-windows-msvc`
+3. Packages each binary into a tarball (`.tar.gz` for Linux/macOS, `.zip` for Windows)
 4. Creates a GitHub Release with auto-generated release notes and all tarballs attached
 
-These tarballs are consumed by the `curl-install.sh` remote installer.
+These tarballs are consumed by the `scripts/curl-install.sh` remote installer (and `.zip` archives by `scripts/curl-install.ps1` on Windows).
