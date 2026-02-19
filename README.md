@@ -37,11 +37,11 @@ A terminal-based HTTP and WebSocket client built with Rust. Think Postman or Ins
 - **Pre/post request scripts** -- JavaScript execution via embedded Boa runtime
 - **Response handling** -- pretty-printed JSON, syntax highlighting, image preview, cookies, and headers
 - **Import** -- Postman collections & environments, cURL commands, OpenAPI specs, and `.http` files (including `WEBSOCKET` requests)
-- **Export** -- HTTP, cURL, PHP Guzzle, Node.js Axios, and Rust reqwest
+- **Export** -- HTTP, cURL, PHP Guzzle, Node.js Axios, Rust reqwest, and PowerShell
 - **Themes** -- 9 built-in themes (Gruber Darker, Dracula, Catppuccin variants, Gruvbox, and more) plus custom TOML themes
 - **Key bindings** -- fully customizable with Vim, Emacs, and default modes
 - **Clipboard** -- copy response bodies and exports (optional feature)
-- **Shell completions & man pages** -- Bash, Zsh, and Fish via clap
+- **Shell completions & man pages** -- Bash, Zsh, Fish, and PowerShell via clap
 
 ## Installation
 
@@ -211,7 +211,7 @@ squrl theme export <name>    # Export a theme as TOML
 #### Utilities
 
 ```sh
-squrl completions <shell> [<dir>]   # Generate shell completions (bash, zsh, fish)
+squrl completions <shell> [<dir>]   # Generate shell completions (bash, zsh, fish, powershell)
 squrl man [<output-dir>]            # Generate man pages
 ```
 

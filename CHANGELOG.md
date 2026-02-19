@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Windows support** -- squrl now builds, tests, and releases on Windows (x86_64 and aarch64 MSVC targets)
+- **Windows CI** -- `windows-latest` added to the CI test matrix
+- **Windows release artifacts** -- `.zip` archives for Windows targets alongside `.tar.gz` for Linux and macOS
+- **PowerShell export format** -- export requests as PowerShell `Invoke-RestMethod` scripts (`.ps1`) with splatting, `-InFile` for file bodies, `-Form` for multipart (PS 6+), and `-Proxy` support
+- **PowerShell install scripts** -- `scripts/install.ps1` (build from source) and `scripts/curl-install.ps1` (download pre-built binary) for Windows
+- **Scoop package manager** -- `scoop bucket add squrl` for Windows installation, with automated manifest updates on release
+
+### Changed
+
+- Moved install scripts into `scripts/` directory (`install.sh`, `curl-install.sh`, `install.ps1`, `curl-install.ps1`)
+- `get_user_config_dir()` now uses `ProjectDirs` on Windows instead of `~/.config/squrl`
+- `sanitize_name` now strips backslashes (`\`) in addition to forward slashes and quotes
+- Test suite is fully cross-platform: replaced hardcoded `/tmp` paths with `std::env::temp_dir()`, gated Unix-specific tilde expansion tests with `#[cfg(not(windows))]`, and made path construction platform-aware
+- Added `BSL-1.0` (Boost Software License) to `deny.toml` allowed licenses
+- Added Windows target triples to `deny.toml`
+
+### Fixed
+
+- Curl export `--data` flag used `'@/<path>'` instead of `'@<path>'`, producing double-slashes for absolute paths
+
 ## [0.1.1] - 2026-02-19
 
 ### Added
