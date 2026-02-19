@@ -79,10 +79,10 @@ jobs:
         if: ${{ contains(matrix.target, 'windows') }}
         shell: pwsh
         run: |
-          VERSION="${GITHUB_REF_NAME}"
-          ARCHIVE="squrl-${VERSION}-${{ matrix.target }}.tar.gz"
+          VERSION= $env:GITHUB_REF_NAME
+          ARCHIVE="squrl-${VERSION}-${{ matrix.target }}.zip"
           Compress-Archive -Path "target/${{ matrix.target }}/release/squrl.exe" -DestinationPath $ARCHIVE
-          echo "ARCHIVE=${ARCHIVE}" >> "$GITHUB_ENV"
+          echo "ARCHIVE=${ARCHIVE}" >> $env:GITHUB_ENV
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
