@@ -56,6 +56,7 @@ jobs:
         run: cargo install cross --git https://github.com/cross-rs/cross
 
       - name: Build
+        shell: bash
         run: |
           if [ "${{ matrix.cross }}" = "true" ]; then
             cross build --release --target ${{ matrix.target }}
@@ -63,13 +64,24 @@ jobs:
             cargo build --release --target ${{ matrix.target }}
           fi
 
-      - name: Package
+      - name: Package (Unix)
+        if: ${{ !contains(matrix.target, 'windows') }}
+        shell: bash
         run: |
           VERSION="${GITHUB_REF_NAME}"
           ARCHIVE="squrl-${VERSION}-${{ matrix.target }}.tar.gz"
           cd target/${{ matrix.target }}/release
           tar czf "../../../${ARCHIVE}" squrl
           cd ../../..
+          echo "ARCHIVE=${ARCHIVE}" >> "$GITHUB_ENV"
+
+      - name: Package (Windows)
+        if: ${{ contains(matrix.target, 'windows') }}
+        shell: pwsh
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          ARCHIVE="squrl-${VERSION}-${{ matrix.target }}.tar.gz"
+          Compress-Archive -Path "target/${{ matrix.target }}/release/squrl.exe" -DestinationPath $ARCHIVE
           echo "ARCHIVE=${ARCHIVE}" >> "$GITHUB_ENV"
 
       - name: Upload artifact
