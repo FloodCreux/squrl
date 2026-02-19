@@ -11,7 +11,9 @@ use crate::models::auth::bearer_token::BearerToken;
 use crate::models::auth::digest::{Digest, digest_to_authorization_header};
 use crate::models::auth::jwt::{JwtToken, jwt_do_jaat};
 use crate::models::export::ExportFormat;
-use crate::models::export::ExportFormat::{Curl, HTTP, NodeJsAxios, PhpGuzzle, RustReqwest};
+use crate::models::export::ExportFormat::{
+	Curl, HTTP, NodeJsAxios, PhpGuzzle, PowerShell, RustReqwest,
+};
 use crate::models::protocol::http::body::ContentType::{
 	File, Form, Html, Javascript, Json, Multipart, NoBody, Raw, Xml,
 };
@@ -66,12 +68,13 @@ impl App<'_> {
 				PhpGuzzle => self.php_guzzle(output, request, url, headers),
 				NodeJsAxios => self.node_axios(output, request, url, headers),
 				RustReqwest => self.rust_request(output, request, url, headers),
+				PowerShell => self.powershell(output, request, url, headers),
 			},
 			Protocol::WsRequest(_) => match export_format {
 				RustReqwest => self.rust_request(output, request, url, headers),
-				PhpGuzzle | NodeJsAxios | HTTP | Curl => Err(anyhow!(ExportFormatNotSupported(
-					request.protocol.to_string()
-				))),
+				PhpGuzzle | NodeJsAxios | HTTP | Curl | PowerShell => Err(anyhow!(
+					ExportFormatNotSupported(request.protocol.to_string())
+				)),
 			},
 		}
 	}
@@ -960,6 +963,142 @@ impl App<'_> {
 
 		Ok(output)
 	}
+
+	fn powershell(
+		&self,
+		mut output: String,
+		request: &Request,
+		url: Url,
+		headers: Vec<(String, String)>,
+	) -> anyhow::Result<String> {
+		let http_request = request.get_http_request()?;
+
+		/* Splatting params hashtable */
+
+		output += "$params = @{\n";
+		output += &format!("    Uri    = '{}'\n", ps_escape(url.as_str()));
+		output += &format!(
+			"    Method = '{}'\n",
+			http_request.method.to_string().to_uppercase()
+		);
+
+		/* Headers */
+
+		let auth_header = self.resolve_auth_header_value(&request.auth, url.as_str());
+		let has_headers = !headers.is_empty() || !auth_header.is_empty();
+
+		if has_headers {
+			output += "    Headers = @{\n";
+
+			if !auth_header.is_empty() {
+				// resolve_auth_header_value returns "\nKey: Value" format
+				for line in auth_header.lines() {
+					let line = line.trim();
+					if line.is_empty() {
+						continue;
+					}
+					if let Some((key, value)) = line.split_once(": ") {
+						output +=
+							&format!("        '{}' = '{}'\n", ps_escape(key), ps_escape(value));
+					}
+				}
+			}
+
+			for (header, value) in &headers {
+				output += &format!("        '{}' = '{}'\n", ps_escape(header), ps_escape(value));
+			}
+
+			output += "    }\n";
+		}
+
+		/* Body */
+
+		match &http_request.body {
+			NoBody => {}
+			File(file_path) => {
+				let file_path_with_env_values = self.replace_env_keys_by_value(file_path);
+
+				output += &format!(
+					"    ContentType = '{}'\n",
+					http_request.body.to_content_type()
+				);
+				output += &format!("    InFile = '{}'\n", ps_escape(&file_path_with_env_values));
+			}
+			Multipart(multipart) => {
+				// -Form parameter requires PowerShell 6+
+				output += "    Form = @{\n";
+
+				for key_value in multipart {
+					if !key_value.enabled {
+						continue;
+					}
+
+					let key = self.replace_env_keys_by_value(&key_value.data.0);
+					let value = self.replace_env_keys_by_value(&key_value.data.1);
+
+					if let Some(file_path) = value.strip_prefix(FILE_VALUE_PREFIX) {
+						output += &format!(
+							"        '{}' = Get-Item -Path '{}'\n",
+							ps_escape(&key),
+							ps_escape(file_path)
+						);
+					} else {
+						output +=
+							&format!("        '{}' = '{}'\n", ps_escape(&key), ps_escape(&value));
+					}
+				}
+
+				output += "    }\n";
+			}
+			Form(form_data) => {
+				let form = self.key_value_vec_to_tuple_vec(form_data);
+
+				output += &format!(
+					"    ContentType = '{}'\n",
+					http_request.body.to_content_type()
+				);
+				output += "    Body = @{\n";
+
+				for (key, value) in &form {
+					output += &format!("        '{}' = '{}'\n", ps_escape(key), ps_escape(value));
+				}
+
+				output += "    }\n";
+			}
+			Json(body) => {
+				output += "    ContentType = 'application/json'\n";
+				output += &format!("    Body = '{}'\n", ps_escape(body));
+			}
+			Raw(body) | Xml(body) | Html(body) | Javascript(body) => {
+				output += &format!(
+					"    ContentType = '{}'\n",
+					http_request.body.to_content_type()
+				);
+				output += &format!("    Body = '{}'\n", ps_escape(body));
+			}
+		};
+
+		/* Proxy */
+
+		if request.settings.use_config_proxy.as_bool().unwrap_or(true)
+			&& let Some(proxy) = &self.core.config.get_proxy()
+		{
+			// PowerShell's -Proxy takes a single URI; prefer HTTPS proxy if available
+			if let Some(https_proxy) = &proxy.https_proxy {
+				output += &format!("    Proxy = '{}'\n", ps_escape(https_proxy));
+			} else if let Some(http_proxy) = &proxy.http_proxy {
+				output += &format!("    Proxy = '{}'\n", ps_escape(http_proxy));
+			}
+		}
+
+		output += "}\n\n";
+
+		/* Invoke */
+
+		output += "$response = Invoke-RestMethod @params";
+
+		Ok(output)
+	}
 }
 
 fn encode_basic_auth(username: &String, password: &String) -> String {
@@ -976,6 +1115,12 @@ fn encode_basic_auth(username: &String, password: &String) -> String {
 
 fn escape<T: AsRef<str>>(text: T, to_escape: char) -> String {
 	text.as_ref().replace(to_escape, &format!("\\{to_escape}"))
+}
+
+/// Escape a string for use inside PowerShell single-quoted strings.
+/// Single quotes are the only character that needs escaping — doubled to `''`.
+fn ps_escape<T: AsRef<str>>(text: T) -> String {
+	text.as_ref().replace('\'', "''")
 }
 
 #[cfg(test)]

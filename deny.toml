@@ -52,6 +52,7 @@ allow = [
     "MPL-2.0",
     "OpenSSL",
     "Unicode-3.0",
+    "BSL-1.0",
 ]
 
 # Allow specific licenses for specific crates

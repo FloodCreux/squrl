@@ -25,6 +25,10 @@ pub enum ExportFormat {
 	#[strum(to_string = "Rust\nReqwest")]
 	#[clap(name = "rust")]
 	RustReqwest,
+
+	#[strum(to_string = "Power\nShell")]
+	#[clap(name = "powershell")]
+	PowerShell,
 }
 
 impl ExportFormat {
@@ -35,6 +39,7 @@ impl ExportFormat {
 			ExportFormat::PhpGuzzle => Some("php"),
 			ExportFormat::NodeJsAxios => Some("js"),
 			ExportFormat::RustReqwest => Some("rs"),
+			ExportFormat::PowerShell => Some("ps1"),
 		}
 	}
 }
