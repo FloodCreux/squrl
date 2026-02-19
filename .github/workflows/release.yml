@@ -255,7 +255,7 @@ jobs:
 
       - name: Push manifest to bucket
         env:
-          BUCKET_TOKEN: ${{ secrets.SCOOP_BUCKET_TOKEN }}
+          BUCKET_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           VERSION: ${{ github.ref_name }}
         run: |
           git clone https://x-access-token:${BUCKET_TOKEN}@github.com/FloodCreux/scoop-squrl.git bucket
