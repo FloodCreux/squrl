@@ -198,8 +198,15 @@ fn get_app_config_dir() -> Option<PathBuf> {
 }
 
 fn get_user_config_dir() -> Option<PathBuf> {
-	let home = UserDirs::new()?.home_dir().to_path_buf();
-	let dir = home.join(".config").join("squrl");
+	let dir = if cfg!(windows) {
+		ProjectDirs::from("com", "flood-creux", "squrl")?
+			.config_dir()
+			.to_path_buf()
+	} else {
+		let home = UserDirs::new()?.home_dir().to_path_buf();
+		home.join(".config").join("squrl")
+	};
+
 	if !dir.exists() {
 		fs::create_dir_all(&dir).ok();
 	}
