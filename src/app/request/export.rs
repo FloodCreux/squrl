@@ -250,7 +250,7 @@ impl App<'_> {
 				let file_path_with_env_values = self.replace_env_keys_by_value(file_path);
 
 				format!(
-					"\n--header 'Content-Type: {}' \\\n--data '@/{}' \\",
+					"\n--header 'Content-Type: {}' \\\n--data '@{}' \\",
 					&http_request.body.to_content_type(),
 					file_path_with_env_values
 				)

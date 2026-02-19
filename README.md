@@ -52,6 +52,13 @@ brew tap FloodCreux/squrl
 brew install squrl
 ```
 
+### Scoop (Windows)
+
+```powershell
+scoop bucket add squrl https://github.com/FloodCreux/scoop-squrl
+scoop install squrl
+```
+
 ### Pre-built binary
 
 **macOS / Linux:**
