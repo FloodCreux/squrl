@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Docker support** -- multi-platform builds with cargo-chef and cargo-zigbuild
 - **GitHub CI/CD** -- format, clippy, and test workflows; release workflow with cross-compiled binaries for Linux and macOS (x86_64 and aarch64)
 - **GitHub issue and PR templates** -- bug report, feature request, and pull request templates
+- **Collection write-back for `.http` files** -- modifications to `.http`-based collections are now saved back to the original `.http` files, preserving the HTTP file format with full round-trip support for methods, URLs, query parameters, headers, authentication, and bodies
+- **Request source path tracking** -- each request parsed from an `.http` file now records its originating file path, enabling accurate write-back to the correct file
 
 ### Changed
 
@@ -25,11 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed untagged serde deserialization
 - Cleaned up module visibility and access modifiers
 - Cleaned up logging configuration
+- Homepage description text is now properly centered in the TUI using layout constraints
+- WebSocket badge in the request list now uses foreground-only coloring instead of foreground + background
 
 ### Fixed
 
 - Panic errors replaced with graceful error handling
 - Settings options cleanup
+- Trailing slash on WebSocket echo URL in demo collection
 
 ## [0.1.0] - 2026-02-17
 

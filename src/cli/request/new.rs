@@ -100,6 +100,7 @@ pub fn create_request_from_new_request_command(
 		console_output: ConsoleOutput::default(),
 		is_pending: false,
 		cancellation_token: CancellationToken::new(),
+		source_path: None,
 	};
 
 	request.update_url_and_params(new_request_command.url);

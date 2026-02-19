@@ -53,6 +53,11 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxx      ;;;;;.   ;;;;
 		.split(inner_block_area);
 
 		let title_length = 20;
+		let description_width = description_string
+			.lines()
+			.map(|line| line.len())
+			.max()
+			.unwrap_or(0) as u16;
 
 		let title_layout = Layout::new(
 			Horizontal,
@@ -74,13 +79,23 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxx      ;;;;;.   ;;;;
 		let welcome_to = Paragraph::new("Welcome to")
 			.centered()
 			.fg(THEME.read().ui.secondary_foreground_color);
-		let description = Paragraph::new(description_string)
-			.centered()
-			.fg(THEME.read().ui.main_foreground_color);
+
+		let description_layout = Layout::new(
+			Horizontal,
+			[
+				Constraint::Fill(1),
+				Constraint::Length(description_width),
+				Constraint::Fill(1),
+			],
+		)
+		.split(inner_layout[4]);
+
+		let description =
+			Paragraph::new(description_string).fg(THEME.read().ui.main_foreground_color);
 
 		frame.render_widget(block, rect);
 		frame.render_widget(welcome_to, inner_layout[1]);
 		frame.render_widget(title, title_layout[1]);
-		frame.render_widget(description, inner_layout[4]);
+		frame.render_widget(description, description_layout[1]);
 	}
 }

@@ -30,7 +30,7 @@ A terminal-based HTTP and WebSocket client built with Rust. Think Postman or Ins
 - **Dual interface** -- interactive TUI and full-featured CLI
 - **HTTP client** -- all 9 standard methods (GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD, TRACE, CONNECT) with configurable timeouts, redirects, and proxy support
 - **WebSocket support** -- connect, send/receive messages, and track connection state
-- **Collections** -- organize requests in JSON or YAML files with tree-based navigation and optional folder grouping
+- **Collections** -- organize requests in JSON, YAML, or `.http` files with tree-based navigation, optional folder grouping, and round-trip write-back for `.http` collections
 - **Environments** -- key-value variables with `{{variable}}` substitution across URLs, headers, bodies, auth, and scripts
 - **Authentication** -- Basic, Bearer Token, JWT (HS/RS/ES/PS/EdDSA), and Digest (MD5, SHA-256, SHA-512)
 - **Request bodies** -- raw text, JSON, XML, HTML, JavaScript, file upload, URL-encoded form, and multipart
@@ -232,6 +232,8 @@ https_proxy = "https://..."
 squrl_main_dir/
   collection1.json      # or .yaml -- request collections
   collection2.yaml
+  requests/             # .http file collections (auto-loaded in git repos)
+    example.http
   .env.production       # KEY=VALUE environment files
   .env.staging
   squrl.toml            # Local configuration
@@ -255,7 +257,7 @@ Collection files support an optional `folders` field for grouping requests:
 
 Folders appear in the collection tree between the collection and its root-level requests. When creating a new request in the TUI, the popup includes a folder selector -- choose "None (root)" to add to the collection root, or pick a folder to add the request directly into it. If your cursor is already inside a folder, it is pre-selected. Deleting a folder moves its requests to the collection root. Existing collection files without folders continue to work unchanged.
 
-squrl also auto-loads `.http` files from a `requests/` subdirectory when inside a git repository. Subdirectories are searched recursively, and files found inside a child directory of `requests/` are grouped into a folder named after that top-level child directory. These collections start as ephemeral (in-memory only), but are automatically persisted to disk on first modification.
+squrl also auto-loads `.http` files from a `requests/` subdirectory when inside a git repository. Subdirectories are searched recursively, and files found inside a child directory of `requests/` are grouped into a folder named after that top-level child directory. Modifications to these collections are saved back to the original `.http` files, preserving the HTTP file format.
 
 `.http` files support standard HTTP methods as well as `WEBSOCKET` for WebSocket connections:
 

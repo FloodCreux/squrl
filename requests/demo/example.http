@@ -28,4 +28,4 @@ Content-Type: application/json
 DELETE https://jsonplaceholder.typicode.com/users/1
 
 ### Echo WebSocket
-WEBSOCKET wss://echo.websocket.org
+WEBSOCKET wss://echo.websocket.org/

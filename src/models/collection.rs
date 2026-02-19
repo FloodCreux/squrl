@@ -37,6 +37,9 @@ pub enum CollectionFileFormat {
 	#[serde(alias = "yaml", alias = "YAML")]
 	#[strum(to_string = "yaml")]
 	Yaml,
+	#[serde(alias = "http", alias = "HTTP")]
+	#[strum(to_string = "http")]
+	Http,
 }
 
 impl Collection {

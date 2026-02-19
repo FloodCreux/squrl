@@ -1,10 +1,11 @@
 use anyhow::anyhow;
 use ratatui::prelude::{Line, Modifier, Span};
-use ratatui::style::{Color, Stylize};
+use ratatui::style::Stylize;
 use rayon::prelude::*;
 use regex::Regex;
 use serde::Serialize;
 use serde_versioning::Deserialize;
+use std::path::PathBuf;
 use std::sync::LazyLock;
 use tokio_util::sync::CancellationToken;
 use tracing::trace;
@@ -48,6 +49,9 @@ pub struct Request {
 
 	#[serde(skip)]
 	pub cancellation_token: CancellationToken,
+
+	#[serde(skip)]
+	pub source_path: Option<PathBuf>,
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
@@ -158,15 +162,12 @@ impl Request {
 				.style(Modifier::BOLD)
 				.fg(http_request.method.get_color()),
 			Protocol::WsRequest(ws_request) => {
-				let color = match ws_request.is_connected {
-					true => THEME.read().websocket.connection_status.connected,
-					false => THEME.read().websocket.connection_status.disconnected,
-				};
-
 				Span::from("WS")
 					.style(Modifier::BOLD)
-					.fg(Color::White)
-					.bg(color)
+					.fg(match ws_request.is_connected {
+						true => THEME.read().websocket.connection_status.connected,
+						false => THEME.read().websocket.connection_status.disconnected,
+					})
 			}
 		};
 

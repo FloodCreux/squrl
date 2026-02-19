@@ -230,6 +230,10 @@ impl<'a> App<'a> {
 						}
 					};
 
+					for req in &parsed_requests {
+						req.write().source_path = Some(http_path.clone());
+					}
+
 					if components.len() == 1 {
 						// File directly in requests/ -> root-level requests
 						root_requests.extend(parsed_requests);
@@ -268,8 +272,8 @@ impl<'a> App<'a> {
 						last_position: None,
 						folders,
 						requests: root_requests,
-						path: PathBuf::new(), // Ephemeral -- no file path
-						file_format: CollectionFileFormat::default(),
+						path: requests_dir.clone(),
+						file_format: CollectionFileFormat::Http,
 					};
 
 					self.core.collections.push(collection);
