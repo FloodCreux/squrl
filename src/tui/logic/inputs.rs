@@ -97,6 +97,14 @@ macro_rules! for_all_inputs {
 			$body;
 		}
 		{
+			let $input = &mut $self.graphql_query_text_area;
+			$body;
+		}
+		{
+			let $input = &mut $self.graphql_variables_text_area;
+			$body;
+		}
+		{
 			let $input = &mut $self.script_console.pre_request_text_area;
 			$body;
 		}
@@ -156,6 +164,8 @@ impl App<'_> {
 		self.request_editor.auth.jwt_payload.is_single_line = false;
 		self.request_editor.body_text_area.is_single_line = false;
 		self.message_text_area.is_single_line = false;
+		self.graphql_query_text_area.is_single_line = false;
+		self.graphql_variables_text_area.is_single_line = false;
 		self.script_console.pre_request_text_area.is_single_line = false;
 		self.script_console.post_request_text_area.is_single_line = false;
 

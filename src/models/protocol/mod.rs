@@ -1,3 +1,4 @@
+pub(crate) mod graphql;
 pub(crate) mod http;
 #[allow(clippy::module_inception)]
 pub(crate) mod protocol;

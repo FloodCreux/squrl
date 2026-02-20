@@ -177,6 +177,10 @@ fn selected_request_param_tab_events(
 					None,
 				))]
 			}
+			Protocol::GraphqlRequest(_) => {
+				// GraphQL requests don't need method or body type toggles
+				vec![]
+			}
 		};
 
 		events.extend(protocol_specific);
@@ -370,6 +374,20 @@ fn selected_request_param_tab_events(
 			vec![EditRequestMessage(EventKeyBinding::new(
 				vec![key_bindings.generic.list_and_table_actions.edit_element],
 				"Edit message",
+				None,
+			))]
+		}
+		RequestParamsTabs::GraphqlQuery => {
+			vec![EditGraphqlQuery(EventKeyBinding::new(
+				vec![key_bindings.generic.list_and_table_actions.edit_element],
+				"Edit GraphQL query",
+				None,
+			))]
+		}
+		RequestParamsTabs::GraphqlVariables => {
+			vec![EditGraphqlVariables(EventKeyBinding::new(
+				vec![key_bindings.generic.list_and_table_actions.edit_element],
+				"Edit GraphQL variables",
 				None,
 			))]
 		}

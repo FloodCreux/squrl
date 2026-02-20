@@ -177,6 +177,8 @@ impl App<'_> {
 			| EditingRequestBodyFile
 			| EditingRequestBodyString
 			| EditingRequestMessage
+			| EditingGraphqlQuery
+			| EditingGraphqlVariables
 			| EditingPreRequestScript
 			| EditingPostRequestScript
 			| EditingRequestSettings
@@ -235,6 +237,8 @@ impl App<'_> {
 				| EditingRequestBodyTable
 				| EditingRequestBodyFile
 				| EditingRequestBodyString
+				| EditingGraphqlQuery
+				| EditingGraphqlVariables
 				| EditingPreRequestScript
 				| EditingPostRequestScript
 				| EditingRequestSettings

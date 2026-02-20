@@ -80,6 +80,10 @@ impl App<'_> {
 
 			AppEvent::EditRequestMessage(_) => self.edit_request_message_state(),
 
+			/* GraphQL */
+			AppEvent::EditGraphqlQuery(_) => self.edit_graphql_query_state(),
+			AppEvent::EditGraphqlVariables(_) => self.edit_graphql_variables_state(),
+
 			AppEvent::RequestBodyTableMoveUp(_) => self.request_editor.body_form_table.up(),
 			AppEvent::RequestBodyTableMoveDown(_) => self.request_editor.body_form_table.down(),
 			AppEvent::RequestBodyTableMoveLeft(_) | AppEvent::RequestBodyTableMoveRight(_) => {

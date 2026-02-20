@@ -1,3 +1,4 @@
+use crate::models::protocol::graphql::graphql::GraphqlRequest;
 use crate::models::protocol::http::http::HttpRequest;
 use crate::models::protocol::protocol::Protocol;
 use crate::models::protocol::ws::ws::WsRequest;
@@ -122,13 +123,15 @@ impl NewRequestPopup {
 	pub fn next_protocol(&mut self) {
 		self.protocol = match self.protocol {
 			Protocol::HttpRequest(_) => Protocol::WsRequest(WsRequest::default()),
-			Protocol::WsRequest(_) => Protocol::HttpRequest(HttpRequest::default()),
+			Protocol::WsRequest(_) => Protocol::GraphqlRequest(GraphqlRequest::default()),
+			Protocol::GraphqlRequest(_) => Protocol::HttpRequest(HttpRequest::default()),
 		}
 	}
 
 	pub fn previous_protocol(&mut self) {
 		self.protocol = match self.protocol {
-			Protocol::HttpRequest(_) => Protocol::WsRequest(WsRequest::default()),
+			Protocol::HttpRequest(_) => Protocol::GraphqlRequest(GraphqlRequest::default()),
+			Protocol::GraphqlRequest(_) => Protocol::WsRequest(WsRequest::default()),
 			Protocol::WsRequest(_) => Protocol::HttpRequest(HttpRequest::default()),
 		}
 	}

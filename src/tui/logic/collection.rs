@@ -162,6 +162,10 @@ impl App<'_> {
 
 				self.message_text_area.push_str(&content);
 			}
+			Protocol::GraphqlRequest(gql) => {
+				self.graphql_query_text_area.push_str(&gql.query);
+				self.graphql_variables_text_area.push_str(&gql.variables);
+			}
 		}
 
 		let pre_request_script = match &selected_request.scripts.pre_request_script {
@@ -218,7 +222,7 @@ impl App<'_> {
 				Protocol::HttpRequest(_) => {
 					self.tui_update_body_table_selection();
 				}
-				Protocol::WsRequest(_) => {}
+				Protocol::WsRequest(_) | Protocol::GraphqlRequest(_) => {}
 			}
 
 			*self.core.received_response.lock() = true;

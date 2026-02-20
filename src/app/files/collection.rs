@@ -218,6 +218,9 @@ impl App<'_> {
 				Protocol::WsRequest(_) => {
 					lines.push(format!("WEBSOCKET {}", full_url));
 				}
+				Protocol::GraphqlRequest(_) => {
+					lines.push(format!("GRAPHQL {}", full_url));
+				}
 			}
 
 			// --- Authorization header from auth ---
@@ -257,6 +260,23 @@ impl App<'_> {
 					Self::serialize_body(&http.body)
 				}
 				Protocol::WsRequest(_) => None,
+				Protocol::GraphqlRequest(gql) => {
+					if !user_has_content_type {
+						lines.push("Content-Type: application/json".to_string());
+					}
+					let mut body = serde_json::json!({ "query": gql.query });
+					if !gql.variables.is_empty()
+						&& let Ok(vars) = serde_json::from_str::<serde_json::Value>(&gql.variables)
+					{
+						body["variables"] = vars;
+					}
+					if let Some(op) = &gql.operation_name
+						&& !op.is_empty()
+					{
+						body["operationName"] = serde_json::Value::String(op.clone());
+					}
+					Some(serde_json::to_string_pretty(&body).unwrap_or_default())
+				}
 			};
 
 			// --- User headers ---

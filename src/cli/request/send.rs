@@ -108,7 +108,7 @@ impl App<'_> {
 
 		let local_env = self.get_selected_env_as_local();
 		let response = match protocol {
-			Protocol::HttpRequest(_) => {
+			Protocol::HttpRequest(_) | Protocol::GraphqlRequest(_) => {
 				send_http_request(prepared_request, local_request.clone(), &local_env).await?
 			}
 			Protocol::WsRequest(_) => {

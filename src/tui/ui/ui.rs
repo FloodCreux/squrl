@@ -76,7 +76,7 @@ impl<'a> App<'a> {
 				let selected_request = self.get_request_from_selection(&selection).read().clone();
 
 				match selected_request.protocol {
-					Protocol::HttpRequest(_) => {
+					Protocol::HttpRequest(_) | Protocol::GraphqlRequest(_) => {
 						self.render_http_request(frame, inner_layout[2], selected_request)
 					}
 					Protocol::WsRequest(_) => {

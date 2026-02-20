@@ -506,6 +506,24 @@ impl AppState {
 				false,
 			),
 
+			EditingGraphqlQuery => simple_text_input_events(
+				&key_bindings,
+				ModifyGraphqlQuery,
+				CancelEditGraphqlQuery,
+				KeyEventEditGraphqlQuery,
+				false,
+				false,
+			),
+
+			EditingGraphqlVariables => simple_text_input_events(
+				&key_bindings,
+				ModifyGraphqlVariables,
+				CancelEditGraphqlVariables,
+				KeyEventEditGraphqlVariables,
+				false,
+				false,
+			),
+
 			EditingPreRequestScript => simple_text_input_events(
 				&key_bindings,
 				ModifyRequestPreRequestScript,

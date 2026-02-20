@@ -429,6 +429,44 @@ impl App<'_> {
 				self.message_text_area.key_event(key, Some(terminal))
 			}
 
+			/* GraphQL Query */
+			AppEvent::ModifyGraphqlQuery(_) => {
+				match self.graphql_query_text_area.is_in_default_mode() {
+					true => self.tui_modify_graphql_query(),
+					false => self.graphql_query_text_area.key_event(key, Some(terminal)),
+				}
+			}
+			AppEvent::CancelEditGraphqlQuery(_) => {
+				match self.graphql_query_text_area.is_in_default_mode() {
+					true => self.select_request_state(),
+					false => self.graphql_query_text_area.key_event(key, Some(terminal)),
+				}
+			}
+			AppEvent::KeyEventEditGraphqlQuery(_) => {
+				self.graphql_query_text_area.key_event(key, Some(terminal))
+			}
+
+			/* GraphQL Variables */
+			AppEvent::ModifyGraphqlVariables(_) => {
+				match self.graphql_variables_text_area.is_in_default_mode() {
+					true => self.tui_modify_graphql_variables(),
+					false => self
+						.graphql_variables_text_area
+						.key_event(key, Some(terminal)),
+				}
+			}
+			AppEvent::CancelEditGraphqlVariables(_) => {
+				match self.graphql_variables_text_area.is_in_default_mode() {
+					true => self.select_request_state(),
+					false => self
+						.graphql_variables_text_area
+						.key_event(key, Some(terminal)),
+				}
+			}
+			AppEvent::KeyEventEditGraphqlVariables(_) => self
+				.graphql_variables_text_area
+				.key_event(key, Some(terminal)),
+
 			/* Scripts - Pre-request */
 			AppEvent::ModifyRequestPreRequestScript(_) => match self
 				.script_console

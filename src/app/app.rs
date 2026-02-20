@@ -146,6 +146,10 @@ pub struct App<'a> {
 	/* WS message */
 	pub message_text_area: TextInput,
 
+	/* GraphQL */
+	pub graphql_query_text_area: TextInput,
+	pub graphql_variables_text_area: TextInput,
+
 	/* Response */
 	pub response_view: ResponseViewState,
 
@@ -283,6 +287,10 @@ impl App<'_> {
 
 			/* WS message */
 			message_text_area: TextInput::new(None),
+
+			/* GraphQL */
+			graphql_query_text_area: TextInput::new(None),
+			graphql_variables_text_area: TextInput::new(None),
 
 			/* Response */
 			response_view: ResponseViewState {

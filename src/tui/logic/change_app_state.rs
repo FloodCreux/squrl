@@ -416,6 +416,14 @@ impl App<'_> {
 		self.set_app_state(AppState::EditingRequestMessage);
 	}
 
+	pub fn edit_graphql_query_state(&mut self) {
+		self.set_app_state(AppState::EditingGraphqlQuery);
+	}
+
+	pub fn edit_graphql_variables_state(&mut self) {
+		self.set_app_state(AppState::EditingGraphqlVariables);
+	}
+
 	pub fn edit_request_script_state(&mut self) {
 		self.request_param_tab = RequestParamsTabs::Scripts;
 
@@ -450,7 +458,9 @@ impl App<'_> {
 		let selected_request = local_selected_request.read();
 
 		self.export_request.choices = match selected_request.protocol {
-			Protocol::HttpRequest(_) => ExportFormat::VARIANTS.to_vec(),
+			Protocol::HttpRequest(_) | Protocol::GraphqlRequest(_) => {
+				ExportFormat::VARIANTS.to_vec()
+			}
 			Protocol::WsRequest(_) => vec![ExportFormat::RustReqwest],
 		};
 

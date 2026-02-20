@@ -4,6 +4,7 @@ use crate::cli::import::http_file::ImportHttpFileError::{
 use crate::models::auth::auth::Auth;
 use crate::models::auth::basic::BasicAuth;
 use crate::models::auth::bearer_token::BearerToken;
+use crate::models::protocol::graphql::graphql::GraphqlRequest;
 use crate::models::protocol::http::body::ContentType;
 use crate::models::protocol::http::body::ContentType::NoBody;
 use crate::models::protocol::http::http::HttpRequest;
@@ -128,8 +129,9 @@ pub fn parse_http_content(content: &str) -> anyhow::Result<Vec<Arc<RwLock<Reques
 		let url_str = parts[1];
 
 		let is_websocket = method_str == "WEBSOCKET";
+		let is_graphql = method_str == "GRAPHQL";
 
-		let method = if is_websocket {
+		let method = if is_websocket || is_graphql {
 			None
 		} else {
 			match Method::from_str(method_str) {
@@ -231,6 +233,35 @@ pub fn parse_http_content(content: &str) -> anyhow::Result<Vec<Arc<RwLock<Reques
 		// Build protocol-specific request
 		let protocol = if is_websocket {
 			Protocol::WsRequest(WsRequest::default())
+		} else if is_graphql {
+			// For GraphQL .http files, the body is treated as the GraphQL query/JSON body.
+			// If the body is valid JSON with a "query" field, extract query/variables/operationName.
+			// Otherwise, treat the entire body as the query string.
+			let (query, variables, operation_name) =
+				if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&body_string) {
+					let query = parsed
+						.get("query")
+						.and_then(|v| v.as_str())
+						.unwrap_or("")
+						.to_string();
+					let variables = parsed
+						.get("variables")
+						.map(|v| v.to_string())
+						.unwrap_or_default();
+					let operation_name = parsed
+						.get("operationName")
+						.and_then(|v| v.as_str())
+						.map(|s| s.to_string());
+					(query, variables, operation_name)
+				} else {
+					(body_string, String::new(), None)
+				};
+
+			Protocol::GraphqlRequest(GraphqlRequest {
+				query,
+				variables,
+				operation_name,
+			})
 		} else {
 			let method = method.expect("HTTP method should be present");
 

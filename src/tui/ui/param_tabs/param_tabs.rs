@@ -13,8 +13,8 @@ use crate::models::protocol::http::body::ContentType::*;
 use crate::models::protocol::protocol::Protocol;
 use crate::models::request::Request;
 use crate::tui::app_states::AppState::{
-	EditingRequestBodyString, EditingRequestBodyTable, EditingRequestHeader, EditingRequestMessage,
-	EditingRequestParam,
+	EditingGraphqlQuery, EditingGraphqlVariables, EditingRequestBodyString,
+	EditingRequestBodyTable, EditingRequestHeader, EditingRequestMessage, EditingRequestParam,
 };
 use crate::tui::logic::utils::key_value_vec_to_items_list;
 use crate::tui::utils::stateful::text_input::MultiLineTextInput;
@@ -35,6 +35,10 @@ pub enum RequestParamsTabs {
 	Body,
 	#[strum(to_string = "MESSAGE")]
 	Message,
+	#[strum(to_string = "QUERY")]
+	GraphqlQuery,
+	#[strum(to_string = "VARIABLES")]
+	GraphqlVariables,
 	#[strum(to_string = "SCRIPTS")]
 	Scripts,
 }
@@ -61,6 +65,14 @@ impl App<'_> {
 				RequestParamsTabs::Message,
 				RequestParamsTabs::Scripts,
 			],
+			Protocol::GraphqlRequest(_) => vec![
+				RequestParamsTabs::QueryParams,
+				RequestParamsTabs::Auth,
+				RequestParamsTabs::Headers,
+				RequestParamsTabs::GraphqlQuery,
+				RequestParamsTabs::GraphqlVariables,
+				RequestParamsTabs::Scripts,
+			],
 		};
 
 		let selected_param_tab_index = match &request.protocol {
@@ -78,6 +90,15 @@ impl App<'_> {
 				RequestParamsTabs::Headers => 2,
 				RequestParamsTabs::Message => 3,
 				RequestParamsTabs::Scripts => 4,
+				_ => unreachable!(),
+			},
+			Protocol::GraphqlRequest(_) => match self.request_param_tab {
+				RequestParamsTabs::QueryParams => 0,
+				RequestParamsTabs::Auth => 1,
+				RequestParamsTabs::Headers => 2,
+				RequestParamsTabs::GraphqlQuery => 3,
+				RequestParamsTabs::GraphqlVariables => 4,
+				RequestParamsTabs::Scripts => 5,
 				_ => unreachable!(),
 			},
 		};
@@ -126,6 +147,16 @@ impl App<'_> {
 						tab.to_string().to_uppercase(),
 						ws_request.message_type
 					)
+				}
+				RequestParamsTabs::GraphqlQuery => tab.to_string().to_uppercase(),
+				RequestParamsTabs::GraphqlVariables => {
+					let gql = request
+						.get_graphql_request()
+						.expect("request should be GraphQL");
+					match gql.variables.is_empty() {
+						true => tab.to_string().to_uppercase(),
+						false => format!("{} (*)", tab.to_string().to_uppercase()),
+					}
 				}
 				RequestParamsTabs::Scripts => tab.to_string().to_uppercase(),
 			})
@@ -282,6 +313,32 @@ impl App<'_> {
 					MultiLineTextInput(
 						&mut self.message_text_area,
 						ENV_VARIABLE_SYNTAX_REF.clone(),
+					),
+					request_params_layout[1],
+				);
+			}
+			RequestParamsTabs::GraphqlQuery => {
+				let display_cursor = matches!(&self.state, EditingGraphqlQuery);
+
+				self.graphql_query_text_area.display_cursor = display_cursor;
+
+				frame.render_widget(
+					MultiLineTextInput(
+						&mut self.graphql_query_text_area,
+						ENV_VARIABLE_SYNTAX_REF.clone(),
+					),
+					request_params_layout[1],
+				);
+			}
+			RequestParamsTabs::GraphqlVariables => {
+				let display_cursor = matches!(&self.state, EditingGraphqlVariables);
+
+				self.graphql_variables_text_area.display_cursor = display_cursor;
+
+				frame.render_widget(
+					MultiLineTextInput(
+						&mut self.graphql_variables_text_area,
+						JSON_SYNTAX_REF.clone(),
 					),
 					request_params_layout[1],
 				);

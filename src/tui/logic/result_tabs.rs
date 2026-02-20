@@ -30,14 +30,16 @@ impl App<'_> {
 					&selected_request.console_output.post_request_output,
 				) {
 					(None, None) => match selected_request.protocol {
-						Protocol::HttpRequest(_) => RequestResultTabs::Body,
+						Protocol::HttpRequest(_) | Protocol::GraphqlRequest(_) => {
+							RequestResultTabs::Body
+						}
 						Protocol::WsRequest(_) => RequestResultTabs::Messages,
 					},
 					(_, _) => RequestResultTabs::Console,
 				}
 			}
 			RequestResultTabs::Console => match selected_request.protocol {
-				Protocol::HttpRequest(_) => RequestResultTabs::Body,
+				Protocol::HttpRequest(_) | Protocol::GraphqlRequest(_) => RequestResultTabs::Body,
 				Protocol::WsRequest(_) => RequestResultTabs::Messages,
 			},
 		};
@@ -59,12 +61,12 @@ impl App<'_> {
 				.is_none()
 		{
 			self.request_result_tab = match selected_request.protocol {
-				Protocol::HttpRequest(_) => RequestResultTabs::Body,
+				Protocol::HttpRequest(_) | Protocol::GraphqlRequest(_) => RequestResultTabs::Body,
 				Protocol::WsRequest(_) => RequestResultTabs::Messages,
 			};
 		} else {
 			match selected_request.protocol {
-				Protocol::HttpRequest(_)
+				Protocol::HttpRequest(_) | Protocol::GraphqlRequest(_)
 					if self.request_result_tab == RequestResultTabs::Messages =>
 				{
 					self.request_result_tab = RequestResultTabs::Body

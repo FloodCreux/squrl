@@ -172,6 +172,9 @@ get_key_bindings! {
 
 		EditRequestMessage(EventKeyBinding),
 
+		EditGraphqlQuery(EventKeyBinding),
+		EditGraphqlVariables(EventKeyBinding),
+
 		EditRequestScript(EventKeyBinding),
 		// Move up or down
 		RequestScriptMove(EventKeyBinding),
@@ -289,6 +292,16 @@ get_key_bindings! {
 		ModifyRequestMessage(EventKeyBinding),
 		CancelEditRequestMessage(EventKeyBinding),
 		KeyEventEditRequestMessage(EventKeyBinding),
+
+		/* GraphQL */
+
+		ModifyGraphqlQuery(EventKeyBinding),
+		CancelEditGraphqlQuery(EventKeyBinding),
+		KeyEventEditGraphqlQuery(EventKeyBinding),
+
+		ModifyGraphqlVariables(EventKeyBinding),
+		CancelEditGraphqlVariables(EventKeyBinding),
+		KeyEventEditGraphqlVariables(EventKeyBinding),
 
 		/* Scripts */
 
