@@ -166,6 +166,12 @@ impl App<'_> {
 				self.graphql_query_text_area.push_str(&gql.query);
 				self.graphql_variables_text_area.push_str(&gql.variables);
 			}
+			Protocol::GrpcRequest(grpc) => {
+				self.grpc_proto_file_input.push_str(&grpc.proto_file);
+				self.grpc_service_input.push_str(&grpc.service);
+				self.grpc_method_input.push_str(&grpc.method);
+				self.grpc_message_text_area.push_str(&grpc.message);
+			}
 		}
 
 		let pre_request_script = match &selected_request.scripts.pre_request_script {
@@ -222,7 +228,8 @@ impl App<'_> {
 				Protocol::HttpRequest(_) => {
 					self.tui_update_body_table_selection();
 				}
-				Protocol::WsRequest(_) | Protocol::GraphqlRequest(_) => {}
+				Protocol::WsRequest(_) | Protocol::GraphqlRequest(_) | Protocol::GrpcRequest(_) => {
+				}
 			}
 
 			*self.core.received_response.lock() = true;

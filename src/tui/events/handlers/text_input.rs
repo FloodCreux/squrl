@@ -467,6 +467,66 @@ impl App<'_> {
 				.graphql_variables_text_area
 				.key_event(key, Some(terminal)),
 
+			/* gRPC Proto File */
+			AppEvent::ModifyGrpcProtoFile(_) => {
+				match self.grpc_proto_file_input.is_in_default_mode() {
+					true => self.tui_modify_grpc_proto_file(),
+					false => self.grpc_proto_file_input.key_event(key, None),
+				}
+			}
+			AppEvent::CancelEditGrpcProtoFile(_) => {
+				match self.grpc_proto_file_input.is_in_default_mode() {
+					true => self.select_request_state(),
+					false => self.grpc_proto_file_input.key_event(key, None),
+				}
+			}
+			AppEvent::KeyEventEditGrpcProtoFile(_) => {
+				self.grpc_proto_file_input.key_event(key, None)
+			}
+
+			/* gRPC Service */
+			AppEvent::ModifyGrpcService(_) => match self.grpc_service_input.is_in_default_mode() {
+				true => self.tui_modify_grpc_service(),
+				false => self.grpc_service_input.key_event(key, None),
+			},
+			AppEvent::CancelEditGrpcService(_) => {
+				match self.grpc_service_input.is_in_default_mode() {
+					true => self.select_request_state(),
+					false => self.grpc_service_input.key_event(key, None),
+				}
+			}
+			AppEvent::KeyEventEditGrpcService(_) => self.grpc_service_input.key_event(key, None),
+
+			/* gRPC Method */
+			AppEvent::ModifyGrpcMethod(_) => match self.grpc_method_input.is_in_default_mode() {
+				true => self.tui_modify_grpc_method(),
+				false => self.grpc_method_input.key_event(key, None),
+			},
+			AppEvent::CancelEditGrpcMethod(_) => {
+				match self.grpc_method_input.is_in_default_mode() {
+					true => self.select_request_state(),
+					false => self.grpc_method_input.key_event(key, None),
+				}
+			}
+			AppEvent::KeyEventEditGrpcMethod(_) => self.grpc_method_input.key_event(key, None),
+
+			/* gRPC Message */
+			AppEvent::ModifyGrpcMessage(_) => {
+				match self.grpc_message_text_area.is_in_default_mode() {
+					true => self.tui_modify_grpc_message(),
+					false => self.grpc_message_text_area.key_event(key, Some(terminal)),
+				}
+			}
+			AppEvent::CancelEditGrpcMessage(_) => {
+				match self.grpc_message_text_area.is_in_default_mode() {
+					true => self.select_request_state(),
+					false => self.grpc_message_text_area.key_event(key, Some(terminal)),
+				}
+			}
+			AppEvent::KeyEventEditGrpcMessage(_) => {
+				self.grpc_message_text_area.key_event(key, Some(terminal))
+			}
+
 			/* Scripts - Pre-request */
 			AppEvent::ModifyRequestPreRequestScript(_) => match self
 				.script_console

@@ -63,6 +63,7 @@ impl App<'_> {
 			Protocol::GraphqlRequest(_) => {
 				("GQL".to_string(), THEME.read().ui.main_foreground_color)
 			}
+			Protocol::GrpcRequest(_) => ("gRPC".to_string(), THEME.read().ui.main_foreground_color),
 			_ => ("???".to_string(), Color::default()),
 		};
 

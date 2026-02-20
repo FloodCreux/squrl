@@ -1,5 +1,6 @@
 pub(crate) mod auth;
 pub(crate) mod export;
+pub mod grpc;
 pub(crate) mod headers;
 pub mod http;
 mod key_value_crud;

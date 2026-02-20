@@ -42,3 +42,14 @@ GRAPHQL https://countries.trevorblades.com/graphql
     currency
   }
 }
+
+### Say Hello (gRPC)
+GRPC http://localhost:50051
+X-Proto-File: proto/helloworld.proto
+X-Grpc-Service: helloworld.Greeter
+X-Grpc-Method: SayHello
+Content-Type: application/grpc+json
+
+{
+  "name": "World"
+}

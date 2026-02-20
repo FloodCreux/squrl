@@ -16,10 +16,11 @@ use crate::app::files::config::SKIP_SAVE_REQUESTS_RESPONSE;
 use crate::app::files::theme::THEME;
 use crate::models::auth::auth::Auth;
 use crate::models::protocol::graphql::graphql::GraphqlRequest;
+use crate::models::protocol::grpc::grpc::GrpcRequest;
 use crate::models::protocol::http::http::HttpRequest;
 use crate::models::protocol::protocol::Protocol;
 use crate::models::protocol::protocol::ProtocolTypeError::{
-	NotAGraphqlRequest, NotAWsRequest, NotAnHttpRequest,
+	NotAGraphqlRequest, NotAGrpcRequest, NotAWsRequest, NotAnHttpRequest,
 };
 use crate::models::protocol::ws::ws::WsRequest;
 use crate::models::response::RequestResponse;
@@ -165,6 +166,20 @@ impl Request {
 		}
 	}
 
+	pub fn get_grpc_request(&self) -> anyhow::Result<&GrpcRequest> {
+		match &self.protocol {
+			Protocol::GrpcRequest(request) => Ok(request),
+			_ => Err(anyhow!(NotAGrpcRequest)),
+		}
+	}
+
+	pub fn get_grpc_request_mut(&mut self) -> anyhow::Result<&mut GrpcRequest> {
+		match &mut self.protocol {
+			Protocol::GrpcRequest(request) => Ok(request),
+			_ => Err(anyhow!(NotAGrpcRequest)),
+		}
+	}
+
 	pub fn to_tree_item<'a>(&self, identifier: usize, is_last: bool) -> TreeItem<'a, usize> {
 		let mut line_elements: Vec<Span> = vec![];
 
@@ -187,6 +202,9 @@ impl Request {
 					})
 			}
 			Protocol::GraphqlRequest(_) => Span::from("GQL")
+				.style(Modifier::BOLD)
+				.fg(THEME.read().ui.main_foreground_color),
+			Protocol::GrpcRequest(_) => Span::from("gRPC")
 				.style(Modifier::BOLD)
 				.fg(THEME.read().ui.main_foreground_color),
 		};

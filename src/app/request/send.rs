@@ -192,10 +192,15 @@ impl App<'_> {
 
 		/* REQUEST */
 
+		// gRPC requests skip the standard reqwest pipeline entirely;
+		// they use their own HTTP/2 client in send_grpc_request().
+		// We still need to return a PreparedRequest for consistency,
+		// but the builder won't actually be used for gRPC.
 		let method = match &modified_request.protocol {
 			Protocol::HttpRequest(http_request) => http_request.method.to_reqwest(),
 			Protocol::WsRequest(_) => reqwest::Method::GET,
 			Protocol::GraphqlRequest(_) => reqwest::Method::POST,
+			Protocol::GrpcRequest(_) => reqwest::Method::POST,
 		};
 
 		let mut request_builder = client.request(method, url);

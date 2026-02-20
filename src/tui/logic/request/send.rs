@@ -1,4 +1,5 @@
 use crate::app::App;
+use crate::app::request::grpc::send::send_grpc_request;
 use crate::app::request::http::send::send_http_request;
 use crate::app::request::ws::send::send_ws_request;
 use crate::models::auth::auth::Auth;
@@ -30,7 +31,9 @@ impl App<'_> {
 		let ws_disconnect = {
 			let mut selected_request = local_selected_request.write();
 			match &mut selected_request.protocol {
-				Protocol::HttpRequest(_) | Protocol::GraphqlRequest(_) => None,
+				Protocol::HttpRequest(_)
+				| Protocol::GraphqlRequest(_)
+				| Protocol::GrpcRequest(_) => None,
 				Protocol::WsRequest(ws_request) => {
 					if ws_request.is_connected
 						&& let Some(websocket) = ws_request.websocket.clone()
@@ -109,6 +112,28 @@ impl App<'_> {
 				Protocol::HttpRequest(_) | Protocol::GraphqlRequest(_) => {
 					send_http_request(prepared_request, local_selected_request.clone(), &local_env)
 						.await
+				}
+				Protocol::GrpcRequest(ref grpc_req) => {
+					let url = {
+						let req = local_selected_request.read();
+						req.url.clone()
+					};
+					let headers = {
+						let req = local_selected_request.read();
+						req.headers
+							.iter()
+							.filter(|h| h.enabled)
+							.map(|h| (h.data.0.clone(), h.data.1.clone()))
+							.collect::<Vec<_>>()
+					};
+					send_grpc_request(
+						grpc_req,
+						&url,
+						&headers,
+						local_selected_request.clone(),
+						&local_env,
+					)
+					.await
 				}
 				Protocol::WsRequest(_) => {
 					send_ws_request(

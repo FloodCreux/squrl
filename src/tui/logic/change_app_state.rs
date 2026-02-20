@@ -424,6 +424,22 @@ impl App<'_> {
 		self.set_app_state(AppState::EditingGraphqlVariables);
 	}
 
+	pub fn edit_grpc_proto_file_state(&mut self) {
+		self.set_app_state(AppState::EditingGrpcProtoFile);
+	}
+
+	pub fn edit_grpc_service_state(&mut self) {
+		self.set_app_state(AppState::EditingGrpcService);
+	}
+
+	pub fn edit_grpc_method_state(&mut self) {
+		self.set_app_state(AppState::EditingGrpcMethod);
+	}
+
+	pub fn edit_grpc_message_state(&mut self) {
+		self.set_app_state(AppState::EditingGrpcMessage);
+	}
+
 	pub fn edit_request_script_state(&mut self) {
 		self.request_param_tab = RequestParamsTabs::Scripts;
 
@@ -462,6 +478,7 @@ impl App<'_> {
 				ExportFormat::VARIANTS.to_vec()
 			}
 			Protocol::WsRequest(_) => vec![ExportFormat::RustReqwest],
+			Protocol::GrpcRequest(_) => vec![ExportFormat::Curl],
 		};
 
 		self.set_app_state(AppState::ChoosingRequestExportFormat);

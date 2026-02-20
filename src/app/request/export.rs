@@ -104,6 +104,12 @@ impl App<'_> {
 					ExportFormatNotSupported(request.protocol.to_string())
 				)),
 			},
+			Protocol::GrpcRequest(_) => match export_format {
+				Curl => self.grpc_curl(output, request, url),
+				_ => Err(anyhow!(ExportFormatNotSupported(
+					request.protocol.to_string()
+				))),
+			},
 		}
 	}
 
@@ -115,6 +121,25 @@ impl App<'_> {
 				tracing::warn!("Could not copy request export to clipboard: {e}");
 			}
 		}
+	}
+
+	fn grpc_curl(&self, mut output: String, request: &Request, url: Url) -> anyhow::Result<String> {
+		let grpc = request.get_grpc_request()?;
+
+		let service = self.replace_env_keys_by_value(&grpc.service);
+		let method = self.replace_env_keys_by_value(&grpc.method);
+		let message = self.replace_env_keys_by_value(&grpc.message);
+		let escaped_message = message.replace('\'', "'\\''");
+
+		output += &format!(
+			"grpcurl -plaintext \\\n-d '{}' \\\n{} {}/{}",
+			escaped_message,
+			url.host_str().unwrap_or("localhost"),
+			service,
+			method
+		);
+
+		Ok(output)
 	}
 
 	fn raw_html(
@@ -791,6 +816,7 @@ impl App<'_> {
 			Protocol::HttpRequest(http_request) => http_request.method.to_string(),
 			Protocol::WsRequest(_) => Method::GET.to_string(),
 			Protocol::GraphqlRequest(_) => Method::POST.to_string(),
+			Protocol::GrpcRequest(_) => Method::POST.to_string(),
 		};
 
 		/* Headers */
@@ -908,6 +934,9 @@ impl App<'_> {
 			Protocol::GraphqlRequest(_) => {
 				output += "use serde_json::json;\n";
 			}
+			Protocol::GrpcRequest(_) => {
+				output += "use serde_json::json;\n";
+			}
 		}
 
 		/* Main function */
@@ -987,7 +1016,7 @@ impl App<'_> {
 					body_str += &format!("        .body(r#\"{}\"#)\n", body);
 				}
 			},
-			Protocol::WsRequest(_) => {}
+			Protocol::WsRequest(_) | Protocol::GrpcRequest(_) => {}
 			Protocol::GraphqlRequest(gql) => {
 				let query = self.replace_env_keys_by_value(&gql.query);
 				let escaped_query = escape(query, escape_char);
@@ -1034,7 +1063,7 @@ impl App<'_> {
 		output += "        .await?;\n\n";
 
 		match request.protocol {
-			Protocol::HttpRequest(_) | Protocol::GraphqlRequest(_) => {
+			Protocol::HttpRequest(_) | Protocol::GraphqlRequest(_) | Protocol::GrpcRequest(_) => {
 				output += "    let status = response.status();\n";
 				output += "    let body = response.text().await?;\n\n";
 

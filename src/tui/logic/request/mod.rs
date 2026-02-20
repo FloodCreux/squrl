@@ -2,6 +2,7 @@ pub(crate) mod auth;
 pub(crate) mod cookies;
 pub(crate) mod export;
 pub(crate) mod graphql;
+pub(crate) mod grpc;
 pub(crate) mod headers;
 pub(crate) mod http;
 pub(crate) mod query_params;

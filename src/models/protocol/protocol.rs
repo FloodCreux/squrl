@@ -1,4 +1,5 @@
 use crate::models::protocol::graphql::graphql::GraphqlRequest;
+use crate::models::protocol::grpc::grpc::GrpcRequest;
 use crate::models::protocol::http::http::HttpRequest;
 use crate::models::protocol::ws::ws::WsRequest;
 use serde::{Deserialize, Serialize};
@@ -14,6 +15,8 @@ pub enum ProtocolTypeError {
 	NotAWsRequest,
 	#[error("The request is not a GraphQL request")]
 	NotAGraphqlRequest,
+	#[error("The request is not a gRPC request")]
+	NotAGrpcRequest,
 }
 
 #[derive(Debug, Clone, EnumString, Display, Serialize, Deserialize)]
@@ -31,6 +34,10 @@ pub enum Protocol {
 	#[serde(rename = "graphql", alias = "graphql", alias = "GRAPHQL")]
 	#[strum(to_string = "graphql")]
 	GraphqlRequest(GraphqlRequest),
+
+	#[serde(rename = "grpc", alias = "grpc", alias = "GRPC")]
+	#[strum(to_string = "grpc")]
+	GrpcRequest(GrpcRequest),
 }
 
 impl Default for Protocol {

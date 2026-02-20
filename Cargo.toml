@@ -14,13 +14,28 @@ arboard = ["dep:arboard"]
 [dependencies]
 # Request
 ## Send requests
-reqwest = { version = "0.13.2", default-features = false, features = ["cookies", "rustls", "form", "multipart", "gzip", "brotli", "deflate", "stream"] }
+reqwest = { version = "0.13.2", default-features = false, features = ["cookies", "rustls", "form", "multipart", "gzip", "brotli", "deflate", "stream", "http2"] }
 ## Wrapper around reqwest to allow for client middleware chains
 reqwest-middleware = { version = "0.5.1", features = ["rustls", "json", "multipart", "form"] }
 ## Wrapper around reqwest to handle web-socket requests
 reqwest-websocket = { version = "0.6.0", features = ["json", "middleware"] }
 reqwest_cookie_store = "0.10.0"
 cookie_store = "0.22.0"
+
+# gRPC
+## gRPC over HTTP/2 implementation
+tonic = { version = "0.14.3", features = ["transport", "channel"] }
+## Protocol Buffers encoding/decoding
+prost = "0.14"
+prost-types = "0.14"
+## Dynamic protobuf messages (no codegen)
+prost-reflect = { version = "0.16.3", features = ["serde"] }
+## Parse .proto files at runtime
+protox = "0.9"
+## HTTP types (needed for tonic metadata)
+http = "1"
+## Bytes type (needed for protobuf messages)
+bytes = "1"
 
 # TUI
 ## Terminal UI framework

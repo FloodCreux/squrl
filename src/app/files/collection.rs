@@ -221,6 +221,9 @@ impl App<'_> {
 				Protocol::GraphqlRequest(_) => {
 					lines.push(format!("GRAPHQL {}", full_url));
 				}
+				Protocol::GrpcRequest(_) => {
+					lines.push(format!("GRPC {}", full_url));
+				}
 			}
 
 			// --- Authorization header from auth ---
@@ -276,6 +279,25 @@ impl App<'_> {
 						body["operationName"] = serde_json::Value::String(op.clone());
 					}
 					Some(serde_json::to_string_pretty(&body).unwrap_or_default())
+				}
+				Protocol::GrpcRequest(grpc) => {
+					if !grpc.proto_file.is_empty() {
+						lines.push(format!("X-Proto-File: {}", grpc.proto_file));
+					}
+					if !grpc.service.is_empty() {
+						lines.push(format!("X-Grpc-Service: {}", grpc.service));
+					}
+					if !grpc.method.is_empty() {
+						lines.push(format!("X-Grpc-Method: {}", grpc.method));
+					}
+					if !user_has_content_type {
+						lines.push("Content-Type: application/grpc+json".to_string());
+					}
+					if grpc.message.is_empty() {
+						None
+					} else {
+						Some(grpc.message.clone())
+					}
 				}
 			};
 

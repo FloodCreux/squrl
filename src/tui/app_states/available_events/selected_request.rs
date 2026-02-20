@@ -181,6 +181,10 @@ fn selected_request_param_tab_events(
 				// GraphQL requests don't need method or body type toggles
 				vec![]
 			}
+			Protocol::GrpcRequest(_) => {
+				// gRPC requests don't need method or body type toggles
+				vec![]
+			}
 		};
 
 		events.extend(protocol_specific);
@@ -388,6 +392,34 @@ fn selected_request_param_tab_events(
 			vec![EditGraphqlVariables(EventKeyBinding::new(
 				vec![key_bindings.generic.list_and_table_actions.edit_element],
 				"Edit GraphQL variables",
+				None,
+			))]
+		}
+		RequestParamsTabs::GrpcProtoFile => {
+			vec![EditGrpcProtoFile(EventKeyBinding::new(
+				vec![key_bindings.generic.list_and_table_actions.edit_element],
+				"Edit proto file",
+				None,
+			))]
+		}
+		RequestParamsTabs::GrpcService => {
+			vec![
+				EditGrpcService(EventKeyBinding::new(
+					vec![key_bindings.generic.list_and_table_actions.edit_element],
+					"Edit service",
+					None,
+				)),
+				EditGrpcMethod(EventKeyBinding::new(
+					vec![key_bindings.generic.navigation.move_cursor_down],
+					"Edit method",
+					None,
+				)),
+			]
+		}
+		RequestParamsTabs::GrpcMessage => {
+			vec![EditGrpcMessage(EventKeyBinding::new(
+				vec![key_bindings.generic.list_and_table_actions.edit_element],
+				"Edit message",
 				None,
 			))]
 		}

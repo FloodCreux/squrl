@@ -59,12 +59,14 @@ impl App<'_> {
 		// REQUEST RESULT TABS
 
 		let allowed_tabs = match &request.protocol {
-			Protocol::HttpRequest(_) | Protocol::GraphqlRequest(_) => vec![
-				RequestResultTabs::Body,
-				RequestResultTabs::Cookies,
-				RequestResultTabs::Headers,
-				RequestResultTabs::Console,
-			],
+			Protocol::HttpRequest(_) | Protocol::GraphqlRequest(_) | Protocol::GrpcRequest(_) => {
+				vec![
+					RequestResultTabs::Body,
+					RequestResultTabs::Cookies,
+					RequestResultTabs::Headers,
+					RequestResultTabs::Console,
+				]
+			}
 			Protocol::WsRequest(_) => vec![
 				RequestResultTabs::Messages,
 				RequestResultTabs::Cookies,
@@ -74,7 +76,7 @@ impl App<'_> {
 		};
 
 		let selected_request_tab_index = match &request.protocol {
-			Protocol::HttpRequest(_) | Protocol::GraphqlRequest(_) => {
+			Protocol::HttpRequest(_) | Protocol::GraphqlRequest(_) | Protocol::GrpcRequest(_) => {
 				match self.request_result_tab {
 					RequestResultTabs::Body => 0,
 					RequestResultTabs::Cookies => 1,
