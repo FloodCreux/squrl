@@ -26,6 +26,25 @@ impl App<'_> {
 				RequestParamsTabs::Scripts => RequestParamsTabs::QueryParams,
 				_ => unreachable!(),
 			},
+			Protocol::GraphqlRequest(_) => match self.request_param_tab {
+				RequestParamsTabs::QueryParams => RequestParamsTabs::Auth,
+				RequestParamsTabs::Auth => RequestParamsTabs::Headers,
+				RequestParamsTabs::Headers => RequestParamsTabs::GraphqlQuery,
+				RequestParamsTabs::GraphqlQuery => RequestParamsTabs::GraphqlVariables,
+				RequestParamsTabs::GraphqlVariables => RequestParamsTabs::Scripts,
+				RequestParamsTabs::Scripts => RequestParamsTabs::QueryParams,
+				_ => unreachable!(),
+			},
+			Protocol::GrpcRequest(_) => match self.request_param_tab {
+				RequestParamsTabs::QueryParams => RequestParamsTabs::Auth,
+				RequestParamsTabs::Auth => RequestParamsTabs::Headers,
+				RequestParamsTabs::Headers => RequestParamsTabs::GrpcProtoFile,
+				RequestParamsTabs::GrpcProtoFile => RequestParamsTabs::GrpcService,
+				RequestParamsTabs::GrpcService => RequestParamsTabs::GrpcMessage,
+				RequestParamsTabs::GrpcMessage => RequestParamsTabs::Scripts,
+				RequestParamsTabs::Scripts => RequestParamsTabs::QueryParams,
+				_ => unreachable!(),
+			},
 		};
 
 		self.tui_load_a_request_param_tab();
@@ -41,7 +60,36 @@ impl App<'_> {
 			Protocol::HttpRequest(_) if self.request_param_tab == RequestParamsTabs::Message => {
 				self.request_param_tab = RequestParamsTabs::QueryParams
 			}
+			Protocol::HttpRequest(_)
+				if self.request_param_tab == RequestParamsTabs::GraphqlQuery
+					|| self.request_param_tab == RequestParamsTabs::GraphqlVariables =>
+			{
+				self.request_param_tab = RequestParamsTabs::QueryParams
+			}
 			Protocol::WsRequest(_) if self.request_param_tab == RequestParamsTabs::Body => {
+				self.request_param_tab = RequestParamsTabs::QueryParams
+			}
+			Protocol::WsRequest(_)
+				if self.request_param_tab == RequestParamsTabs::GraphqlQuery
+					|| self.request_param_tab == RequestParamsTabs::GraphqlVariables =>
+			{
+				self.request_param_tab = RequestParamsTabs::QueryParams
+			}
+			Protocol::GraphqlRequest(_)
+				if self.request_param_tab == RequestParamsTabs::Body
+					|| self.request_param_tab == RequestParamsTabs::Message
+					|| self.request_param_tab == RequestParamsTabs::GrpcProtoFile
+					|| self.request_param_tab == RequestParamsTabs::GrpcService
+					|| self.request_param_tab == RequestParamsTabs::GrpcMessage =>
+			{
+				self.request_param_tab = RequestParamsTabs::QueryParams
+			}
+			Protocol::GrpcRequest(_)
+				if self.request_param_tab == RequestParamsTabs::Body
+					|| self.request_param_tab == RequestParamsTabs::Message
+					|| self.request_param_tab == RequestParamsTabs::GraphqlQuery
+					|| self.request_param_tab == RequestParamsTabs::GraphqlVariables =>
+			{
 				self.request_param_tab = RequestParamsTabs::QueryParams
 			}
 			_ => {}
@@ -55,6 +103,11 @@ impl App<'_> {
 			RequestParamsTabs::Headers => self.tui_load_request_headers_tab(),
 			RequestParamsTabs::Body => self.tui_load_request_body_param_tab(),
 			RequestParamsTabs::Message => self.tui_load_request_message_param_tab(),
+			RequestParamsTabs::GraphqlQuery => self.tui_load_graphql_query_tab(),
+			RequestParamsTabs::GraphqlVariables => self.tui_load_graphql_variables_tab(),
+			RequestParamsTabs::GrpcProtoFile => self.tui_load_grpc_proto_file_tab(),
+			RequestParamsTabs::GrpcService => self.tui_load_grpc_service_tab(),
+			RequestParamsTabs::GrpcMessage => self.tui_load_grpc_message_tab(),
 			RequestParamsTabs::Scripts => {}
 		}
 	}
@@ -87,6 +140,31 @@ impl App<'_> {
 
 	pub fn tui_load_request_message_param_tab(&mut self) {
 		self.request_param_tab = RequestParamsTabs::Message;
+		self.update_inputs();
+	}
+
+	pub fn tui_load_graphql_query_tab(&mut self) {
+		self.request_param_tab = RequestParamsTabs::GraphqlQuery;
+		self.update_inputs();
+	}
+
+	pub fn tui_load_graphql_variables_tab(&mut self) {
+		self.request_param_tab = RequestParamsTabs::GraphqlVariables;
+		self.update_inputs();
+	}
+
+	pub fn tui_load_grpc_proto_file_tab(&mut self) {
+		self.request_param_tab = RequestParamsTabs::GrpcProtoFile;
+		self.update_inputs();
+	}
+
+	pub fn tui_load_grpc_service_tab(&mut self) {
+		self.request_param_tab = RequestParamsTabs::GrpcService;
+		self.update_inputs();
+	}
+
+	pub fn tui_load_grpc_message_tab(&mut self) {
+		self.request_param_tab = RequestParamsTabs::GrpcMessage;
 		self.update_inputs();
 	}
 }

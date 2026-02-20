@@ -13,8 +13,9 @@ use crate::models::protocol::http::body::ContentType::*;
 use crate::models::protocol::protocol::Protocol;
 use crate::models::request::Request;
 use crate::tui::app_states::AppState::{
-	EditingRequestBodyString, EditingRequestBodyTable, EditingRequestHeader, EditingRequestMessage,
-	EditingRequestParam,
+	EditingGraphqlQuery, EditingGraphqlVariables, EditingGrpcMessage, EditingGrpcMethod,
+	EditingGrpcProtoFile, EditingGrpcService, EditingRequestBodyString, EditingRequestBodyTable,
+	EditingRequestHeader, EditingRequestMessage, EditingRequestParam,
 };
 use crate::tui::logic::utils::key_value_vec_to_items_list;
 use crate::tui::utils::stateful::text_input::MultiLineTextInput;
@@ -35,6 +36,16 @@ pub enum RequestParamsTabs {
 	Body,
 	#[strum(to_string = "MESSAGE")]
 	Message,
+	#[strum(to_string = "QUERY")]
+	GraphqlQuery,
+	#[strum(to_string = "VARIABLES")]
+	GraphqlVariables,
+	#[strum(to_string = "PROTO")]
+	GrpcProtoFile,
+	#[strum(to_string = "SERVICE")]
+	GrpcService,
+	#[strum(to_string = "MESSAGE")]
+	GrpcMessage,
 	#[strum(to_string = "SCRIPTS")]
 	Scripts,
 }
@@ -61,6 +72,23 @@ impl App<'_> {
 				RequestParamsTabs::Message,
 				RequestParamsTabs::Scripts,
 			],
+			Protocol::GraphqlRequest(_) => vec![
+				RequestParamsTabs::QueryParams,
+				RequestParamsTabs::Auth,
+				RequestParamsTabs::Headers,
+				RequestParamsTabs::GraphqlQuery,
+				RequestParamsTabs::GraphqlVariables,
+				RequestParamsTabs::Scripts,
+			],
+			Protocol::GrpcRequest(_) => vec![
+				RequestParamsTabs::QueryParams,
+				RequestParamsTabs::Auth,
+				RequestParamsTabs::Headers,
+				RequestParamsTabs::GrpcProtoFile,
+				RequestParamsTabs::GrpcService,
+				RequestParamsTabs::GrpcMessage,
+				RequestParamsTabs::Scripts,
+			],
 		};
 
 		let selected_param_tab_index = match &request.protocol {
@@ -78,6 +106,25 @@ impl App<'_> {
 				RequestParamsTabs::Headers => 2,
 				RequestParamsTabs::Message => 3,
 				RequestParamsTabs::Scripts => 4,
+				_ => unreachable!(),
+			},
+			Protocol::GraphqlRequest(_) => match self.request_param_tab {
+				RequestParamsTabs::QueryParams => 0,
+				RequestParamsTabs::Auth => 1,
+				RequestParamsTabs::Headers => 2,
+				RequestParamsTabs::GraphqlQuery => 3,
+				RequestParamsTabs::GraphqlVariables => 4,
+				RequestParamsTabs::Scripts => 5,
+				_ => unreachable!(),
+			},
+			Protocol::GrpcRequest(_) => match self.request_param_tab {
+				RequestParamsTabs::QueryParams => 0,
+				RequestParamsTabs::Auth => 1,
+				RequestParamsTabs::Headers => 2,
+				RequestParamsTabs::GrpcProtoFile => 3,
+				RequestParamsTabs::GrpcService => 4,
+				RequestParamsTabs::GrpcMessage => 5,
+				RequestParamsTabs::Scripts => 6,
 				_ => unreachable!(),
 			},
 		};
@@ -127,6 +174,32 @@ impl App<'_> {
 						ws_request.message_type
 					)
 				}
+				RequestParamsTabs::GraphqlQuery => tab.to_string().to_uppercase(),
+				RequestParamsTabs::GraphqlVariables => {
+					let gql = request
+						.get_graphql_request()
+						.expect("request should be GraphQL");
+					match gql.variables.is_empty() {
+						true => tab.to_string().to_uppercase(),
+						false => format!("{} (*)", tab.to_string().to_uppercase()),
+					}
+				}
+				RequestParamsTabs::GrpcProtoFile => {
+					let grpc = request.get_grpc_request().expect("request should be gRPC");
+					match grpc.proto_file.is_empty() {
+						true => tab.to_string().to_uppercase(),
+						false => format!("{} (*)", tab.to_string().to_uppercase()),
+					}
+				}
+				RequestParamsTabs::GrpcService => {
+					let grpc = request.get_grpc_request().expect("request should be gRPC");
+					if grpc.service.is_empty() {
+						tab.to_string().to_uppercase()
+					} else {
+						format!("{} (*)", tab.to_string().to_uppercase())
+					}
+				}
+				RequestParamsTabs::GrpcMessage => tab.to_string().to_uppercase(),
 				RequestParamsTabs::Scripts => tab.to_string().to_uppercase(),
 			})
 			.collect();
@@ -283,6 +356,92 @@ impl App<'_> {
 						&mut self.message_text_area,
 						ENV_VARIABLE_SYNTAX_REF.clone(),
 					),
+					request_params_layout[1],
+				);
+			}
+			RequestParamsTabs::GraphqlQuery => {
+				let display_cursor = matches!(&self.state, EditingGraphqlQuery);
+
+				self.graphql_query_text_area.display_cursor = display_cursor;
+
+				frame.render_widget(
+					MultiLineTextInput(
+						&mut self.graphql_query_text_area,
+						ENV_VARIABLE_SYNTAX_REF.clone(),
+					),
+					request_params_layout[1],
+				);
+			}
+			RequestParamsTabs::GraphqlVariables => {
+				let display_cursor = matches!(&self.state, EditingGraphqlVariables);
+
+				self.graphql_variables_text_area.display_cursor = display_cursor;
+
+				frame.render_widget(
+					MultiLineTextInput(
+						&mut self.graphql_variables_text_area,
+						JSON_SYNTAX_REF.clone(),
+					),
+					request_params_layout[1],
+				);
+			}
+			RequestParamsTabs::GrpcProtoFile => {
+				let grpc_layout = Layout::new(
+					Vertical,
+					[
+						Constraint::Length(3),
+						Constraint::Length(3),
+						Constraint::Fill(1),
+					],
+				)
+				.split(request_params_layout[1]);
+
+				// Proto file input
+				self.grpc_proto_file_input.display_cursor =
+					matches!(&self.state, EditingGrpcProtoFile);
+				frame.render_widget(
+					crate::tui::utils::stateful::text_input::SingleLineTextInput(
+						&mut self.grpc_proto_file_input,
+					),
+					grpc_layout[0],
+				);
+			}
+			RequestParamsTabs::GrpcService => {
+				let grpc_layout = Layout::new(
+					Vertical,
+					[
+						Constraint::Length(3),
+						Constraint::Length(3),
+						Constraint::Fill(1),
+					],
+				)
+				.split(request_params_layout[1]);
+
+				// Service input
+				self.grpc_service_input.display_cursor = matches!(&self.state, EditingGrpcService);
+				frame.render_widget(
+					crate::tui::utils::stateful::text_input::SingleLineTextInput(
+						&mut self.grpc_service_input,
+					),
+					grpc_layout[0],
+				);
+
+				// Method input
+				self.grpc_method_input.display_cursor = matches!(&self.state, EditingGrpcMethod);
+				frame.render_widget(
+					crate::tui::utils::stateful::text_input::SingleLineTextInput(
+						&mut self.grpc_method_input,
+					),
+					grpc_layout[1],
+				);
+			}
+			RequestParamsTabs::GrpcMessage => {
+				let display_cursor = matches!(&self.state, EditingGrpcMessage);
+
+				self.grpc_message_text_area.display_cursor = display_cursor;
+
+				frame.render_widget(
+					MultiLineTextInput(&mut self.grpc_message_text_area, JSON_SYNTAX_REF.clone()),
 					request_params_layout[1],
 				);
 			}

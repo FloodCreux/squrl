@@ -15,9 +15,13 @@ use crate::app::App;
 use crate::app::files::config::SKIP_SAVE_REQUESTS_RESPONSE;
 use crate::app::files::theme::THEME;
 use crate::models::auth::auth::Auth;
+use crate::models::protocol::graphql::graphql::GraphqlRequest;
+use crate::models::protocol::grpc::grpc::GrpcRequest;
 use crate::models::protocol::http::http::HttpRequest;
 use crate::models::protocol::protocol::Protocol;
-use crate::models::protocol::protocol::ProtocolTypeError::{NotAWsRequest, NotAnHttpRequest};
+use crate::models::protocol::protocol::ProtocolTypeError::{
+	NotAGraphqlRequest, NotAGrpcRequest, NotAWsRequest, NotAnHttpRequest,
+};
 use crate::models::protocol::ws::ws::WsRequest;
 use crate::models::response::RequestResponse;
 use crate::models::scripts::RequestScripts;
@@ -123,28 +127,56 @@ impl Request {
 	pub fn get_http_request(&self) -> anyhow::Result<&HttpRequest> {
 		match &self.protocol {
 			Protocol::HttpRequest(request) => Ok(request),
-			Protocol::WsRequest(_) => Err(anyhow!(NotAnHttpRequest)),
+			_ => Err(anyhow!(NotAnHttpRequest)),
 		}
 	}
 
 	pub fn get_http_request_mut(&mut self) -> anyhow::Result<&mut HttpRequest> {
 		match &mut self.protocol {
 			Protocol::HttpRequest(request) => Ok(request),
-			Protocol::WsRequest(_) => Err(anyhow!(NotAnHttpRequest)),
+			_ => Err(anyhow!(NotAnHttpRequest)),
 		}
 	}
 
 	pub fn get_ws_request(&self) -> anyhow::Result<&WsRequest> {
 		match &self.protocol {
-			Protocol::HttpRequest(_) => Err(anyhow!(NotAWsRequest)),
 			Protocol::WsRequest(request) => Ok(request),
+			_ => Err(anyhow!(NotAWsRequest)),
 		}
 	}
 
 	pub fn get_ws_request_mut(&mut self) -> anyhow::Result<&mut WsRequest> {
 		match &mut self.protocol {
-			Protocol::HttpRequest(_) => Err(anyhow!(NotAWsRequest)),
 			Protocol::WsRequest(request) => Ok(request),
+			_ => Err(anyhow!(NotAWsRequest)),
+		}
+	}
+
+	pub fn get_graphql_request(&self) -> anyhow::Result<&GraphqlRequest> {
+		match &self.protocol {
+			Protocol::GraphqlRequest(request) => Ok(request),
+			_ => Err(anyhow!(NotAGraphqlRequest)),
+		}
+	}
+
+	pub fn get_graphql_request_mut(&mut self) -> anyhow::Result<&mut GraphqlRequest> {
+		match &mut self.protocol {
+			Protocol::GraphqlRequest(request) => Ok(request),
+			_ => Err(anyhow!(NotAGraphqlRequest)),
+		}
+	}
+
+	pub fn get_grpc_request(&self) -> anyhow::Result<&GrpcRequest> {
+		match &self.protocol {
+			Protocol::GrpcRequest(request) => Ok(request),
+			_ => Err(anyhow!(NotAGrpcRequest)),
+		}
+	}
+
+	pub fn get_grpc_request_mut(&mut self) -> anyhow::Result<&mut GrpcRequest> {
+		match &mut self.protocol {
+			Protocol::GrpcRequest(request) => Ok(request),
+			_ => Err(anyhow!(NotAGrpcRequest)),
 		}
 	}
 
@@ -169,6 +201,12 @@ impl Request {
 						false => THEME.read().websocket.connection_status.disconnected,
 					})
 			}
+			Protocol::GraphqlRequest(_) => Span::from("GQL")
+				.style(Modifier::BOLD)
+				.fg(THEME.read().ui.main_foreground_color),
+			Protocol::GrpcRequest(_) => Span::from("gRPC")
+				.style(Modifier::BOLD)
+				.fg(THEME.read().ui.main_foreground_color),
 		};
 
 		line_elements.push(prefix);

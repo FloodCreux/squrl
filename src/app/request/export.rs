@@ -40,6 +40,34 @@ enum ExportError {
 }
 
 impl App<'_> {
+	fn build_graphql_json_body(
+		&self,
+		gql: &crate::models::protocol::graphql::graphql::GraphqlRequest,
+	) -> String {
+		let query = self.replace_env_keys_by_value(&gql.query);
+		let variables = self.replace_env_keys_by_value(&gql.variables);
+		let operation_name = gql
+			.operation_name
+			.as_ref()
+			.map(|name| self.replace_env_keys_by_value(name));
+
+		let mut body = serde_json::json!({ "query": query });
+
+		if !variables.is_empty()
+			&& let Ok(parsed_vars) = serde_json::from_str::<serde_json::Value>(&variables)
+		{
+			body["variables"] = parsed_vars;
+		}
+
+		if let Some(op_name) = operation_name
+			&& !op_name.is_empty()
+		{
+			body["operationName"] = serde_json::Value::String(op_name);
+		}
+
+		serde_json::to_string_pretty(&body).unwrap_or_default()
+	}
+
 	pub fn export_request_to_string_with_format(
 		&self,
 		export_format: &ExportFormat,
@@ -62,7 +90,7 @@ impl App<'_> {
 			.collect();
 
 		match request.protocol {
-			Protocol::HttpRequest(_) => match export_format {
+			Protocol::HttpRequest(_) | Protocol::GraphqlRequest(_) => match export_format {
 				HTTP => self.raw_html(output, request, url, headers),
 				Curl => self.curl(output, request, url, headers),
 				PhpGuzzle => self.php_guzzle(output, request, url, headers),
@@ -75,6 +103,12 @@ impl App<'_> {
 				PhpGuzzle | NodeJsAxios | HTTP | Curl | PowerShell => Err(anyhow!(
 					ExportFormatNotSupported(request.protocol.to_string())
 				)),
+			},
+			Protocol::GrpcRequest(_) => match export_format {
+				Curl => self.grpc_curl(output, request, url),
+				_ => Err(anyhow!(ExportFormatNotSupported(
+					request.protocol.to_string()
+				))),
 			},
 		}
 	}
@@ -89,6 +123,25 @@ impl App<'_> {
 		}
 	}
 
+	fn grpc_curl(&self, mut output: String, request: &Request, url: Url) -> anyhow::Result<String> {
+		let grpc = request.get_grpc_request()?;
+
+		let service = self.replace_env_keys_by_value(&grpc.service);
+		let method = self.replace_env_keys_by_value(&grpc.method);
+		let message = self.replace_env_keys_by_value(&grpc.message);
+		let escaped_message = message.replace('\'', "'\\''");
+
+		output += &format!(
+			"grpcurl -plaintext \\\n-d '{}' \\\n{} {}/{}",
+			escaped_message,
+			url.host_str().unwrap_or("localhost"),
+			service,
+			method
+		);
+
+		Ok(output)
+	}
+
 	fn raw_html(
 		&self,
 		mut output: String,
@@ -96,6 +149,31 @@ impl App<'_> {
 		url: Url,
 		headers: Vec<(String, String)>,
 	) -> anyhow::Result<String> {
+		// Handle GraphQL requests
+		if let Protocol::GraphqlRequest(gql) = &request.protocol {
+			output += &format!(
+				"POST {}{} HTTP/1.1",
+				url.path(),
+				match url.query() {
+					None => String::new(),
+					Some(query) => format!("?{query}"),
+				}
+			);
+			output += &format!("\nHost: {}", url.host_str().unwrap_or("localhost"));
+			output += "\nContent-Type: application/json";
+
+			for (header, value) in &headers {
+				output += &format!("\n{}: {}", header, value);
+			}
+
+			output += &self.resolve_auth_header_value(&request.auth, url.as_str());
+
+			let body = self.build_graphql_json_body(gql);
+			output += &format!("\nContent-Length: {}\n\n{}", body.len(), body);
+
+			return Ok(output);
+		}
+
 		let http_request = request.get_http_request()?;
 
 		/* URL & Query params */
@@ -223,6 +301,30 @@ impl App<'_> {
 		url: Url,
 		headers: Vec<(String, String)>,
 	) -> anyhow::Result<String> {
+		// Handle GraphQL requests
+		if let Protocol::GraphqlRequest(gql) = &request.protocol {
+			output += &format!("curl --location --request POST '{}' \\", url);
+			output += &self.resolve_auth_header_value(&request.auth, url.as_str());
+
+			for (header, value) in &headers {
+				output += &format!("\n--header '{}: {}' \\", header, value);
+			}
+
+			let body = self.build_graphql_json_body(gql);
+			let escaped_body = body.replace('\'', "'\\''");
+			output += &format!(
+				"\n--header 'Content-Type: application/json' \\\n--data '{}' \\",
+				escaped_body
+			);
+
+			// Remove trailing " \"
+			if output.ends_with(" \\") {
+				output.truncate(output.len() - 2);
+			}
+
+			return Ok(output);
+		}
+
 		let http_request = request.get_http_request()?;
 
 		/* URL & Query params */
@@ -329,6 +431,10 @@ impl App<'_> {
 		url: Url,
 		headers: Vec<(String, String)>,
 	) -> anyhow::Result<String> {
+		if matches!(request.protocol, Protocol::GraphqlRequest(_)) {
+			return self.curl(output, request, url, headers);
+		}
+
 		let escape_char = '\'';
 
 		let http_request = request.get_http_request()?;
@@ -492,6 +598,10 @@ impl App<'_> {
 		url: Url,
 		headers: Vec<(String, String)>,
 	) -> anyhow::Result<String> {
+		if matches!(request.protocol, Protocol::GraphqlRequest(_)) {
+			return self.curl(output, request, url, headers);
+		}
+
 		let escape_char = '\'';
 
 		let http_request = request.get_http_request()?;
@@ -705,6 +815,8 @@ impl App<'_> {
 		let method = match &request.protocol {
 			Protocol::HttpRequest(http_request) => http_request.method.to_string(),
 			Protocol::WsRequest(_) => Method::GET.to_string(),
+			Protocol::GraphqlRequest(_) => Method::POST.to_string(),
+			Protocol::GrpcRequest(_) => Method::POST.to_string(),
 		};
 
 		/* Headers */
@@ -819,6 +931,12 @@ impl App<'_> {
 			Protocol::WsRequest(_) => {
 				output += "use reqwest_websocket::{Error, Message, RequestBuilderExt};\nuse futures_util::{SinkExt, StreamExt, TryStreamExt};\n";
 			}
+			Protocol::GraphqlRequest(_) => {
+				output += "use serde_json::json;\n";
+			}
+			Protocol::GrpcRequest(_) => {
+				output += "use serde_json::json;\n";
+			}
 		}
 
 		/* Main function */
@@ -898,7 +1016,30 @@ impl App<'_> {
 					body_str += &format!("        .body(r#\"{}\"#)\n", body);
 				}
 			},
-			Protocol::WsRequest(_) => {}
+			Protocol::WsRequest(_) | Protocol::GrpcRequest(_) => {}
+			Protocol::GraphqlRequest(gql) => {
+				let query = self.replace_env_keys_by_value(&gql.query);
+				let escaped_query = escape(query, escape_char);
+
+				let mut json_body = format!(
+					"    let body = json!({{\"query\": \"{}\"}});\n\n",
+					escaped_query
+				);
+
+				if !gql.variables.is_empty() {
+					let variables = self.replace_env_keys_by_value(&gql.variables);
+					let escaped_vars = escape(variables, escape_char);
+					json_body = format!(
+						"    let body = json!({{\"query\": \"{}\", \"variables\": {}}});\n\n",
+						escaped_query, escaped_vars
+					);
+				}
+
+				output += &json_body;
+				has_headers = true;
+				headers_str += "            .header(\"Content-Type\", \"application/json\")\n";
+				body_str += "        .json(&body)\n";
+			}
 		}
 
 		/* Request and response */
@@ -922,7 +1063,7 @@ impl App<'_> {
 		output += "        .await?;\n\n";
 
 		match request.protocol {
-			Protocol::HttpRequest(_) => {
+			Protocol::HttpRequest(_) | Protocol::GraphqlRequest(_) | Protocol::GrpcRequest(_) => {
 				output += "    let status = response.status();\n";
 				output += "    let body = response.text().await?;\n\n";
 
@@ -971,6 +1112,10 @@ impl App<'_> {
 		url: Url,
 		headers: Vec<(String, String)>,
 	) -> anyhow::Result<String> {
+		if matches!(request.protocol, Protocol::GraphqlRequest(_)) {
+			return self.curl(output, request, url, headers);
+		}
+
 		let http_request = request.get_http_request()?;
 
 		/* Splatting params hashtable */

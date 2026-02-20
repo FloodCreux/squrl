@@ -1,4 +1,5 @@
 use crate::app::App;
+use crate::app::request::grpc::send::send_grpc_request;
 use crate::app::request::http::send::send_http_request;
 use crate::app::request::ws::send::send_ws_request;
 use crate::cli::commands::request_commands::send::SendCommand;
@@ -108,8 +109,24 @@ impl App<'_> {
 
 		let local_env = self.get_selected_env_as_local();
 		let response = match protocol {
-			Protocol::HttpRequest(_) => {
+			Protocol::HttpRequest(_) | Protocol::GraphqlRequest(_) => {
 				send_http_request(prepared_request, local_request.clone(), &local_env).await?
+			}
+			Protocol::GrpcRequest(ref grpc_req) => {
+				let url = {
+					let req = local_request.read();
+					req.url.clone()
+				};
+				let headers = {
+					let req = local_request.read();
+					req.headers
+						.iter()
+						.filter(|h| h.enabled)
+						.map(|h| (h.data.0.clone(), h.data.1.clone()))
+						.collect::<Vec<_>>()
+				};
+				send_grpc_request(grpc_req, &url, &headers, local_request.clone(), &local_env)
+					.await?
 			}
 			Protocol::WsRequest(_) => {
 				send_ws_request(

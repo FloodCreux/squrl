@@ -172,6 +172,14 @@ get_key_bindings! {
 
 		EditRequestMessage(EventKeyBinding),
 
+		EditGraphqlQuery(EventKeyBinding),
+		EditGraphqlVariables(EventKeyBinding),
+
+		EditGrpcProtoFile(EventKeyBinding),
+		EditGrpcService(EventKeyBinding),
+		EditGrpcMethod(EventKeyBinding),
+		EditGrpcMessage(EventKeyBinding),
+
 		EditRequestScript(EventKeyBinding),
 		// Move up or down
 		RequestScriptMove(EventKeyBinding),
@@ -289,6 +297,34 @@ get_key_bindings! {
 		ModifyRequestMessage(EventKeyBinding),
 		CancelEditRequestMessage(EventKeyBinding),
 		KeyEventEditRequestMessage(EventKeyBinding),
+
+		/* GraphQL */
+
+		ModifyGraphqlQuery(EventKeyBinding),
+		CancelEditGraphqlQuery(EventKeyBinding),
+		KeyEventEditGraphqlQuery(EventKeyBinding),
+
+		ModifyGraphqlVariables(EventKeyBinding),
+		CancelEditGraphqlVariables(EventKeyBinding),
+		KeyEventEditGraphqlVariables(EventKeyBinding),
+
+		/* gRPC */
+
+		ModifyGrpcProtoFile(EventKeyBinding),
+		CancelEditGrpcProtoFile(EventKeyBinding),
+		KeyEventEditGrpcProtoFile(EventKeyBinding),
+
+		ModifyGrpcService(EventKeyBinding),
+		CancelEditGrpcService(EventKeyBinding),
+		KeyEventEditGrpcService(EventKeyBinding),
+
+		ModifyGrpcMethod(EventKeyBinding),
+		CancelEditGrpcMethod(EventKeyBinding),
+		KeyEventEditGrpcMethod(EventKeyBinding),
+
+		ModifyGrpcMessage(EventKeyBinding),
+		CancelEditGrpcMessage(EventKeyBinding),
+		KeyEventEditGrpcMessage(EventKeyBinding),
 
 		/* Scripts */
 

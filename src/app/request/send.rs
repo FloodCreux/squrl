@@ -192,9 +192,15 @@ impl App<'_> {
 
 		/* REQUEST */
 
+		// gRPC requests skip the standard reqwest pipeline entirely;
+		// they use their own HTTP/2 client in send_grpc_request().
+		// We still need to return a PreparedRequest for consistency,
+		// but the builder won't actually be used for gRPC.
 		let method = match &modified_request.protocol {
 			Protocol::HttpRequest(http_request) => http_request.method.to_reqwest(),
 			Protocol::WsRequest(_) => reqwest::Method::GET,
+			Protocol::GraphqlRequest(_) => reqwest::Method::POST,
+			Protocol::GrpcRequest(_) => reqwest::Method::POST,
 		};
 
 		let mut request_builder = client.request(method, url);
@@ -313,6 +319,35 @@ impl App<'_> {
 					request_builder = request_builder.body(body_with_env_values);
 				}
 			};
+		}
+
+		if let Protocol::GraphqlRequest(graphql_request) = &modified_request.protocol {
+			let query = self.replace_env_keys_by_value(&graphql_request.query);
+			let variables = self.replace_env_keys_by_value(&graphql_request.variables);
+			let operation_name = graphql_request
+				.operation_name
+				.as_ref()
+				.map(|name| self.replace_env_keys_by_value(name));
+
+			let mut body = serde_json::json!({
+				"query": query,
+			});
+
+			if !variables.is_empty()
+				&& let Ok(parsed_vars) = serde_json::from_str::<serde_json::Value>(&variables)
+			{
+				body["variables"] = parsed_vars;
+			}
+
+			if let Some(op_name) = operation_name
+				&& !op_name.is_empty()
+			{
+				body["operationName"] = serde_json::Value::String(op_name);
+			}
+
+			request_builder = request_builder
+				.header("content-type", "application/json")
+				.body(body.to_string());
 		}
 
 		/* HEADERS */

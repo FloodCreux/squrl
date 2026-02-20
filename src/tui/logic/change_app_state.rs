@@ -416,6 +416,30 @@ impl App<'_> {
 		self.set_app_state(AppState::EditingRequestMessage);
 	}
 
+	pub fn edit_graphql_query_state(&mut self) {
+		self.set_app_state(AppState::EditingGraphqlQuery);
+	}
+
+	pub fn edit_graphql_variables_state(&mut self) {
+		self.set_app_state(AppState::EditingGraphqlVariables);
+	}
+
+	pub fn edit_grpc_proto_file_state(&mut self) {
+		self.set_app_state(AppState::EditingGrpcProtoFile);
+	}
+
+	pub fn edit_grpc_service_state(&mut self) {
+		self.set_app_state(AppState::EditingGrpcService);
+	}
+
+	pub fn edit_grpc_method_state(&mut self) {
+		self.set_app_state(AppState::EditingGrpcMethod);
+	}
+
+	pub fn edit_grpc_message_state(&mut self) {
+		self.set_app_state(AppState::EditingGrpcMessage);
+	}
+
 	pub fn edit_request_script_state(&mut self) {
 		self.request_param_tab = RequestParamsTabs::Scripts;
 
@@ -450,8 +474,11 @@ impl App<'_> {
 		let selected_request = local_selected_request.read();
 
 		self.export_request.choices = match selected_request.protocol {
-			Protocol::HttpRequest(_) => ExportFormat::VARIANTS.to_vec(),
+			Protocol::HttpRequest(_) | Protocol::GraphqlRequest(_) => {
+				ExportFormat::VARIANTS.to_vec()
+			}
 			Protocol::WsRequest(_) => vec![ExportFormat::RustReqwest],
+			Protocol::GrpcRequest(_) => vec![ExportFormat::Curl],
 		};
 
 		self.set_app_state(AppState::ChoosingRequestExportFormat);

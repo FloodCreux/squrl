@@ -177,6 +177,12 @@ impl App<'_> {
 			| EditingRequestBodyFile
 			| EditingRequestBodyString
 			| EditingRequestMessage
+			| EditingGraphqlQuery
+			| EditingGraphqlVariables
+			| EditingGrpcProtoFile
+			| EditingGrpcService
+			| EditingGrpcMethod
+			| EditingGrpcMessage
 			| EditingPreRequestScript
 			| EditingPostRequestScript
 			| EditingRequestSettings
@@ -235,6 +241,12 @@ impl App<'_> {
 				| EditingRequestBodyTable
 				| EditingRequestBodyFile
 				| EditingRequestBodyString
+				| EditingGraphqlQuery
+				| EditingGraphqlVariables
+				| EditingGrpcProtoFile
+				| EditingGrpcService
+				| EditingGrpcMethod
+				| EditingGrpcMessage
 				| EditingPreRequestScript
 				| EditingPostRequestScript
 				| EditingRequestSettings

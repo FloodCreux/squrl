@@ -146,6 +146,16 @@ pub struct App<'a> {
 	/* WS message */
 	pub message_text_area: TextInput,
 
+	/* GraphQL */
+	pub graphql_query_text_area: TextInput,
+	pub graphql_variables_text_area: TextInput,
+
+	/* gRPC */
+	pub grpc_proto_file_input: TextInput,
+	pub grpc_service_input: TextInput,
+	pub grpc_method_input: TextInput,
+	pub grpc_message_text_area: TextInput,
+
 	/* Response */
 	pub response_view: ResponseViewState,
 
@@ -283,6 +293,16 @@ impl App<'_> {
 
 			/* WS message */
 			message_text_area: TextInput::new(None),
+
+			/* GraphQL */
+			graphql_query_text_area: TextInput::new(None),
+			graphql_variables_text_area: TextInput::new(None),
+
+			/* gRPC */
+			grpc_proto_file_input: TextInput::new(Some(String::from("Proto file path"))),
+			grpc_service_input: TextInput::new(Some(String::from("Service"))),
+			grpc_method_input: TextInput::new(Some(String::from("Method"))),
+			grpc_message_text_area: TextInput::new(None),
 
 			/* Response */
 			response_view: ResponseViewState {

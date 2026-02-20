@@ -74,6 +74,48 @@ pub fn create_request_from_new_request_command(
 				}
 			}
 		}
+		Protocol::GraphqlRequest(_) => {
+			// GraphQL requests use POST and build their own body from query/variables,
+			// so method and body flags are not applicable.
+			match new_request_command.method {
+				Method::POST | Method::GET => {}
+				_ => {
+					return Err(anyhow!(
+						"Setting a method other than POST or GET with a GraphQL request is not supported"
+					));
+				}
+			}
+
+			match body {
+				ContentType::NoBody => {}
+				_ => {
+					return Err(anyhow!(
+						"Setting a body with a GraphQL request is incompatible; use query/variables instead"
+					));
+				}
+			}
+		}
+		Protocol::GrpcRequest(_) => {
+			// gRPC requests build their own body from the message field,
+			// so method and body flags are not applicable.
+			match new_request_command.method {
+				Method::POST | Method::GET => {}
+				_ => {
+					return Err(anyhow!(
+						"Setting a method with a gRPC request is incompatible"
+					));
+				}
+			}
+
+			match body {
+				ContentType::NoBody => {}
+				_ => {
+					return Err(anyhow!(
+						"Setting a body with a gRPC request is incompatible; use the message field instead"
+					));
+				}
+			}
+		}
 	};
 
 	let mut request = Request {

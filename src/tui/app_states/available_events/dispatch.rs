@@ -506,6 +506,60 @@ impl AppState {
 				false,
 			),
 
+			EditingGraphqlQuery => simple_text_input_events(
+				&key_bindings,
+				ModifyGraphqlQuery,
+				CancelEditGraphqlQuery,
+				KeyEventEditGraphqlQuery,
+				false,
+				false,
+			),
+
+			EditingGraphqlVariables => simple_text_input_events(
+				&key_bindings,
+				ModifyGraphqlVariables,
+				CancelEditGraphqlVariables,
+				KeyEventEditGraphqlVariables,
+				false,
+				false,
+			),
+
+			EditingGrpcProtoFile => simple_text_input_events(
+				&key_bindings,
+				ModifyGrpcProtoFile,
+				CancelEditGrpcProtoFile,
+				KeyEventEditGrpcProtoFile,
+				true,
+				false,
+			),
+
+			EditingGrpcService => simple_text_input_events(
+				&key_bindings,
+				ModifyGrpcService,
+				CancelEditGrpcService,
+				KeyEventEditGrpcService,
+				true,
+				false,
+			),
+
+			EditingGrpcMethod => simple_text_input_events(
+				&key_bindings,
+				ModifyGrpcMethod,
+				CancelEditGrpcMethod,
+				KeyEventEditGrpcMethod,
+				true,
+				false,
+			),
+
+			EditingGrpcMessage => simple_text_input_events(
+				&key_bindings,
+				ModifyGrpcMessage,
+				CancelEditGrpcMessage,
+				KeyEventEditGrpcMessage,
+				false,
+				false,
+			),
+
 			EditingPreRequestScript => simple_text_input_events(
 				&key_bindings,
 				ModifyRequestPreRequestScript,

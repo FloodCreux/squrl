@@ -1,5 +1,6 @@
 use crate::app::App;
 use crate::app::files::theme::THEME;
+use crate::models::protocol::protocol::Protocol;
 use crate::models::request::Request;
 use crate::tui::app_states::AppState;
 use crate::tui::utils::stateful::text_input::SingleLineTextInput;
@@ -7,7 +8,7 @@ use ratatui::Frame;
 use ratatui::layout::Direction::{Horizontal, Vertical};
 use ratatui::layout::{Alignment, Constraint, Layout, Margin, Rect};
 use ratatui::prelude::Stylize;
-use ratatui::style::Modifier;
+use ratatui::style::{Color, Modifier};
 use ratatui::symbols::border;
 use ratatui::widgets::{Block, Borders, Padding, Paragraph};
 
@@ -54,8 +55,17 @@ impl App<'_> {
 
 		// REQUEST METHOD
 
-		let http_request = request.get_http_request().expect("request should be HTTP");
-		let method = http_request.method;
+		let (method_label, method_color) = match &request.protocol {
+			Protocol::HttpRequest(http_request) => (
+				http_request.method.to_string(),
+				http_request.method.get_color(),
+			),
+			Protocol::GraphqlRequest(_) => {
+				("GQL".to_string(), THEME.read().ui.main_foreground_color)
+			}
+			Protocol::GrpcRequest(_) => ("gRPC".to_string(), THEME.read().ui.main_foreground_color),
+			_ => ("???".to_string(), Color::default()),
+		};
 
 		let method_block = Block::new()
 			.borders(Borders::NONE)
@@ -64,9 +74,9 @@ impl App<'_> {
 
 		let method_area = method_block.inner(request_header_layout[0]);
 
-		let method_paragraph = Paragraph::new(format!("[ {} ]", method))
+		let method_paragraph = Paragraph::new(format!("[ {} ]", method_label))
 			.style(Modifier::BOLD)
-			.fg(method.get_color())
+			.fg(method_color)
 			.centered();
 
 		frame.render_widget(method_block, request_header_layout[0]);

@@ -114,6 +114,24 @@ pub enum AppState {
 	#[strum(to_string = "Editing request message")]
 	EditingRequestMessage,
 
+	#[strum(to_string = "Editing GraphQL query")]
+	EditingGraphqlQuery,
+
+	#[strum(to_string = "Editing GraphQL variables")]
+	EditingGraphqlVariables,
+
+	#[strum(to_string = "Editing gRPC proto file")]
+	EditingGrpcProtoFile,
+
+	#[strum(to_string = "Editing gRPC service")]
+	EditingGrpcService,
+
+	#[strum(to_string = "Editing gRPC method")]
+	EditingGrpcMethod,
+
+	#[strum(to_string = "Editing gRPC message")]
+	EditingGrpcMessage,
+
 	#[strum(to_string = "Editing pre-request script")]
 	EditingPreRequestScript,
 

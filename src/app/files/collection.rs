@@ -218,6 +218,12 @@ impl App<'_> {
 				Protocol::WsRequest(_) => {
 					lines.push(format!("WEBSOCKET {}", full_url));
 				}
+				Protocol::GraphqlRequest(_) => {
+					lines.push(format!("GRAPHQL {}", full_url));
+				}
+				Protocol::GrpcRequest(_) => {
+					lines.push(format!("GRPC {}", full_url));
+				}
 			}
 
 			// --- Authorization header from auth ---
@@ -257,6 +263,42 @@ impl App<'_> {
 					Self::serialize_body(&http.body)
 				}
 				Protocol::WsRequest(_) => None,
+				Protocol::GraphqlRequest(gql) => {
+					if !user_has_content_type {
+						lines.push("Content-Type: application/json".to_string());
+					}
+					let mut body = serde_json::json!({ "query": gql.query });
+					if !gql.variables.is_empty()
+						&& let Ok(vars) = serde_json::from_str::<serde_json::Value>(&gql.variables)
+					{
+						body["variables"] = vars;
+					}
+					if let Some(op) = &gql.operation_name
+						&& !op.is_empty()
+					{
+						body["operationName"] = serde_json::Value::String(op.clone());
+					}
+					Some(serde_json::to_string_pretty(&body).unwrap_or_default())
+				}
+				Protocol::GrpcRequest(grpc) => {
+					if !grpc.proto_file.is_empty() {
+						lines.push(format!("X-Proto-File: {}", grpc.proto_file));
+					}
+					if !grpc.service.is_empty() {
+						lines.push(format!("X-Grpc-Service: {}", grpc.service));
+					}
+					if !grpc.method.is_empty() {
+						lines.push(format!("X-Grpc-Method: {}", grpc.method));
+					}
+					if !user_has_content_type {
+						lines.push("Content-Type: application/grpc+json".to_string());
+					}
+					if grpc.message.is_empty() {
+						None
+					} else {
+						Some(grpc.message.clone())
+					}
+				}
 			};
 
 			// --- User headers ---

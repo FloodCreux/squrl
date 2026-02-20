@@ -4,6 +4,8 @@ use crate::cli::import::http_file::ImportHttpFileError::{
 use crate::models::auth::auth::Auth;
 use crate::models::auth::basic::BasicAuth;
 use crate::models::auth::bearer_token::BearerToken;
+use crate::models::protocol::graphql::graphql::GraphqlRequest;
+use crate::models::protocol::grpc::grpc::GrpcRequest;
 use crate::models::protocol::http::body::ContentType;
 use crate::models::protocol::http::body::ContentType::NoBody;
 use crate::models::protocol::http::http::HttpRequest;
@@ -128,8 +130,10 @@ pub fn parse_http_content(content: &str) -> anyhow::Result<Vec<Arc<RwLock<Reques
 		let url_str = parts[1];
 
 		let is_websocket = method_str == "WEBSOCKET";
+		let is_graphql = method_str == "GRAPHQL";
+		let is_grpc = method_str == "GRPC";
 
-		let method = if is_websocket {
+		let method = if is_websocket || is_graphql || is_grpc {
 			None
 		} else {
 			match Method::from_str(method_str) {
@@ -218,10 +222,15 @@ pub fn parse_http_content(content: &str) -> anyhow::Result<Vec<Arc<RwLock<Reques
 		// Extract auth from Authorization header
 		let auth = extract_auth_from_headers(&raw_headers);
 
-		// Build headers (exclude Authorization since it's handled by auth)
+		// Build headers (exclude Authorization since it's handled by auth,
+		// and gRPC-specific pseudo-headers that are handled by the gRPC protocol model)
+		let grpc_pseudo_headers = ["x-proto-file", "x-grpc-service", "x-grpc-method"];
 		let headers: Vec<KeyValue> = raw_headers
 			.iter()
-			.filter(|(name, _)| name.to_lowercase() != "authorization")
+			.filter(|(name, _)| {
+				let lower = name.to_lowercase();
+				lower != "authorization" && !grpc_pseudo_headers.contains(&lower.as_str())
+			})
 			.map(|(k, v)| KeyValue {
 				enabled: true,
 				data: (k.clone(), v.clone()),
@@ -231,6 +240,62 @@ pub fn parse_http_content(content: &str) -> anyhow::Result<Vec<Arc<RwLock<Reques
 		// Build protocol-specific request
 		let protocol = if is_websocket {
 			Protocol::WsRequest(WsRequest::default())
+		} else if is_graphql {
+			// For GraphQL .http files, the body is treated as the GraphQL query/JSON body.
+			// If the body is valid JSON with a "query" field, extract query/variables/operationName.
+			// Otherwise, treat the entire body as the query string.
+			let (query, variables, operation_name) =
+				if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&body_string) {
+					let query = parsed
+						.get("query")
+						.and_then(|v| v.as_str())
+						.unwrap_or("")
+						.to_string();
+					let variables = parsed
+						.get("variables")
+						.map(|v| v.to_string())
+						.unwrap_or_default();
+					let operation_name = parsed
+						.get("operationName")
+						.and_then(|v| v.as_str())
+						.map(|s| s.to_string());
+					(query, variables, operation_name)
+				} else {
+					(body_string, String::new(), None)
+				};
+
+			Protocol::GraphqlRequest(GraphqlRequest {
+				query,
+				variables,
+				operation_name,
+			})
+		} else if is_grpc {
+			// For gRPC .http files, extract proto file path, service, and method from
+			// custom headers (X-Proto-File, X-Grpc-Service, X-Grpc-Method).
+			// The body is the JSON message.
+			let proto_file = raw_headers
+				.iter()
+				.find(|(name, _)| name.to_lowercase() == "x-proto-file")
+				.map(|(_, v)| v.clone())
+				.unwrap_or_default();
+			let service = raw_headers
+				.iter()
+				.find(|(name, _)| name.to_lowercase() == "x-grpc-service")
+				.map(|(_, v)| v.clone())
+				.unwrap_or_default();
+			let grpc_method = raw_headers
+				.iter()
+				.find(|(name, _)| name.to_lowercase() == "x-grpc-method")
+				.map(|(_, v)| v.clone())
+				.unwrap_or_default();
+
+			Protocol::GrpcRequest(GrpcRequest {
+				proto_file,
+				import_paths: vec![],
+				service,
+				method: grpc_method,
+				message: body_string,
+			})
 		} else {
 			let method = method.expect("HTTP method should be present");
 
@@ -571,6 +636,185 @@ X-Custom: header-value
 	}
 
 	#[test]
+	fn parse_graphql_with_raw_query() {
+		let content = r#"### List Countries
+GRAPHQL https://countries.trevorblades.com/graphql
+
+{
+  countries {
+    code
+    name
+    capital
+  }
+}
+"#;
+
+		let requests = parse_http_content(content).unwrap();
+		assert_eq!(requests.len(), 1);
+
+		let req = requests[0].read();
+		assert_eq!(req.name, "List Countries");
+		assert_eq!(req.url, "https://countries.trevorblades.com/graphql");
+
+		match &req.protocol {
+			Protocol::GraphqlRequest(gql) => {
+				assert!(gql.query.contains("countries"));
+				assert!(gql.query.contains("code"));
+				assert!(gql.query.contains("name"));
+				assert!(gql.variables.is_empty());
+				assert!(gql.operation_name.is_none());
+			}
+			_ => panic!("Expected GraphqlRequest"),
+		}
+	}
+
+	#[test]
+	fn parse_graphql_with_json_body() {
+		let content = r#"### Get Country
+GRAPHQL https://countries.trevorblades.com/graphql
+Content-Type: application/json
+
+{"query": "query GetCountry($code: ID!) { country(code: $code) { name capital } }", "variables": {"code": "CA"}, "operationName": "GetCountry"}
+"#;
+
+		let requests = parse_http_content(content).unwrap();
+		assert_eq!(requests.len(), 1);
+
+		let req = requests[0].read();
+		assert_eq!(req.name, "Get Country");
+
+		match &req.protocol {
+			Protocol::GraphqlRequest(gql) => {
+				assert!(gql.query.contains("GetCountry"));
+				assert!(gql.query.contains("country(code: $code)"));
+				assert!(gql.variables.contains("CA"));
+				assert_eq!(gql.operation_name, Some("GetCountry".to_string()));
+			}
+			_ => panic!("Expected GraphqlRequest"),
+		}
+	}
+
+	#[test]
+	fn parse_graphql_with_json_body_and_variables_object() {
+		let content = r#"### Search
+GRAPHQL https://api.example.com/graphql
+
+{"query": "{ users(limit: $limit) { id name } }", "variables": {"limit": 10}}
+"#;
+
+		let requests = parse_http_content(content).unwrap();
+		let req = requests[0].read();
+
+		match &req.protocol {
+			Protocol::GraphqlRequest(gql) => {
+				assert!(gql.query.contains("users(limit: $limit)"));
+				assert!(gql.variables.contains("10"));
+				assert!(gql.operation_name.is_none());
+			}
+			_ => panic!("Expected GraphqlRequest"),
+		}
+	}
+
+	#[test]
+	fn parse_graphql_with_headers() {
+		let content = r#"### Authenticated GraphQL
+GRAPHQL https://api.example.com/graphql
+Authorization: Bearer gql-token
+X-Custom-Header: custom-value
+
+{ viewer { login } }
+"#;
+
+		let requests = parse_http_content(content).unwrap();
+		let req = requests[0].read();
+
+		match &req.auth {
+			Auth::BearerToken(bearer) => assert_eq!(bearer.token, "gql-token"),
+			other => panic!("Expected BearerToken, got {:?}", other),
+		}
+
+		assert_eq!(req.headers.len(), 1);
+		assert_eq!(req.headers[0].data.0, "X-Custom-Header");
+		assert_eq!(req.headers[0].data.1, "custom-value");
+
+		match &req.protocol {
+			Protocol::GraphqlRequest(gql) => {
+				assert!(gql.query.contains("viewer"));
+			}
+			_ => panic!("Expected GraphqlRequest"),
+		}
+	}
+
+	#[test]
+	fn parse_graphql_no_body() {
+		let content = r#"### Empty GraphQL
+GRAPHQL https://api.example.com/graphql
+"#;
+
+		let requests = parse_http_content(content).unwrap();
+		let req = requests[0].read();
+
+		match &req.protocol {
+			Protocol::GraphqlRequest(gql) => {
+				assert!(gql.query.is_empty());
+				assert!(gql.variables.is_empty());
+				assert!(gql.operation_name.is_none());
+			}
+			_ => panic!("Expected GraphqlRequest"),
+		}
+	}
+
+	#[test]
+	fn parse_mixed_http_websocket_and_graphql() {
+		let content = r#"### Get Users
+GET https://api.example.com/users
+
+### Live Feed
+WEBSOCKET wss://api.example.com/feed
+
+### GraphQL Query
+GRAPHQL https://api.example.com/graphql
+
+{ users { id name } }
+
+### Create User
+POST https://api.example.com/users
+Content-Type: application/json
+
+{"name": "Jane"}
+"#;
+
+		let requests = parse_http_content(content).unwrap();
+		assert_eq!(requests.len(), 4);
+
+		assert_eq!(requests[0].read().name, "Get Users");
+		assert!(matches!(
+			requests[0].read().protocol,
+			Protocol::HttpRequest(_)
+		));
+
+		assert_eq!(requests[1].read().name, "Live Feed");
+		assert!(matches!(
+			requests[1].read().protocol,
+			Protocol::WsRequest(_)
+		));
+
+		assert_eq!(requests[2].read().name, "GraphQL Query");
+		match &requests[2].read().protocol {
+			Protocol::GraphqlRequest(gql) => {
+				assert!(gql.query.contains("users"));
+			}
+			_ => panic!("Expected GraphqlRequest"),
+		}
+
+		assert_eq!(requests[3].read().name, "Create User");
+		assert!(matches!(
+			requests[3].read().protocol,
+			Protocol::HttpRequest(_)
+		));
+	}
+
+	#[test]
 	fn parse_mixed_http_and_websocket() {
 		let content = r#"### Get Users
 GET https://api.example.com/users
@@ -605,5 +849,147 @@ Content-Type: application/json
 			Protocol::HttpRequest(http) => assert!(matches!(http.method, Method::POST)),
 			_ => panic!("Expected HttpRequest"),
 		}
+	}
+
+	#[test]
+	fn parse_grpc_request_basic() {
+		let content = r#"### Say Hello
+GRPC http://localhost:50051
+X-Proto-File: proto/helloworld.proto
+X-Grpc-Service: helloworld.Greeter
+X-Grpc-Method: SayHello
+
+{"name": "World"}
+"#;
+
+		let requests = parse_http_content(content).unwrap();
+		assert_eq!(requests.len(), 1);
+
+		let req = requests[0].read();
+		assert_eq!(req.name, "Say Hello");
+		match &req.protocol {
+			Protocol::GrpcRequest(grpc) => {
+				assert_eq!(grpc.proto_file, "proto/helloworld.proto");
+				assert_eq!(grpc.service, "helloworld.Greeter");
+				assert_eq!(grpc.method, "SayHello");
+				assert_eq!(grpc.message, "{\"name\": \"World\"}");
+			}
+			_ => panic!("Expected GrpcRequest"),
+		}
+	}
+
+	#[test]
+	fn parse_grpc_request_no_body() {
+		let content = r#"### Health Check
+GRPC http://localhost:50051
+X-Proto-File: proto/health.proto
+X-Grpc-Service: grpc.health.v1.Health
+X-Grpc-Method: Check
+"#;
+
+		let requests = parse_http_content(content).unwrap();
+		assert_eq!(requests.len(), 1);
+
+		let req = requests[0].read();
+		match &req.protocol {
+			Protocol::GrpcRequest(grpc) => {
+				assert_eq!(grpc.service, "grpc.health.v1.Health");
+				assert_eq!(grpc.method, "Check");
+				assert!(grpc.message.is_empty());
+			}
+			_ => panic!("Expected GrpcRequest"),
+		}
+	}
+
+	#[test]
+	fn parse_grpc_request_with_extra_headers() {
+		let content = r#"### Auth Call
+GRPC http://localhost:50051
+X-Proto-File: proto/service.proto
+X-Grpc-Service: mypackage.MyService
+X-Grpc-Method: DoWork
+Authorization: Bearer token123
+x-custom-header: value
+
+{"field": "data"}
+"#;
+
+		let requests = parse_http_content(content).unwrap();
+		assert_eq!(requests.len(), 1);
+
+		let req = requests[0].read();
+
+		// X-Proto-File, X-Grpc-Service, X-Grpc-Method should NOT appear in headers
+		assert!(
+			req.headers
+				.iter()
+				.all(|h| h.data.0.to_lowercase() != "x-proto-file")
+		);
+		assert!(
+			req.headers
+				.iter()
+				.all(|h| h.data.0.to_lowercase() != "x-grpc-service")
+		);
+		assert!(
+			req.headers
+				.iter()
+				.all(|h| h.data.0.to_lowercase() != "x-grpc-method")
+		);
+
+		// x-custom-header SHOULD be in headers
+		assert!(
+			req.headers
+				.iter()
+				.any(|h| h.data.0 == "x-custom-header" && h.data.1 == "value")
+		);
+
+		// Auth should be extracted
+		match &req.auth {
+			Auth::BearerToken(bt) => assert_eq!(bt.token, "token123"),
+			_ => panic!("Expected BearerToken auth"),
+		}
+	}
+
+	#[test]
+	fn parse_mixed_http_ws_graphql_grpc() {
+		let content = r#"### HTTP Request
+GET https://api.example.com/users
+
+### WebSocket
+WEBSOCKET wss://api.example.com/feed
+
+### GraphQL
+GRAPHQL https://api.example.com/graphql
+
+{ users { id name } }
+
+### gRPC
+GRPC http://localhost:50051
+X-Proto-File: proto/service.proto
+X-Grpc-Service: mypackage.MyService
+X-Grpc-Method: DoWork
+
+{"key": "value"}
+"#;
+
+		let requests = parse_http_content(content).unwrap();
+		assert_eq!(requests.len(), 4);
+
+		assert!(matches!(
+			requests[0].read().protocol,
+			Protocol::HttpRequest(_)
+		));
+		assert!(matches!(
+			requests[1].read().protocol,
+			Protocol::WsRequest(_)
+		));
+		assert!(matches!(
+			requests[2].read().protocol,
+			Protocol::GraphqlRequest(_)
+		));
+		assert!(matches!(
+			requests[3].read().protocol,
+			Protocol::GrpcRequest(_)
+		));
 	}
 }

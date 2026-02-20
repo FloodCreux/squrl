@@ -80,6 +80,16 @@ impl App<'_> {
 
 			AppEvent::EditRequestMessage(_) => self.edit_request_message_state(),
 
+			/* GraphQL */
+			AppEvent::EditGraphqlQuery(_) => self.edit_graphql_query_state(),
+			AppEvent::EditGraphqlVariables(_) => self.edit_graphql_variables_state(),
+
+			/* gRPC */
+			AppEvent::EditGrpcProtoFile(_) => self.edit_grpc_proto_file_state(),
+			AppEvent::EditGrpcService(_) => self.edit_grpc_service_state(),
+			AppEvent::EditGrpcMethod(_) => self.edit_grpc_method_state(),
+			AppEvent::EditGrpcMessage(_) => self.edit_grpc_message_state(),
+
 			AppEvent::RequestBodyTableMoveUp(_) => self.request_editor.body_form_table.up(),
 			AppEvent::RequestBodyTableMoveDown(_) => self.request_editor.body_form_table.down(),
 			AppEvent::RequestBodyTableMoveLeft(_) | AppEvent::RequestBodyTableMoveRight(_) => {
