@@ -602,6 +602,185 @@ X-Custom: header-value
 	}
 
 	#[test]
+	fn parse_graphql_with_raw_query() {
+		let content = r#"### List Countries
+GRAPHQL https://countries.trevorblades.com/graphql
+
+{
+  countries {
+    code
+    name
+    capital
+  }
+}
+"#;
+
+		let requests = parse_http_content(content).unwrap();
+		assert_eq!(requests.len(), 1);
+
+		let req = requests[0].read();
+		assert_eq!(req.name, "List Countries");
+		assert_eq!(req.url, "https://countries.trevorblades.com/graphql");
+
+		match &req.protocol {
+			Protocol::GraphqlRequest(gql) => {
+				assert!(gql.query.contains("countries"));
+				assert!(gql.query.contains("code"));
+				assert!(gql.query.contains("name"));
+				assert!(gql.variables.is_empty());
+				assert!(gql.operation_name.is_none());
+			}
+			_ => panic!("Expected GraphqlRequest"),
+		}
+	}
+
+	#[test]
+	fn parse_graphql_with_json_body() {
+		let content = r#"### Get Country
+GRAPHQL https://countries.trevorblades.com/graphql
+Content-Type: application/json
+
+{"query": "query GetCountry($code: ID!) { country(code: $code) { name capital } }", "variables": {"code": "CA"}, "operationName": "GetCountry"}
+"#;
+
+		let requests = parse_http_content(content).unwrap();
+		assert_eq!(requests.len(), 1);
+
+		let req = requests[0].read();
+		assert_eq!(req.name, "Get Country");
+
+		match &req.protocol {
+			Protocol::GraphqlRequest(gql) => {
+				assert!(gql.query.contains("GetCountry"));
+				assert!(gql.query.contains("country(code: $code)"));
+				assert!(gql.variables.contains("CA"));
+				assert_eq!(gql.operation_name, Some("GetCountry".to_string()));
+			}
+			_ => panic!("Expected GraphqlRequest"),
+		}
+	}
+
+	#[test]
+	fn parse_graphql_with_json_body_and_variables_object() {
+		let content = r#"### Search
+GRAPHQL https://api.example.com/graphql
+
+{"query": "{ users(limit: $limit) { id name } }", "variables": {"limit": 10}}
+"#;
+
+		let requests = parse_http_content(content).unwrap();
+		let req = requests[0].read();
+
+		match &req.protocol {
+			Protocol::GraphqlRequest(gql) => {
+				assert!(gql.query.contains("users(limit: $limit)"));
+				assert!(gql.variables.contains("10"));
+				assert!(gql.operation_name.is_none());
+			}
+			_ => panic!("Expected GraphqlRequest"),
+		}
+	}
+
+	#[test]
+	fn parse_graphql_with_headers() {
+		let content = r#"### Authenticated GraphQL
+GRAPHQL https://api.example.com/graphql
+Authorization: Bearer gql-token
+X-Custom-Header: custom-value
+
+{ viewer { login } }
+"#;
+
+		let requests = parse_http_content(content).unwrap();
+		let req = requests[0].read();
+
+		match &req.auth {
+			Auth::BearerToken(bearer) => assert_eq!(bearer.token, "gql-token"),
+			other => panic!("Expected BearerToken, got {:?}", other),
+		}
+
+		assert_eq!(req.headers.len(), 1);
+		assert_eq!(req.headers[0].data.0, "X-Custom-Header");
+		assert_eq!(req.headers[0].data.1, "custom-value");
+
+		match &req.protocol {
+			Protocol::GraphqlRequest(gql) => {
+				assert!(gql.query.contains("viewer"));
+			}
+			_ => panic!("Expected GraphqlRequest"),
+		}
+	}
+
+	#[test]
+	fn parse_graphql_no_body() {
+		let content = r#"### Empty GraphQL
+GRAPHQL https://api.example.com/graphql
+"#;
+
+		let requests = parse_http_content(content).unwrap();
+		let req = requests[0].read();
+
+		match &req.protocol {
+			Protocol::GraphqlRequest(gql) => {
+				assert!(gql.query.is_empty());
+				assert!(gql.variables.is_empty());
+				assert!(gql.operation_name.is_none());
+			}
+			_ => panic!("Expected GraphqlRequest"),
+		}
+	}
+
+	#[test]
+	fn parse_mixed_http_websocket_and_graphql() {
+		let content = r#"### Get Users
+GET https://api.example.com/users
+
+### Live Feed
+WEBSOCKET wss://api.example.com/feed
+
+### GraphQL Query
+GRAPHQL https://api.example.com/graphql
+
+{ users { id name } }
+
+### Create User
+POST https://api.example.com/users
+Content-Type: application/json
+
+{"name": "Jane"}
+"#;
+
+		let requests = parse_http_content(content).unwrap();
+		assert_eq!(requests.len(), 4);
+
+		assert_eq!(requests[0].read().name, "Get Users");
+		assert!(matches!(
+			requests[0].read().protocol,
+			Protocol::HttpRequest(_)
+		));
+
+		assert_eq!(requests[1].read().name, "Live Feed");
+		assert!(matches!(
+			requests[1].read().protocol,
+			Protocol::WsRequest(_)
+		));
+
+		assert_eq!(requests[2].read().name, "GraphQL Query");
+		match &requests[2].read().protocol {
+			Protocol::GraphqlRequest(gql) => {
+				assert!(gql.query.contains("users"));
+			}
+			_ => panic!("Expected GraphqlRequest"),
+		}
+
+		assert_eq!(requests[3].read().name, "Create User");
+		assert!(matches!(
+			requests[3].read().protocol,
+			Protocol::HttpRequest(_)
+		));
+	}
+
+	#[test]
 	fn parse_mixed_http_and_websocket() {
 		let content = r#"### Get Users
 GET https://api.example.com/users

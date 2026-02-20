@@ -29,3 +29,16 @@ DELETE https://jsonplaceholder.typicode.com/users/1
 
 ### Echo WebSocket
 WEBSOCKET wss://echo.websocket.org/
+
+### List Countries (GraphQL)
+GRAPHQL https://countries.trevorblades.com/graphql
+
+{
+  countries {
+    code
+    name
+    capital
+    emoji
+    currency
+  }
+}
