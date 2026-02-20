@@ -20,11 +20,11 @@ reqwest-middleware = { version = "0.5.1", features = ["rustls", "json", "multipa
 ## Wrapper around reqwest to handle web-socket requests
 reqwest-websocket = { version = "0.6.0", features = ["json", "middleware"] }
 reqwest_cookie_store = "0.10.0"
-cookie_store = "0.22.0"
+cookie_store = "0.22.1"
 
 # gRPC
 ## gRPC over HTTP/2 implementation
-tonic = { version = "0.14.3", features = ["transport", "channel"] }
+tonic = { version = "0.14.5", features = ["transport", "channel"] }
 ## Protocol Buffers encoding/decoding
 prost = "0.14"
 prost-types = "0.14"
@@ -53,7 +53,7 @@ edtui = { version = "0.11.1", default-features = false, features = ["syntax-high
 ## Display loading UI elements. Used when request is pending.
 throbber-widgets-tui = "0.10.0"
 ## Display response images.
-ratatui-image = { version = "10.0.5", default-features = false, features = ["crossterm", "image-defaults"] }
+ratatui-image = { version = "10.0.6", default-features = false, features = ["crossterm", "image-defaults"] }
 ## Decode images.
 image = "0.25.9"
 
@@ -68,7 +68,7 @@ serde-versioning = "1.0.228-fix.1"
 ## Pretty print JSON
 jsonxf = "1.1.1"
 ## Serialize & Deserialize application config files
-toml = "0.9.11"
+toml = "0.9.12"
 ## Create Javascript runtimes. Used for pre and post request scripts
 boa_engine = { version = "0.21.0", default-features = false }
 ## Deserialize Postman collection files
@@ -78,7 +78,7 @@ curl-parser = { version = "0.6.0", default-features = false }
 ## Parse OpenAPI spec files
 openapiv3 = "2.2.0"
 ## Command Line Argument Parser
-clap = { version = "4.5.57", features = ["derive", "color", "suggestions"] }
+clap = { version = "4.5.60", features = ["derive", "color", "suggestions"] }
 ## Use system files
 directories = "6.0.0"
 ## Copy response body to clipboard
@@ -92,7 +92,7 @@ digest_auth = "0.3.1"
 ## Handle asynchronous requests
 tokio = { version = "1.49.0", features = ["rt", "rt-multi-thread", "macros", "io-std", "io-util"] }
 tokio-util = { version = "0.7.18", features = ["compat"] }
-futures-util = { version = "0.3.31", features = ["sink", "alloc"] }
+futures-util = { version = "0.3.32", features = ["sink", "alloc"] }
 ## Smaller, faster and more flexible implementation of RwLock and Mutex. Used everywhere.
 parking_lot = { version = "0.12.5", features = ["serde", "send_guard"] }
 
@@ -110,11 +110,11 @@ rayon = "1.11.0"
 ## Create custom errors
 thiserror = "2.0.18"
 ## Result that can contain any error
-anyhow = "1.0.101"
+anyhow = "1.0.102"
 ## Add verbosity flag to the CLI
 clap-verbosity-flag = "3.0.4"
 ## Generate completion file
-clap_complete = "4.5.65"
+clap_complete = "4.5.66"
 ## Generate man pages
 clap_mangen = "0.2.31"
 ## Regex. Using for parsing requests URL
@@ -122,7 +122,7 @@ regex = "1.12.3"
 ## Time utils
 chrono = { version = "0.4.43", default-features = false, features = ["now", "serde"] }
 ## UUID generator
-uuid = { version = "1.20.0", features = ["v4", "v7", "serde"] }
+uuid = { version = "1.21.0", features = ["v4", "v7", "serde"] }
 ## Decode base64 strings
 base64 = "0.22.1"
 ## Wrap text to max length
@@ -140,6 +140,6 @@ reqwest-tracing = "0.7.0"
 
 [dev-dependencies]
 mockito = "1.7.2"
-assert_cmd = "2.0"
+assert_cmd = "2.1"
 predicates = "3.1"
-tempfile = "3.14"
+tempfile = "3.25"
