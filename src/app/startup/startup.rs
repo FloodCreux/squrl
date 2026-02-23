@@ -1,4 +1,5 @@
 use crate::app::App;
+use crate::app::files::env_watcher::spawn_env_json_watcher;
 use crate::app::log::LogCounterLayer;
 use crate::cli::args::{ARGS, Command};
 use crate::cli::import::http_file;
@@ -283,6 +284,11 @@ impl<'a> App<'a> {
 					};
 
 					self.core.collections.push(collection);
+
+					self.core._env_watcher = spawn_env_json_watcher(
+						requests_dir.clone(),
+						self.core.env_json_changed.clone(),
+					);
 				}
 			}
 		}

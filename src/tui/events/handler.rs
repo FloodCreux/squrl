@@ -54,6 +54,11 @@ impl App<'_> {
 
 			*self.core.received_response.lock() = false;
 		}
+
+		if *self.core.env_json_changed.lock() {
+			*self.core.env_json_changed.lock() = false;
+			self.reload_companion_env();
+		}
 	}
 
 	async fn handle_key(

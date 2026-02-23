@@ -1,7 +1,9 @@
 {
   "environments": {
     "default": {
-      "BASE_URL": "https://jsonplaceholder.typicode.com"
+      "BASE_URL": "https://jsonplaceholder.typicode.com",
+      "USERNAME": "user_env",
+      "EMAIL": "user_env@test.com"
     }
   },
   "selected_environment": "default"

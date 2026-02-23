@@ -109,6 +109,8 @@ pub struct CoreState {
 	pub selected_environment: usize,
 	pub cookies_popup: CookiesPopup,
 	pub received_response: Arc<Mutex<bool>>,
+	pub env_json_changed: Arc<Mutex<bool>>,
+	pub _env_watcher: Option<notify::RecommendedWatcher>,
 }
 
 pub struct App<'a> {
@@ -187,6 +189,8 @@ impl App<'_> {
 				selected_environment: 0,
 				cookies_popup: CookiesPopup::default(),
 				received_response: Arc::new(Mutex::new(false)),
+				env_json_changed: Arc::new(Mutex::new(false)),
+				_env_watcher: None,
 			},
 
 			tick_rate: TICK_RATE,
