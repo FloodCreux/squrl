@@ -72,11 +72,18 @@ impl App<'_> {
 
 		/* PRE-REQUEST SCRIPT */
 
+		// Determine the collection index for collection-scoped environment resolution
+		let collection_index = self
+			.collections_tree
+			.selected
+			.as_ref()
+			.map(|s| s.collection_index());
+
 		// prepare_request is synchronous — safe to call while holding the lock.
 		let (prepared, protocol) = {
 			let mut selected_request = local_selected_request.write();
 
-			let prepared = match self.prepare_request(&mut selected_request) {
+			let prepared = match self.prepare_request(&mut selected_request, collection_index) {
 				Ok(result) => result,
 				Err(prepare_request_error) => {
 					selected_request.response.status_code = Some(prepare_request_error.to_string());

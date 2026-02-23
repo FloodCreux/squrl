@@ -1,7 +1,8 @@
 use crate::app::App;
 use crate::cli::commands::collection_commands::collection_commands::{
-	CollectionCommand, CollectionSubcommand,
+	CollectionCommand, CollectionEnvSubcommand, CollectionSubcommand,
 };
+use crate::cli::commands::key::KeyCommand;
 use crate::models::collection::Collection;
 
 impl App<'_> {
@@ -36,6 +37,86 @@ impl App<'_> {
 				collection_name,
 				subcommand,
 			} => self.cli_send_collection(collection_name, subcommand).await,
+			CollectionSubcommand::Env {
+				collection_name,
+				subcommand,
+			} => self.handle_collection_env_command(collection_name, subcommand),
+		}
+	}
+
+	fn handle_collection_env_command(
+		&mut self,
+		collection_name: &str,
+		subcommand: &CollectionEnvSubcommand,
+	) -> anyhow::Result<()> {
+		let collection_index = self.find_collection(collection_name)?;
+
+		match subcommand {
+			CollectionEnvSubcommand::List => {
+				let collection = &self.core.collections[collection_index];
+				if collection.environments.is_empty() {
+					println!(
+						"No environments defined in collection \"{}\"",
+						collection_name
+					);
+				} else {
+					let selected = collection.selected_environment.as_deref();
+					for env in &collection.environments {
+						let marker = if selected == Some(&env.name) {
+							" *"
+						} else {
+							""
+						};
+						println!("{}{}", env.name, marker);
+					}
+				}
+				Ok(())
+			}
+			CollectionEnvSubcommand::Create { env_name } => {
+				self.create_collection_environment(collection_index, env_name.clone())
+			}
+			CollectionEnvSubcommand::Delete { env_name } => {
+				self.delete_collection_environment(collection_index, env_name)
+			}
+			CollectionEnvSubcommand::Select { env_name } => {
+				self.select_collection_environment(collection_index, env_name.clone())
+			}
+			CollectionEnvSubcommand::Info { env_name } => {
+				let env_idx = self.find_collection_environment(collection_index, env_name)?;
+				let env = &self.core.collections[collection_index].environments[env_idx];
+
+				println!("name: {}", env.name);
+				println!("values:");
+				for (key, value) in &env.values {
+					println!("\t{key}: {value}");
+				}
+				Ok(())
+			}
+			CollectionEnvSubcommand::Key {
+				env_name,
+				subcommand,
+			} => match subcommand {
+				KeyCommand::Get { key } => {
+					let value = self.get_collection_env_value(collection_index, env_name, key)?;
+					println!("{value}");
+					Ok(())
+				}
+				KeyCommand::Set { key, value } => {
+					self.set_collection_env_value(collection_index, env_name, key, value.clone())
+				}
+				KeyCommand::Add { key, value } => self.create_collection_env_value(
+					collection_index,
+					env_name,
+					key.clone(),
+					value.clone(),
+				),
+				KeyCommand::Delete { key } => {
+					self.delete_collection_env_key(collection_index, env_name, key)
+				}
+				KeyCommand::Rename { key, new_key } => {
+					self.rename_collection_env_key(collection_index, env_name, key, new_key)
+				}
+			},
 		}
 	}
 

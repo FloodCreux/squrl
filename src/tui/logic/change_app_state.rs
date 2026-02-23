@@ -61,8 +61,14 @@ impl App<'_> {
 	}
 
 	pub fn display_env_editor_state(&mut self) {
-		if self.get_selected_env_as_local().is_none() {
-			return;
+		// If the selected collection has no environments, auto-create a "default"
+		// environment so the user has an immediate surface to work with.
+		if let Some(ci) = self.tui_selected_collection_index() {
+			let collection = &self.core.collections[ci];
+			if collection.environments.is_empty() {
+				let _ = self.create_collection_environment(ci, "default".to_string());
+				let _ = self.select_collection_environment(ci, Some("default".to_string()));
+			}
 		}
 
 		self.tui_update_env_variable_table();
@@ -70,16 +76,56 @@ impl App<'_> {
 	}
 
 	pub fn edit_env_variable_state(&mut self) {
+		let Some(selection) = self.env_editor_table.selection else {
+			return;
+		};
+
+		// Try collection environment first
+		if let Some(ci) = {
+			let selected = self.collections_tree.state.selected();
+			if selected.is_empty() {
+				None
+			} else {
+				Some(selected[0])
+			}
+		} {
+			let collection = &self.core.collections[ci];
+			if !collection.environments.is_empty()
+				&& let Some(ref selected_name) = collection.selected_environment
+				&& let Some(env) = collection
+					.environments
+					.iter()
+					.find(|e| &e.name == selected_name)
+				&& !env.values.is_empty()
+			{
+				let pair = env
+					.values
+					.get_index(selection.0)
+					.expect("selected index should be valid");
+				let text = match selection.1 {
+					0 => pair.0,
+					1 => pair.1,
+					_ => unreachable!(),
+				};
+
+				self.env_editor_table.selection_text_input.reset_mode();
+				self.env_editor_table.selection_text_input.clear();
+				self.env_editor_table.selection_text_input.push_str(text);
+				self.env_editor_table
+					.selection_text_input
+					.move_cursor_line_end();
+				self.set_app_state(AppState::EditingEnvVariable);
+			}
+			return;
+		}
+
+		// Fall back to global environment
 		let local_env = self.get_selected_env_as_local();
 
 		if let Some(local_env) = local_env {
 			let env = local_env.read();
 
 			if !env.values.is_empty() {
-				let Some(selection) = self.env_editor_table.selection else {
-					return;
-				};
-
 				let pair = env
 					.values
 					.get_index(selection.0)

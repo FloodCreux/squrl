@@ -101,6 +101,8 @@ pub fn recursive_has_requests(
 				last_position: Some(collections.len() - 1),
 				folders: vec![],
 				requests,
+				environments: vec![],
+				selected_environment: None,
 				path: ARGS
 					.directory
 					.as_ref()

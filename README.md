@@ -19,6 +19,11 @@ A terminal-based HTTP and WebSocket client built with Rust. Think Postman or Ins
   - [TUI (interactive)](#tui)
   - [CLI](#cli)
 - [Configuration](#configuration)
+- [Parameterizing Requests](#parameterizing-requests)
+  - [Environment Variables](#environment-variables-1)
+  - [Built-in Dynamic Variables](#built-in-dynamic-variables)
+  - [Path Parameters](#path-parameters)
+  - [Pre/Post Request Scripts](#prepost-request-scripts-1)
 - [Themes](#themes)
 - [Key Bindings](#key-bindings)
 - [Development](#development)
@@ -32,6 +37,7 @@ A terminal-based HTTP and WebSocket client built with Rust. Think Postman or Ins
 - **WebSocket support** -- connect, send/receive messages, and track connection state
 - **Collections** -- organize requests in JSON, YAML, or `.http` files with tree-based navigation, optional folder grouping, and round-trip write-back for `.http` collections
 - **Environments** -- key-value variables with `{{variable}}` substitution across URLs, headers, bodies, auth, and scripts
+- **Collection-scoped environments** -- define per-collection environments (e.g. `dev`, `staging`, `prod`) with variables embedded directly in collection files, overriding global environments
 - **Authentication** -- Basic, Bearer Token, JWT (HS/RS/ES/PS/EdDSA), and Digest (MD5, SHA-256, SHA-512)
 - **Request bodies** -- raw text, JSON, XML, HTML, JavaScript, file upload, URL-encoded form, and multipart
 - **Pre/post request scripts** -- JavaScript execution via embedded Boa runtime
@@ -153,7 +159,22 @@ squrl collection info <name> [--without-request-names]
 squrl collection new <name>
 squrl collection delete <name>
 squrl collection rename <name> <new-name>
-squrl collection send <name> [--env <env-name>]
+squrl collection send <name> [--env <env-name>] [--collection-env <env-name>]
+```
+
+#### Collection Environments
+
+```sh
+squrl collection env <collection-name> list
+squrl collection env <collection-name> create <env-name>
+squrl collection env <collection-name> delete <env-name>
+squrl collection env <collection-name> select [<env-name>]
+squrl collection env <collection-name> info <env-name>
+squrl collection env <collection-name> key <env-name> get <key>
+squrl collection env <collection-name> key <env-name> set <key> <value>
+squrl collection env <collection-name> key <env-name> add <key> <value>
+squrl collection env <collection-name> key <env-name> delete <key>
+squrl collection env <collection-name> key <env-name> rename <key> <new-key>
 ```
 
 #### Requests
@@ -165,7 +186,7 @@ squrl request info <collection>/<request>
 squrl request new <collection>/<request> [--url <url>] [--method <method>]
 squrl request delete <collection>/<request>
 squrl request rename <collection>/<request> <new-name>
-squrl request send <collection>/<request> [--env <env-name>]
+squrl request send <collection>/<request> [--env <env-name>] [--collection-env <env-name>]
 
 # Modify request properties
 squrl request url <collection>/<request> set|get|add <url>
@@ -255,11 +276,12 @@ https_proxy = "https://..."
 
 ```
 squrl_main_dir/
-  collection1.json      # or .yaml -- request collections
+  collection1.json      # or .yaml -- request collections (may contain embedded environments)
   collection2.yaml
   requests/             # .http file collections (auto-loaded in git repos)
     example.http
-  .env.production       # KEY=VALUE environment files
+    squrl-env.json      # companion file for .http collection environments (optional)
+  .env.production       # KEY=VALUE global environment files
   .env.staging
   squrl.toml            # Local configuration
   squrl.log             # Auto-generated log file (TUI mode)
@@ -314,6 +336,223 @@ requests/
 ```
 
 Folders are ordered alphabetically, and requests within each folder are ordered alphabetically by file path.
+
+## Parameterizing Requests
+
+squrl supports several ways to parameterize requests so you can reuse the same request definitions across different environments and contexts.
+
+### Environment Variables
+
+Define variables in `.env.*` files in your working directory and reference them with `{{VARIABLE_NAME}}` syntax. The environment name is derived from the filename (e.g. `.env.development` becomes `development`).
+
+**Example `.env.development`:**
+
+```
+# API configuration
+BASE_URL=https://jsonplaceholder.typicode.com
+API_KEY=dev-secret-key
+
+# Default resource IDs
+USER_ID=1
+
+# User data
+USERNAME=janedoe
+EMAIL=jane@example.com
+```
+
+**Example `.env.production`:**
+
+```
+BASE_URL=https://api.myapp.com
+API_KEY=prod-secret-key
+USER_ID=42
+USERNAME=admin
+EMAIL=admin@myapp.com
+```
+
+Variables can then be used anywhere in a request -- URLs, headers, and bodies:
+
+```http
+### List Users
+GET {{BASE_URL}}/users
+Authorization: Bearer {{API_KEY}}
+
+### Create User
+POST {{BASE_URL}}/users
+Content-Type: application/json
+
+{
+  "username": "{{USERNAME}}",
+  "email": "{{EMAIL}}"
+}
+```
+
+Select the active environment in the TUI or pass `--env <name>` on the CLI:
+
+```sh
+squrl request send my-collection/create-user --env development
+squrl request send my-collection/create-user --env production
+```
+
+**Variable file format notes:**
+
+- Lines starting with `#` are comments.
+- Values can be unquoted (`KEY=value`), double-quoted (`KEY="value with spaces"` -- supports `\\`, `\"`, `\n`, `\r`, `\t` escapes), or single-quoted (`KEY='literal value'` -- no escape processing).
+- Values containing `=` are fine: `CONNECTION_STRING=host=db port=5432` parses correctly.
+- Empty values are valid: `OPTIONAL_HEADER=` yields an empty string.
+- If no environment is selected, or a `{{VARIABLE}}` has no match, the placeholder is left as-is in the request.
+
+**Resolution order:** Collection-scoped environment variables are checked first (highest priority), then global environment variables, then OS environment variables (all system env vars are available as `{{VAR}}`), then built-in dynamic variables.
+
+### Collection-Scoped Environments
+
+In addition to global `.env.*` files, each collection can define its own named environments with per-environment variables. Collection environment variables take priority over global ones, allowing you to share common variables globally while overriding specific values per-collection.
+
+**Embedded in JSON/YAML collections:**
+
+```json
+{
+  "name": "My API",
+  "selected_environment": "dev",
+  "environments": [
+    {
+      "name": "dev",
+      "values": {
+        "BASE_URL": "http://localhost:3000",
+        "API_KEY": "dev-key-123"
+      }
+    },
+    {
+      "name": "prod",
+      "values": {
+        "BASE_URL": "https://api.example.com",
+        "API_KEY": "prod-key-456"
+      }
+    }
+  ],
+  "requests": [...]
+}
+```
+
+**Companion file for `.http` collections:**
+
+`.http` file collections store environments in a `squrl-env.json` file alongside the `.http` files:
+
+```json
+{
+  "selected_environment": "dev",
+  "environments": {
+    "dev": {
+      "BASE_URL": "http://localhost:3000"
+    },
+    "prod": {
+      "BASE_URL": "https://api.example.com"
+    }
+  }
+}
+```
+
+**CLI management:**
+
+```sh
+# Create environments
+squrl collection env my-api create dev
+squrl collection env my-api create prod
+
+# Add variables
+squrl collection env my-api key dev add BASE_URL http://localhost:3000
+squrl collection env my-api key prod add BASE_URL https://api.example.com
+
+# Select the active environment
+squrl collection env my-api select dev
+
+# Send with a specific collection environment
+squrl request send my-api/get-users --collection-env prod
+```
+
+**TUI:**
+
+- Press `e` to cycle through the selected collection's environments (falls back to global environments if the collection has none)
+- Press `Ctrl-e` to open the environment editor popup, where you can view, add, edit, and delete variables
+- If a collection has no environments when `Ctrl-e` is pressed, a "default" environment is auto-created
+
+### Built-in Dynamic Variables
+
+Four dynamic variables are always available, regardless of environment selection. Each generates a fresh value on every request:
+
+| Variable | Description | Example value |
+| -------------- | ------------------------ | ------------------------------------- |
+| `{{NOW}}` | Current UTC date/time | `2025-07-15 14:30:00.123456789 UTC` |
+| `{{TIMESTAMP}}` | Current Unix timestamp | `1752588600` |
+| `{{UUIDv4}}` | Random UUID v4 | `550e8400-e29b-41d4-a716-446655440000` |
+| `{{UUIDv7}}` | Time-sortable UUID v7 | `01908a6e-7a5c-7000-8000-000000000001` |
+
+```http
+### Create Resource with Generated ID
+POST {{BASE_URL}}/resources
+Content-Type: application/json
+X-Idempotency-Key: {{UUIDv4}}
+X-Request-Timestamp: {{TIMESTAMP}}
+
+{
+  "id": "{{UUIDv4}}",
+  "createdAt": "{{NOW}}"
+}
+```
+
+### Path Parameters
+
+Use `{param}` (single braces) in URLs to define path parameters. Unlike environment variables, path parameters are managed per-request and appear as editable key-value pairs in the TUI.
+
+```http
+### Get User
+GET https://api.example.com/users/{userId}
+
+### Get Post Comments
+GET https://api.example.com/posts/{postId}/comments
+```
+
+Path parameters are distinct from environment variables: `{userId}` is a path parameter while `{{USER_ID}}` is an environment variable. Both can be used in the same URL:
+
+```http
+### Mixed: env var for base URL, path param for resource ID
+GET {{BASE_URL}}/users/{userId}
+```
+
+When importing OpenAPI specs, path parameters from the spec (e.g. `/users/{id}`) are automatically converted to squrl path parameters.
+
+### Pre/Post Request Scripts
+
+For advanced parameterization, squrl supports JavaScript pre-request and post-request scripts executed via an embedded Boa runtime. Scripts can read and modify environment variables programmatically.
+
+**Pre-request script** -- runs before the request is sent:
+
+```javascript
+// Set a dynamic header value
+request.headers["X-Request-ID"] = env.UUIDv4;
+
+// Compute an auth signature
+const timestamp = Date.now().toString();
+request.headers["X-Timestamp"] = timestamp;
+
+// Override the URL based on environment
+if (env.USE_STAGING === "true") {
+  request.url = "https://staging.api.example.com/users";
+}
+```
+
+**Post-request script** -- runs after the response is received:
+
+```javascript
+// Extract a token from the response and store it for later requests
+const body = JSON.parse(response.body);
+env.AUTH_TOKEN = body.token;
+env.USER_ID = body.user.id.toString();
+
+console.log("Stored auth token for user " + env.USER_ID);
+```
+
+Changes made to `env` in scripts are persisted back to the active environment file, making them available to subsequent requests. This is useful for chaining requests -- for example, logging in first and then using the returned token in later requests.
 
 ## Themes
 

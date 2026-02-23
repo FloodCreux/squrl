@@ -66,7 +66,9 @@ impl App<'_> {
 		let middle_layout = Layout::new(Vertical, lines).split(help_keys_layout[1]);
 		let right_layout = Layout::new(Vertical, lines).split(help_keys_layout[2]);
 
-		let is_there_any_env = self.get_selected_env_as_local().is_some();
+		let is_there_any_env = self.get_selected_env_as_local().is_some()
+			|| self.tui_active_collection_has_envs()
+			|| !self.core.collections.is_empty();
 
 		let protocol = match &self.collections_tree.selected {
 			Some(selected_request_index) => {

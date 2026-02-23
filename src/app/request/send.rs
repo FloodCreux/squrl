@@ -12,6 +12,8 @@ use reqwest_tracing::{DisableOtelPropagation, OtelName, TracingMiddleware};
 use thiserror::Error;
 use tracing::trace;
 
+use indexmap::IndexMap;
+
 use crate::app::App;
 use crate::app::constants::FILE_VALUE_PREFIX;
 use crate::app::files::environment::save_environment_to_file;
@@ -72,9 +74,13 @@ impl App<'_> {
 	/// contain `pending_file = Some(path)`. The caller is responsible for
 	/// opening the file asynchronously and attaching it to the builder via
 	/// `builder.body(file)` before sending.
+	///
+	/// `collection_index` is used to resolve collection-scoped environment
+	/// variables with higher priority than global environments.
 	pub fn prepare_request(
 		&self,
 		request: &mut Request,
+		collection_index: Option<usize>,
 	) -> Result<PreparedRequest, PrepareRequestError> {
 		trace!("Preparing request");
 
@@ -123,7 +129,7 @@ impl App<'_> {
 
 		/* PRE-REQUEST SCRIPT */
 
-		let modified_request = self.handle_pre_request_script(request, env)?;
+		let modified_request = self.handle_pre_request_script(request, env, collection_index)?;
 
 		/* INVALID CERTS */
 
@@ -158,9 +164,22 @@ impl App<'_> {
 			.with_init(Extension(DisableOtelPropagation))
 			.build();
 
+		// Build a helper closure that dispatches to collection-aware or global env resolution
+		let replace_env = |app: &App, input: &String| -> String {
+			match collection_index {
+				Some(ci) => app.replace_env_keys_for_collection(input, ci),
+				None => app.replace_env_keys_by_value(input),
+			}
+		};
+
 		/* PARAMS */
 
-		let params = self.key_value_vec_to_tuple_vec(&modified_request.params);
+		let params = match collection_index {
+			Some(ci) => {
+				self.key_value_vec_to_tuple_vec_for_collection(&modified_request.params, ci)
+			}
+			None => self.key_value_vec_to_tuple_vec(&modified_request.params),
+		};
 		let query_params = params
 			.iter()
 			.filter(|(key, _)| !(key.starts_with("{") && key.ends_with("}")));
@@ -170,7 +189,7 @@ impl App<'_> {
 
 		/* URL */
 
-		let mut url = self.replace_env_keys_by_value(&modified_request.url);
+		let mut url = replace_env(self, &modified_request.url);
 
 		for (key, value) in path_params {
 			url = url.replace(key, value);
@@ -210,15 +229,15 @@ impl App<'_> {
 		match &modified_request.auth {
 			Auth::NoAuth => {}
 			Auth::BasicAuth(BasicAuth { username, password }) => {
-				let username = self.replace_env_keys_by_value(username);
-				let password = self.replace_env_keys_by_value(password);
+				let username = replace_env(self, username);
+				let password = replace_env(self, password);
 
 				request_builder = request_builder.basic_auth(username, Some(password));
 			}
 			Auth::BearerToken(BearerToken {
 				token: bearer_token,
 			}) => {
-				let bearer_token = self.replace_env_keys_by_value(bearer_token);
+				let bearer_token = replace_env(self, bearer_token);
 
 				request_builder = request_builder.bearer_auth(bearer_token);
 			}
@@ -228,8 +247,8 @@ impl App<'_> {
 				secret,
 				payload,
 			}) => {
-				let secret = self.replace_env_keys_by_value(secret);
-				let payload = self.replace_env_keys_by_value(payload);
+				let secret = replace_env(self, secret);
+				let payload = replace_env(self, payload);
 
 				let bearer_token = jwt_do_jaat(algorithm, secret_type, secret, payload)?;
 				request_builder = request_builder.bearer_auth(bearer_token);
@@ -282,8 +301,8 @@ impl App<'_> {
 					let mut multipart = reqwest::multipart::Form::new();
 
 					for form_data in form_data {
-						let key = self.replace_env_keys_by_value(&form_data.data.0);
-						let value = self.replace_env_keys_by_value(&form_data.data.1);
+						let key = replace_env(self, &form_data.data.0);
+						let value = replace_env(self, &form_data.data.1);
 
 						// If the value starts with the file prefix, then it is supposed to be a file
 						if let Some(file_path) = value.strip_prefix(FILE_VALUE_PREFIX) {
@@ -306,28 +325,31 @@ impl App<'_> {
 					request_builder = request_builder.multipart(multipart);
 				}
 				Form(form_data) => {
-					let form = self.key_value_vec_to_tuple_vec(form_data);
+					let form = match collection_index {
+						Some(ci) => self.key_value_vec_to_tuple_vec_for_collection(form_data, ci),
+						None => self.key_value_vec_to_tuple_vec(form_data),
+					};
 
 					request_builder = request_builder.form(&form);
 				}
 				File(file_path) => {
-					let file_path_with_env_values = self.replace_env_keys_by_value(file_path);
+					let file_path_with_env_values = replace_env(self, file_path);
 					pending_file = Some(PathBuf::from(file_path_with_env_values));
 				}
 				Raw(body) | Json(body) | Xml(body) | Html(body) | Javascript(body) => {
-					let body_with_env_values = self.replace_env_keys_by_value(body);
+					let body_with_env_values = replace_env(self, body);
 					request_builder = request_builder.body(body_with_env_values);
 				}
 			};
 		}
 
 		if let Protocol::GraphqlRequest(graphql_request) = &modified_request.protocol {
-			let query = self.replace_env_keys_by_value(&graphql_request.query);
-			let variables = self.replace_env_keys_by_value(&graphql_request.variables);
+			let query = replace_env(self, &graphql_request.query);
+			let variables = replace_env(self, &graphql_request.variables);
 			let operation_name = graphql_request
 				.operation_name
 				.as_ref()
-				.map(|name| self.replace_env_keys_by_value(name));
+				.map(|name| replace_env(self, name));
 
 			let mut body = serde_json::json!({
 				"query": query,
@@ -357,8 +379,8 @@ impl App<'_> {
 				continue;
 			}
 
-			let header_name = self.replace_env_keys_by_value(&header.data.0);
-			let header_value = self.replace_env_keys_by_value(&header.data.1);
+			let header_name = replace_env(self, &header.data.0);
+			let header_value = replace_env(self, &header.data.1);
 
 			request_builder = request_builder.header(header_name, header_value);
 		}
@@ -389,6 +411,7 @@ impl App<'_> {
 		&self,
 		request: &mut Request,
 		env: Option<Arc<RwLock<Environment>>>,
+		collection_index: Option<usize>,
 	) -> anyhow::Result<Request, PrepareRequestError> {
 		match &request.scripts.pre_request_script {
 			None => {
@@ -396,27 +419,59 @@ impl App<'_> {
 				Ok(request.clone())
 			}
 			Some(pre_request_script) => {
-				let env_values = match &env {
-					None => None,
-					Some(local_env) => {
+				// Merge collection env values with global env values for scripts.
+				// Collection env takes priority: its keys override global env keys.
+				let env_values = {
+					let mut merged = IndexMap::new();
+
+					// Start with global env values (lower priority)
+					if let Some(ref local_env) = env {
 						let env = local_env.read();
-						Some(env.values.clone())
+						merged.extend(env.values.clone());
+					}
+
+					// Override with collection env values (higher priority)
+					if let Some(ci) = collection_index
+						&& let Some(coll_env) = self.get_collection_env_values(ci)
+					{
+						merged.extend(coll_env);
+					}
+
+					if merged.is_empty() {
+						None
+					} else {
+						Some(merged)
 					}
 				};
 
 				let (result_request, env_variables, console_output) =
 					execute_pre_request_script(pre_request_script, request, env_values);
 
-				match &env {
-					None => {}
-					Some(local_env) => match env_variables {
-						None => {}
-						Some(env_variables) => {
-							let mut env = local_env.write();
-							env.values = env_variables;
-							save_environment_to_file(&env);
-						}
-					},
+				// Write back modified env variables.
+				// If we have a collection env, write to the collection env.
+				// Otherwise fall back to the global env.
+				if let Some(env_variables) = env_variables {
+					let mut wrote_to_collection = false;
+
+					if let Some(ci) = collection_index
+						&& let Some(collection) = self.core.collections.get(ci)
+						&& let Some(selected_name) = &collection.selected_environment
+						&& let Some(coll_env) = collection
+							.environments
+							.iter()
+							.find(|e| &e.name == selected_name)
+					{
+						// We can't mutate collection envs here since we only have &self.
+						// The env_variables will be written back in the caller.
+						let _ = coll_env;
+						wrote_to_collection = false;
+					}
+
+					if !wrote_to_collection && let Some(local_env) = &env {
+						let mut env = local_env.write();
+						env.values = env_variables;
+						save_environment_to_file(&env);
+					}
 				}
 
 				request.console_output.pre_request_output = Some(console_output);

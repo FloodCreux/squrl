@@ -6,6 +6,7 @@ mod creating_new_request;
 mod deleting_collection;
 mod deleting_folder;
 mod deleting_request;
+mod env_editor;
 mod help;
 mod renaming_collection;
 mod renaming_folder;

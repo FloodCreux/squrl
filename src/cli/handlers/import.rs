@@ -61,9 +61,11 @@ impl App<'_> {
 
 		let mut collections: Vec<Collection> = vec![Collection {
 			name: collection_name.clone(),
-			last_position: Some(self.core.collections.len() - 1),
+			last_position: Some(self.core.collections.len().saturating_sub(1)),
 			folders: vec![],
 			requests: vec![],
+			environments: vec![],
+			selected_environment: None,
 			path: ARGS
 				.directory
 				.as_ref()
@@ -253,9 +255,11 @@ impl App<'_> {
 		// Create a new collection
 		let mut collection = Collection {
 			name: collection_name.clone(),
-			last_position: Some(self.core.collections.len() - 1),
+			last_position: Some(self.core.collections.len().saturating_sub(1)),
 			folders: vec![],
 			requests: Vec::new(),
+			environments: vec![],
+			selected_environment: None,
 			path: ARGS
 				.directory
 				.as_ref()
@@ -304,7 +308,7 @@ impl App<'_> {
 		self.core.collections.push(collection);
 
 		// Save the collection to file
-		self.save_collection_to_file(self.core.collections.len() - 1);
+		self.save_collection_to_file(self.core.collections.len().saturating_sub(1));
 
 		Ok(())
 	}
@@ -344,9 +348,11 @@ impl App<'_> {
 
 				let collection = Collection {
 					name: collection_name.clone(),
-					last_position: Some(self.core.collections.len() - 1),
+					last_position: Some(self.core.collections.len().saturating_sub(1)),
 					folders: vec![],
 					requests: vec![],
+					environments: vec![],
+					selected_environment: None,
 					path: ARGS
 						.directory
 						.as_ref()
@@ -358,7 +364,7 @@ impl App<'_> {
 				self.core.collections.push(collection);
 
 				(
-					self.core.collections.len() - 1,
+					self.core.collections.len().saturating_sub(1),
 					self.core
 						.collections
 						.last_mut()
@@ -406,9 +412,11 @@ impl App<'_> {
 
 				let collection = Collection {
 					name: collection_name.clone(),
-					last_position: Some(self.core.collections.len() - 1),
+					last_position: Some(self.core.collections.len().saturating_sub(1)),
 					folders: vec![],
 					requests: vec![],
+					environments: vec![],
+					selected_environment: None,
 					path: ARGS
 						.directory
 						.as_ref()
@@ -420,7 +428,7 @@ impl App<'_> {
 				self.core.collections.push(collection);
 
 				(
-					self.core.collections.len() - 1,
+					self.core.collections.len().saturating_sub(1),
 					self.core
 						.collections
 						.last_mut()

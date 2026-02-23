@@ -65,6 +65,8 @@ impl App<'_> {
 			last_position,
 			folders: vec![],
 			requests: vec![],
+			environments: vec![],
+			selected_environment: None,
 			path: ARGS
 				.directory
 				.as_ref()

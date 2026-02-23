@@ -17,6 +17,7 @@ use crate::cli::args::ARGS;
 use crate::models::auth::auth::Auth;
 use crate::models::collection::CollectionFileFormat::{Http, Json, Yaml};
 use crate::models::collection::{Collection, CollectionFileFormat};
+use crate::models::environment::Environment;
 use crate::models::protocol::http::body::ContentType;
 use crate::models::protocol::protocol::Protocol;
 use crate::models::request::{KeyValue, Request};
@@ -163,6 +164,13 @@ impl App<'_> {
 			let content = self.serialize_requests_to_http(requests);
 
 			write_via_temp_file(file_path, content.as_bytes())?;
+		}
+
+		// --- Phase 3: Save companion env file if collection has environments ---
+
+		let collection = &self.core.collections[collection_index];
+		if let Err(e) = Self::save_companion_env_file(collection) {
+			warn!("Could not save companion env file: {e:#}");
 		}
 
 		Ok(())
@@ -394,6 +402,124 @@ impl App<'_> {
 		}
 	}
 
+	// ── Companion environment file for .http collections ───────────────
+
+	/// The companion env file name stored alongside .http file collections.
+	const COMPANION_ENV_FILE: &'static str = "squrl-env.json";
+
+	/// Load collection environments from a companion `squrl-env.json` file.
+	/// Returns the environments and selected environment name, if the file exists.
+	pub fn load_companion_env_file(base_dir: &Path) -> Option<(Vec<Environment>, Option<String>)> {
+		let companion_path = base_dir.join(Self::COMPANION_ENV_FILE);
+
+		if !companion_path.exists() {
+			return None;
+		}
+
+		trace!(
+			"Loading companion env file \"{}\"",
+			companion_path.display()
+		);
+
+		let content = match fs::read_to_string(&companion_path) {
+			Ok(c) => c,
+			Err(e) => {
+				warn!(
+					"Could not read companion env file \"{}\": {e}",
+					companion_path.display()
+				);
+				return None;
+			}
+		};
+
+		let parsed: serde_json::Value = match serde_json::from_str(&content) {
+			Ok(v) => v,
+			Err(e) => {
+				warn!(
+					"Could not parse companion env file \"{}\": {e}",
+					companion_path.display()
+				);
+				return None;
+			}
+		};
+
+		let selected_environment = parsed
+			.get("selected_environment")
+			.and_then(|v| v.as_str())
+			.map(|s| s.to_string());
+
+		let environments_obj = match parsed.get("environments").and_then(|v| v.as_object()) {
+			Some(obj) => obj,
+			None => return Some((vec![], selected_environment)),
+		};
+
+		let mut environments = Vec::new();
+		for (name, values_val) in environments_obj {
+			let values = match values_val.as_object() {
+				Some(obj) => obj
+					.iter()
+					.map(|(k, v)| (k.clone(), v.as_str().unwrap_or("").to_string()))
+					.collect(),
+				None => indexmap::IndexMap::new(),
+			};
+			environments.push(Environment {
+				name: name.clone(),
+				values,
+				path: PathBuf::new(),
+			});
+		}
+
+		trace!(
+			"Companion env file loaded with {} environments",
+			environments.len()
+		);
+		Some((environments, selected_environment))
+	}
+
+	/// Save collection environments to a companion `squrl-env.json` file.
+	pub fn save_companion_env_file(collection: &Collection) -> anyhow::Result<()> {
+		let companion_path = collection.path.join(Self::COMPANION_ENV_FILE);
+
+		if collection.environments.is_empty() && collection.selected_environment.is_none() {
+			// If there are no environments and no selection, remove the companion file if it exists
+			if companion_path.exists() {
+				let _ = fs::remove_file(&companion_path);
+			}
+			return Ok(());
+		}
+
+		let mut environments_map = serde_json::Map::new();
+		for env in &collection.environments {
+			let values: serde_json::Map<String, serde_json::Value> = env
+				.values
+				.iter()
+				.map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
+				.collect();
+			environments_map.insert(env.name.clone(), serde_json::Value::Object(values));
+		}
+
+		let mut root = serde_json::Map::new();
+		if let Some(ref selected) = collection.selected_environment {
+			root.insert(
+				"selected_environment".to_string(),
+				serde_json::Value::String(selected.clone()),
+			);
+		}
+		root.insert(
+			"environments".to_string(),
+			serde_json::Value::Object(environments_map),
+		);
+
+		let content = serde_json::to_string_pretty(&root)
+			.context("Could not serialize companion env file")?;
+
+		write_via_temp_file(&companion_path, content.as_bytes())
+			.context("Could not save companion env file")?;
+
+		trace!("Companion env file saved");
+		Ok(())
+	}
+
 	/// Delete collection file.
 	/// Logs a warning on failure rather than panicking.
 	pub fn delete_collection_file(&mut self, collection: Collection) {
@@ -406,6 +532,14 @@ impl App<'_> {
 				"Could not delete collection file \"{}\": {e}",
 				collection.path.display()
 			);
+		}
+
+		// Also clean up companion env file for .http collections
+		if matches!(collection.file_format, Http) {
+			let companion_path = collection.path.join(Self::COMPANION_ENV_FILE);
+			if companion_path.exists() {
+				let _ = fs::remove_file(&companion_path);
+			}
 		}
 	}
 }

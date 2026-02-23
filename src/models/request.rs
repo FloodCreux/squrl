@@ -90,6 +90,28 @@ impl App<'_> {
 			})
 			.collect()
 	}
+
+	/// Like `key_value_vec_to_tuple_vec` but uses collection-scoped environment resolution.
+	pub fn key_value_vec_to_tuple_vec_for_collection(
+		&self,
+		key_value: &[KeyValue],
+		collection_index: usize,
+	) -> Vec<(String, String)> {
+		key_value
+			.iter()
+			.filter_map(|param| {
+				if param.enabled {
+					let key = self.replace_env_keys_for_collection(&param.data.0, collection_index);
+					let value =
+						self.replace_env_keys_for_collection(&param.data.1, collection_index);
+
+					Some((key, value))
+				} else {
+					None
+				}
+			})
+			.collect()
+	}
 }
 
 pub static DEFAULT_HEADERS: LazyLock<Vec<KeyValue>> = LazyLock::new(|| {

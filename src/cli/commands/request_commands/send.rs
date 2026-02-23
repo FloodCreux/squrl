@@ -21,7 +21,11 @@ pub struct SendCommand {
 	#[arg(long, default_value_t = false)]
 	pub request_name: bool,
 
-	/// Name of the environment to use, e.g. my_env (from file .env.my_env)
+	/// Name of the global environment to use, e.g. my_env (from file .env.my_env)
 	#[arg(long, value_name = "ENV_NAME", display_order = 98)]
 	pub env: Option<String>,
+
+	/// Name of the collection-scoped environment to use (defined in collection file or squrl-env.json)
+	#[arg(long, value_name = "COLLECTION_ENV_NAME", display_order = 99)]
+	pub collection_env: Option<String>,
 }

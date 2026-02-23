@@ -34,7 +34,8 @@ impl App<'_> {
 		let local_request =
 			self.get_request_as_local_from_indexes(&(collection_index, request_index));
 
-		self.local_send_request(send_command, local_request).await?;
+		self.local_send_request(send_command, local_request, Some(collection_index))
+			.await?;
 
 		if self.core.config.should_save_requests_response() {
 			self.save_collection_to_file(collection_index);
@@ -59,7 +60,8 @@ impl App<'_> {
 		}
 
 		for request in requests {
-			self.local_send_request(send_command, request).await?;
+			self.local_send_request(send_command, request, Some(collection_index))
+				.await?;
 
 			if self.core.config.should_save_requests_response() {
 				self.save_collection_to_file(collection_index);
@@ -73,6 +75,7 @@ impl App<'_> {
 		&mut self,
 		send_command: &SendCommand,
 		local_request: Arc<RwLock<Request>>,
+		collection_index: Option<usize>,
 	) -> anyhow::Result<()> {
 		// Synchronous phase: prepare the request while holding the write guard.
 		let (prepared, protocol) = {
@@ -83,11 +86,18 @@ impl App<'_> {
 				self.core.selected_environment = env_index;
 			};
 
+			// If --collection-env is specified, set the collection's selected environment
+			if let Some(coll_env_name) = &send_command.collection_env
+				&& let Some(ci) = collection_index
+			{
+				self.core.collections[ci].selected_environment = Some(coll_env_name.clone());
+			}
+
 			if send_command.request_name {
 				println!("{}", request.name);
 			}
 
-			let prepared = match self.prepare_request(&mut request) {
+			let prepared = match self.prepare_request(&mut request, collection_index) {
 				Ok(prepared) => prepared,
 				Err(error) => {
 					if send_command.console

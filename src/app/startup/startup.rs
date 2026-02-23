@@ -267,6 +267,10 @@ impl<'a> App<'a> {
 						collection_name
 					);
 
+					// Load companion env file if it exists
+					let (environments, selected_environment) =
+						App::load_companion_env_file(&requests_dir).unwrap_or_default();
+
 					let collection = Collection {
 						name: collection_name,
 						last_position: None,
@@ -274,6 +278,8 @@ impl<'a> App<'a> {
 						requests: root_requests,
 						path: requests_dir.clone(),
 						file_format: CollectionFileFormat::Http,
+						environments,
+						selected_environment,
 					};
 
 					self.core.collections.push(collection);

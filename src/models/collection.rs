@@ -10,6 +10,7 @@ use strum::Display;
 use tui_tree_widget::TreeItem;
 
 use crate::app::files::theme::THEME;
+use crate::models::environment::Environment;
 use crate::models::folder::Folder;
 use crate::models::request::Request;
 
@@ -26,6 +27,12 @@ pub struct Collection {
 
 	#[serde(skip)]
 	pub file_format: CollectionFileFormat,
+
+	#[serde(default)]
+	pub selected_environment: Option<String>,
+
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	pub environments: Vec<Environment>,
 }
 
 #[derive(Debug, Default, Copy, Clone, Display, Serialize, Deserialize)]

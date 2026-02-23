@@ -44,7 +44,9 @@ pub static EMPTY_KEY: LazyLock<KeyCombination> =
 
 impl App<'_> {
 	pub fn update_current_available_events(&mut self) {
-		let is_there_any_env = self.get_selected_env_as_local().is_some();
+		let is_there_any_env = self.get_selected_env_as_local().is_some()
+			|| self.tui_active_collection_has_envs()
+			|| !self.core.collections.is_empty();
 
 		let protocol = match &self.collections_tree.selected {
 			Some(selected) => {
@@ -144,15 +146,22 @@ impl App<'_> {
 			}
 
 			DisplayingEnvEditor | EditingEnvVariable => {
-				let Some(local_env) = self.get_selected_env_as_local() else {
-					return Line::default();
-				};
-				let env = local_env.read();
+				// Try to get env name from collection env first, then global env
+				let env_name = self
+					.tui_selected_collection_index()
+					.and_then(|ci| self.core.collections.get(ci))
+					.filter(|c| !c.environments.is_empty())
+					.and_then(|c| c.selected_environment.clone())
+					.or_else(|| {
+						self.get_selected_env_as_local()
+							.map(|e| e.read().name.clone())
+					})
+					.unwrap_or_else(|| "(none)".to_string());
 
 				Line::from(vec![
 					Span::raw("Environment editor > ")
 						.fg(THEME.read().ui.secondary_foreground_color),
-					Span::raw(env.name.clone())
+					Span::raw(env_name)
 						.fg(THEME.read().ui.font_color)
 						.bg(THEME.read().ui.main_background_color),
 				])

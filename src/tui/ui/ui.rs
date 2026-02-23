@@ -50,12 +50,7 @@ impl<'a> App<'a> {
 		)
 		.split(main_layout[1]);
 
-		if self.core.environments.is_empty() {
-			let env_and_collections_layout =
-				Layout::new(Vertical, [Constraint::Fill(1)]).split(inner_layout[0]);
-
-			self.render_collections(frame, env_and_collections_layout[0]);
-		} else {
+		{
 			let env_and_collections_layout =
 				Layout::new(Vertical, [Constraint::Length(3), Constraint::Fill(1)])
 					.split(inner_layout[0]);
@@ -115,6 +110,7 @@ impl<'a> App<'a> {
 
 		match self.state {
 			ChoosingElementToCreate => self.render_creating_element_popup(frame),
+			DisplayingEnvEditor | EditingEnvVariable => self.render_env_editor_popup(frame),
 			DisplayingCookies | EditingCookies => self.render_cookies_popup(frame),
 			CreatingNewCollection => self.render_creating_new_collection_popup(frame),
 			CreatingNewRequest => self.render_creating_new_request_popup(frame),

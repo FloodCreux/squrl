@@ -193,29 +193,41 @@ pub fn parse_http_content(content: &str) -> anyhow::Result<Vec<Arc<RwLock<Reques
 
 		let body_string = body_lines.join("\n");
 
-		// Process URL - extract query params
-		let mut parsed_url = match Url::parse(url_str) {
-			Ok(url) => url,
-			Err(e) => return Err(anyhow!(CouldNotParseUrl(e.to_string()))),
+		// Process URL - extract query params.
+		// URLs containing {{...}} env variable placeholders are stored as-is
+		// since they cannot be parsed until the variables are resolved at send time.
+		let (url, params) = if url_str.contains("{{") {
+			(url_str.to_string(), vec![])
+		} else {
+			let mut parsed_url = match Url::parse(url_str) {
+				Ok(url) => url,
+				Err(e) => return Err(anyhow!(CouldNotParseUrl(e.to_string()))),
+			};
+
+			let params: Vec<KeyValue> = parsed_url
+				.query_pairs()
+				.map(|(k, v)| KeyValue {
+					enabled: true,
+					data: (k.to_string(), v.to_string()),
+				})
+				.collect();
+
+			parsed_url.set_query(None);
+			(parsed_url.to_string(), params)
 		};
-
-		let params: Vec<KeyValue> = parsed_url
-			.query_pairs()
-			.map(|(k, v)| KeyValue {
-				enabled: true,
-				data: (k.to_string(), v.to_string()),
-			})
-			.collect();
-
-		parsed_url.set_query(None);
-		let url = parsed_url.to_string();
 
 		// Derive request name if not provided
 		let name = match request_name {
 			Some(n) => n,
 			None => {
-				let path = parsed_url.path();
-				format!("{} {}", method_str, path)
+				// For template URLs, derive name from the raw URL string;
+				// for parsed URLs, extract the path portion.
+				let path_part = url
+					.find("//")
+					.and_then(|scheme_end| url[scheme_end + 2..].find('/'))
+					.map(|pos| &url[url.find("//").unwrap() + 2 + pos..])
+					.unwrap_or(&url);
+				format!("{} {}", method_str, path_part)
 			}
 		};
 

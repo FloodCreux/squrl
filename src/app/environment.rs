@@ -3,6 +3,7 @@ use chrono::Utc;
 use indexmap::IndexMap;
 use indexmap::map::MutableKeys;
 use parking_lot::RwLock;
+use std::path::PathBuf;
 use std::sync::Arc;
 use thiserror::Error;
 use tracing::{info, trace};
@@ -277,6 +278,291 @@ impl App<'_> {
 			}
 			None => interpolate_env_keys(input, &[]),
 		}
+	}
+
+	/// Get the active environment values for a collection, if the collection
+	/// has a selected environment. Returns `None` if the collection has no
+	/// environments or no environment is selected.
+	pub fn get_collection_env_values(
+		&self,
+		collection_index: usize,
+	) -> Option<IndexMap<String, String>> {
+		let collection = self.core.collections.get(collection_index)?;
+		let selected_name = collection.selected_environment.as_ref()?;
+
+		collection
+			.environments
+			.iter()
+			.find(|env| &env.name == selected_name)
+			.map(|env| env.values.clone())
+	}
+
+	/// Replace `{{KEY}}` placeholders using the collection's environment (highest priority),
+	/// then the global environment, then OS env vars, then built-in variables.
+	///
+	/// This is the primary interpolation method used during request preparation.
+	pub fn replace_env_keys_for_collection(&self, input: &str, collection_index: usize) -> String {
+		let collection_env = self.get_collection_env_values(collection_index);
+		let global_env = self.get_selected_env_as_local();
+
+		let mut maps: Vec<&IndexMap<String, String>> = Vec::new();
+
+		// Collection env takes highest priority
+		if let Some(ref coll_env) = collection_env {
+			maps.push(coll_env);
+		}
+
+		// Global env is next
+		let global_env_guard;
+		if let Some(ref env_lock) = global_env {
+			global_env_guard = env_lock.read();
+			maps.push(&global_env_guard.values);
+		}
+
+		// OS env vars are last
+		maps.push(&OS_ENV_VARS);
+
+		interpolate_env_keys(input, &maps)
+	}
+
+	// ── Collection-scoped environment operations ──────────────────────────
+
+	/// Find a collection environment by name. Returns its index in the collection's
+	/// environments vector.
+	pub fn find_collection_environment(
+		&self,
+		collection_index: usize,
+		env_name: &str,
+	) -> anyhow::Result<usize> {
+		let collection = self
+			.core
+			.collections
+			.get(collection_index)
+			.ok_or_else(|| anyhow!("Collection not found"))?;
+
+		collection
+			.environments
+			.iter()
+			.position(|env| env.name == env_name)
+			.ok_or_else(|| anyhow!(EnvironmentNotFound))
+	}
+
+	/// Create a new environment in a collection.
+	pub fn create_collection_environment(
+		&mut self,
+		collection_index: usize,
+		env_name: String,
+	) -> anyhow::Result<()> {
+		let collection = self
+			.core
+			.collections
+			.get(collection_index)
+			.ok_or_else(|| anyhow!("Collection not found"))?;
+
+		if collection.environments.iter().any(|e| e.name == env_name) {
+			return Err(anyhow!(
+				"Collection environment \"{env_name}\" already exists"
+			));
+		}
+
+		let new_env = Environment {
+			name: env_name.clone(),
+			values: IndexMap::new(),
+			path: PathBuf::new(),
+		};
+
+		self.core.collections[collection_index]
+			.environments
+			.push(new_env);
+
+		info!("Collection environment \"{env_name}\" created");
+		self.save_collection_to_file(collection_index);
+		Ok(())
+	}
+
+	/// Delete an environment from a collection.
+	pub fn delete_collection_environment(
+		&mut self,
+		collection_index: usize,
+		env_name: &str,
+	) -> anyhow::Result<()> {
+		let env_idx = self.find_collection_environment(collection_index, env_name)?;
+
+		self.core.collections[collection_index]
+			.environments
+			.remove(env_idx);
+
+		// If the deleted env was the selected one, clear the selection
+		if self.core.collections[collection_index]
+			.selected_environment
+			.as_deref()
+			== Some(env_name)
+		{
+			self.core.collections[collection_index].selected_environment = None;
+		}
+
+		info!("Collection environment \"{env_name}\" deleted");
+		self.save_collection_to_file(collection_index);
+		Ok(())
+	}
+
+	/// Select a collection environment by name. Pass `None` to deselect.
+	pub fn select_collection_environment(
+		&mut self,
+		collection_index: usize,
+		env_name: Option<String>,
+	) -> anyhow::Result<()> {
+		if let Some(ref name) = env_name {
+			// Verify the environment exists
+			self.find_collection_environment(collection_index, name)?;
+		}
+
+		self.core.collections[collection_index].selected_environment = env_name.clone();
+
+		match env_name {
+			Some(name) => info!("Collection environment set to \"{name}\""),
+			None => info!("Collection environment deselected"),
+		}
+
+		self.save_collection_to_file(collection_index);
+		Ok(())
+	}
+
+	/// Get a value from a collection environment.
+	pub fn get_collection_env_value(
+		&self,
+		collection_index: usize,
+		env_name: &str,
+		key: &str,
+	) -> anyhow::Result<String> {
+		let env_idx = self.find_collection_environment(collection_index, env_name)?;
+		let env = &self.core.collections[collection_index].environments[env_idx];
+
+		env.values
+			.get(key)
+			.cloned()
+			.ok_or_else(|| anyhow!(KeyNotFound))
+	}
+
+	/// Set a value in a collection environment (key must already exist).
+	pub fn set_collection_env_value(
+		&mut self,
+		collection_index: usize,
+		env_name: &str,
+		key: &str,
+		value: String,
+	) -> anyhow::Result<()> {
+		let env_idx = self.find_collection_environment(collection_index, env_name)?;
+		let env = &mut self.core.collections[collection_index].environments[env_idx];
+
+		match env.values.get_mut(key) {
+			None => return Err(anyhow!(KeyNotFound)),
+			Some(old_value) => {
+				info!("Collection env key \"{key}\" value set to \"{value}\"");
+				*old_value = value;
+			}
+		}
+
+		self.save_collection_to_file(collection_index);
+		Ok(())
+	}
+
+	/// Add a new key-value pair to a collection environment.
+	pub fn create_collection_env_value(
+		&mut self,
+		collection_index: usize,
+		env_name: &str,
+		key: String,
+		value: String,
+	) -> anyhow::Result<()> {
+		let env_idx = self.find_collection_environment(collection_index, env_name)?;
+		let env = &mut self.core.collections[collection_index].environments[env_idx];
+
+		match env.values.insert(key.clone(), value.clone()) {
+			Some(_) => return Err(anyhow!(KeyAlreadyExists)),
+			None => info!("Key \"{key}\" with value \"{value}\" added to collection environment"),
+		}
+
+		self.save_collection_to_file(collection_index);
+		Ok(())
+	}
+
+	/// Delete a key from a collection environment.
+	pub fn delete_collection_env_key(
+		&mut self,
+		collection_index: usize,
+		env_name: &str,
+		key: &str,
+	) -> anyhow::Result<()> {
+		let env_idx = self.find_collection_environment(collection_index, env_name)?;
+		let env = &mut self.core.collections[collection_index].environments[env_idx];
+
+		match env.values.shift_remove(key) {
+			None => return Err(anyhow!(KeyNotFound)),
+			Some(_) => info!("Key \"{key}\" deleted from collection environment"),
+		}
+
+		self.save_collection_to_file(collection_index);
+		Ok(())
+	}
+
+	/// Rename a key in a collection environment.
+	pub fn rename_collection_env_key(
+		&mut self,
+		collection_index: usize,
+		env_name: &str,
+		key: &str,
+		new_key: &str,
+	) -> anyhow::Result<()> {
+		let env_idx = self.find_collection_environment(collection_index, env_name)?;
+		let env = &mut self.core.collections[collection_index].environments[env_idx];
+
+		if env.values.get(new_key).is_some() {
+			return Err(anyhow!(KeyAlreadyExists));
+		}
+
+		let old_index = match env.values.get_index_of(key) {
+			None => return Err(anyhow!(KeyNotFound)),
+			Some(index) => index,
+		};
+
+		let (k, _) = env
+			.values
+			.get_index_mut2(old_index)
+			.ok_or_else(|| anyhow!(KeyNotFound))?;
+		*k = new_key.to_string();
+
+		info!("Collection env key \"{key}\" renamed to \"{new_key}\"");
+
+		self.save_collection_to_file(collection_index);
+		Ok(())
+	}
+
+	/// Cycle to the next collection environment (for TUI). Wraps around.
+	/// If the collection has no environments, does nothing.
+	pub fn tui_next_collection_environment(&mut self, collection_index: usize) {
+		let collection = &self.core.collections[collection_index];
+
+		if collection.environments.is_empty() {
+			return;
+		}
+
+		let current_idx = collection
+			.selected_environment
+			.as_ref()
+			.and_then(|name| collection.environments.iter().position(|e| &e.name == name))
+			.unwrap_or(0);
+
+		let next_idx = if current_idx + 1 < collection.environments.len() {
+			current_idx + 1
+		} else {
+			0
+		};
+
+		self.core.collections[collection_index].selected_environment =
+			Some(collection.environments[next_idx].name.clone());
+
+		self.save_collection_to_file(collection_index);
 	}
 }
 

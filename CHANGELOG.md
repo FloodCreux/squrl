@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Collection-scoped environments** -- each collection can now define its own named environments (e.g. `dev`, `staging`, `prod`) with per-environment key-value variables. Collection environment variables take highest priority during `{{VAR}}` substitution, followed by global `.env.*` environments, OS env vars, and built-in dynamic variables
+- **Embedded environments in JSON/YAML collections** -- environments are stored directly in collection files under `environments` and `selected_environment` fields, with full backward compatibility for existing collections
+- **Companion env file for `.http` collections** -- `.http` file collections store environments in a `squrl-env.json` companion file alongside the `.http` files
+- **Collection environment CLI commands** -- `squrl collection env <name> list|create|delete|select|info` and `squrl collection env <name> key <env> get|set|add|delete|rename` for full CRUD management of collection-scoped environments
+- **`--collection-env` flag** -- specify a collection-scoped environment when sending requests via `squrl request send` or `squrl collection send`
+- **Environment editor popup in TUI** -- `Ctrl-e` now opens a centered popup overlay for viewing and editing environment variables, with full keyboard navigation and inline editing
+- **Auto-create default environment** -- pressing `Ctrl-e` on a collection with no environments automatically creates a "default" environment, providing an immediate editing surface
+- **Environment widget always visible** -- the sidebar environment widget now always renders, showing `(no environment)` when no environment is configured
+- **Template URL support in `.http` files** -- URLs containing `{{VAR}}` placeholders are now accepted by the `.http` file parser instead of failing with "relative URL without a base"
 - **Windows support** -- squrl now builds, tests, and releases on Windows (x86_64 and aarch64 MSVC targets)
 - **Windows CI** -- `windows-latest` added to the CI test matrix
 - **Windows release artifacts** -- `.zip` archives for Windows targets alongside `.tar.gz` for Linux and macOS
@@ -18,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `prepare_request()` now accepts an optional `collection_index` parameter for collection-aware environment variable resolution
+- TUI environment cycling (`e` key) is now context-dependent: cycles collection environments when the selected collection has its own, otherwise cycles global environments
+- TUI environment editor (`Ctrl-e`) is context-dependent: edits collection environments when available, otherwise edits global environments
+- Environment keybindings (`e` and `Ctrl-e`) are now always registered when collections are loaded, rather than only when global `.env.*` files exist
 - Moved install scripts into `scripts/` directory (`install.sh`, `curl-install.sh`, `install.ps1`, `curl-install.ps1`)
 - `get_user_config_dir()` now uses `ProjectDirs` on Windows instead of `~/.config/squrl`
 - `sanitize_name` now strips backslashes (`\`) in addition to forward slashes and quotes
@@ -27,6 +40,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `.http` files with `{{VAR}}` template URLs no longer fail to parse during collection loading
+- Environment `path` field no longer serialized into collection JSON files (was leaking filesystem paths into portable collection data)
+- Integer overflow in import handlers when `collections` list is empty (`len() - 1` replaced with `saturating_sub(1)`)
 - Curl export `--data` flag used `'@/<path>'` instead of `'@<path>'`, producing double-slashes for absolute paths
 
 ## [0.1.1] - 2026-02-19

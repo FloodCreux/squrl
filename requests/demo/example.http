@@ -27,24 +27,66 @@ Content-Type: application/json
 ### Delete User
 DELETE https://jsonplaceholder.typicode.com/users/1
 
+### List Users (parameterized base URL)
+GET {{BASE_URL}}/users
+
+### Get User by ID (parameterized URL and path)
+GET {{BASE_URL}}/users/{{USER_ID}}
+
+### Create User (parameterized body)
+POST {{BASE_URL}}/users
+Content-Type: application/json
+
+{
+  "name": "Jane Doe",
+  "username": "{{USERNAME}}",
+  "email": "{{EMAIL}}"
+}
+
+### Authenticated Request (Bearer token from environment)
+GET {{BASE_URL}}/users
+Authorization: Bearer {{API_KEY}}
+
+### Get User with Path Parameter
+GET {{BASE_URL}}/users/{userId}
+
+### Get Post Comments with Path Parameters
+GET {{BASE_URL}}/posts/{postId}/comments
+
+### Create Resource with Generated ID
+POST {{BASE_URL}}/users
+Content-Type: application/json
+
+{
+  "id": "{{UUIDv4}}",
+  "name": "Jane Doe",
+  "createdAt": "{{NOW}}"
+}
+
+### Idempotency Key via UUID
+POST {{BASE_URL}}/users
+Content-Type: application/json
+X-Idempotency-Key: {{UUIDv4}}
+X-Request-Timestamp: {{TIMESTAMP}}
+
+{
+  "name": "Jane Doe",
+  "email": "jane@example.com"
+}
+
 ### Echo WebSocket
 WEBSOCKET wss://echo.websocket.org/
 
 ### List Countries (GraphQL)
 GRAPHQL https://countries.trevorblades.com/graphql
+Content-Type: application/json
 
 {
-  countries {
-    code
-    name
-    capital
-    emoji
-    currency
-  }
+  "query": "{\n  countries {\n    code\n    name\n    capital\n    emoji\n    currency\n  }\n}"
 }
 
 ### Say Hello (gRPC)
-GRPC http://localhost:50051
+GRPC http://localhost:50051/
 X-Proto-File: requests/demo/proto/helloworld.proto
 X-Grpc-Service: helloworld.Greeter
 X-Grpc-Method: SayHello
