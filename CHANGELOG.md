@@ -7,8 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-02-23
+
 ### Added
 
+- **gRPC support** -- send unary gRPC requests using `.proto` file definitions with runtime protobuf parsing via `prost-reflect` and `protox` (no code generation required). Requests are sent over HTTP/2 with standard gRPC length-prefixed framing, and responses are decoded back to JSON
+- **gRPC TUI integration** -- new `PROTO`, `SERVICE`, and `MESSAGE` param tabs for editing proto file path, service/method names, and JSON message body. gRPC requests display with a bold `gRPC` prefix in the collection tree
+- **gRPC `.http` file support** -- `GRPC` keyword for `.http` files with `X-Proto-File`, `X-Grpc-Service`, and `X-Grpc-Method` pseudo-headers for specifying proto configuration
+- **gRPC export** -- export gRPC requests as `grpcurl` commands
+- **GraphQL support** -- send GraphQL queries and mutations over HTTP with automatic JSON body construction from query, variables, and operation name fields
+- **GraphQL TUI integration** -- new `QUERY` and `VARIABLES` param tabs with syntax-highlighted editors. GraphQL requests display with a bold `GQL` prefix in the collection tree
+- **GraphQL `.http` file support** -- `GRAPHQL` keyword for `.http` files; bodies are parsed as JSON with `query`/`variables`/`operationName` fields, or as raw query strings
+- **GraphQL and gRPC export** -- GraphQL requests export to HTTP raw, cURL, Rust reqwest, and PowerShell formats
+- **Protocol selection in new request popup** -- TUI protocol cycling now includes HTTP, WebSocket, GraphQL, and gRPC
+- **Live reloading of environment files** -- `squrl-env.json` companion files are watched for changes using the `notify` crate (FSEvents on macOS, inotify on Linux, ReadDirectoryChanges on Windows). Changes are automatically reloaded on the next TUI tick (~250ms), with natural debouncing via a shared boolean flag. The environment editor refreshes in-place if open
+- **Demo examples** -- added GraphQL (Countries API) and gRPC (helloworld) examples to the demo collection, including a `helloworld.proto` file
 - **Collection-scoped environments** -- each collection can now define its own named environments (e.g. `dev`, `staging`, `prod`) with per-environment key-value variables. Collection environment variables take highest priority during `{{VAR}}` substitution, followed by global `.env.*` environments, OS env vars, and built-in dynamic variables
 - **Embedded environments in JSON/YAML collections** -- environments are stored directly in collection files under `environments` and `selected_environment` fields, with full backward compatibility for existing collections
 - **Companion env file for `.http` collections** -- `.http` file collections store environments in a `squrl-env.json` companion file alongside the `.http` files
@@ -27,7 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- gRPC requests bypass the standard reqwest middleware pipeline and use a dedicated HTTP/2 client with `http2_prior_knowledge()`
+- `prepare_request()` now handles GraphQL requests by assembling a JSON body from query, variables, and operation name, and forces the method to POST
 - `prepare_request()` now accepts an optional `collection_index` parameter for collection-aware environment variable resolution
+- TUI send dispatches based on protocol: HTTP and GraphQL through `send_http_request`, gRPC through `send_grpc_request`, WebSocket through `send_ws_request`
 - TUI environment cycling (`e` key) is now context-dependent: cycles collection environments when the selected collection has its own, otherwise cycles global environments
 - TUI environment editor (`Ctrl-e`) is context-dependent: edits collection environments when available, otherwise edits global environments
 - Environment keybindings (`e` and `Ctrl-e`) are now always registered when collections are loaded, rather than only when global `.env.*` files exist
@@ -153,6 +169,7 @@ Initial release of squrl.
 - **Security auditing** -- cargo-audit and cargo-deny
 - **Install scripts** -- remote `scripts/curl-install.sh` for pre-built binaries and `scripts/curl-install.ps1` for Windows
 
-[Unreleased]: https://github.com/FloodCreux/squrl/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/FloodCreux/squrl/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/FloodCreux/squrl/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/FloodCreux/squrl/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/FloodCreux/squrl/releases/tag/v0.1.0
